@@ -78,6 +78,6 @@ describe('QuestionView', () => {
   it('Check calls the engine and shows feedback', () => {
     render(<QuestionView problem={classifyFx} />);
     fireEvent.click(screen.getByRole('button', { name: 'Check answer' }));
-    expect(document.querySelector('.feedback')).toBeTruthy();
+    expect(document.querySelector('.fb-result')).toBeTruthy();
   });
 });

@@ -42,4 +42,7 @@ export interface FeedbackPanelProps {
   /** Shown at level 5 or via "Why does this work?" when correct. */
   explanation: Markdown;
   walkthrough?: Markdown[];
+  /** Optional context so locations read "Row 1 · Checking Account" (picker names, row order). */
+  accounts?: Account[];
+  rows?: TransactionRow[];
 }

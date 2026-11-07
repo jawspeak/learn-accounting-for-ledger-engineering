@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { CheckResult, Diagnostic, FeedbackPanelProps } from '@contracts';
 import { Markdown } from '../../app/Markdown';
-import { describeLocation } from './describe';
+import { describeLocation, type LocationContext } from './describe';
 import './feedback.css';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -11,7 +11,16 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
  * 1 count + correct parts · 2 where · 3 what kind · 4 why (explanations) · 5 full solution + walkthrough.
  * Hints are independent of checking and revealed one at a time.
  */
-export function FeedbackPanel({ result, level, onEscalate, hints, explanation, walkthrough }: FeedbackPanelProps) {
+export function FeedbackPanel({
+  result,
+  level,
+  onEscalate,
+  hints,
+  explanation,
+  walkthrough,
+  accounts,
+  rows,
+}: FeedbackPanelProps) {
   const [hintCount, setHintCount] = useState(0);
   /** "Why does this work?" is tied to the result it was asked for, so a new check hides it again. */
   const [whyFor, setWhyFor] = useState<CheckResult | null>(null);
@@ -56,7 +65,7 @@ export function FeedbackPanel({ result, level, onEscalate, hints, explanation, w
             {!correct && level >= 2 && (
               <ul className="fb-diags">
                 {ordered.map((d, i) => (
-                  <DiagnosticItem key={i} d={d} level={level} />
+                  <DiagnosticItem key={i} d={d} level={level} ctx={{ accounts, rows }} />
                 ))}
               </ul>
             )}
@@ -150,12 +159,12 @@ function Summary({
   );
 }
 
-function DiagnosticItem({ d, level }: { d: Diagnostic; level: number }) {
+function DiagnosticItem({ d, level, ctx }: { d: Diagnostic; level: number; ctx: LocationContext }) {
   return (
     <li className={`fb-diag is-${d.severity}`}>
       <p className="fb-loc">
         <span aria-hidden="true">{d.severity === 'error' ? '✗' : '⚠'}</span>{' '}
-        <span className="fb-sev">{d.severity === 'error' ? 'Issue' : 'Near-miss'}:</span> {describeLocation(d)}
+        <span className="fb-sev">{d.severity === 'error' ? 'Issue' : 'Near-miss'}:</span> {describeLocation(d, ctx)}
       </p>
       {level >= 3 && <p className="fb-msg">{d.message}</p>}
       {level >= 4 &&

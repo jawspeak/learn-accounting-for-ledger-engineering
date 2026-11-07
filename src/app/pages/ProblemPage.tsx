@@ -307,6 +307,8 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
             hints={problem.hints}
             explanation={problem.explanation}
             walkthrough={problem.walkthrough}
+            accounts={accounts}
+            rows={rows}
           />
         </>
       )}

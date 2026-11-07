@@ -33,7 +33,10 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - Non-booking checkers (`items.ts`) per `contracts/items.ts` and SHELL's itemIndex conventions.
 - Notes: MISSING_ACCOUNT for an unbooked event has no rowId; BS-line correct parts are `{accountId}` without rowId.
 - Deferred (optional contract ideas): `MISSING_ROW` code; flag distinguishing BS-line correct parts.
-## UI
+## UI — ✅ merged
+- T-account grid (group bands, `=` divider, opening row, footer balances, per-row ✓/✗, snap highlight), type-then-name `AccountPicker` combobox (sandbox can create accounts), before/after BS panels (editable after-BS), journal view, locked rows, correct-part ✓ and field-aware highlights, container-query layout, native DnD + ◀▶ column reorder (sandbox). `FeedbackPanel` reveal levels 1–5 + hints.
+- Conventions: `onColumnOrderChange([])` = reset to canonical; hidden-answer highlights (MISSING_ACCOUNT) outline the row.
+- Manager at merge: contract `FeedbackPanelProps` gained optional `accounts`/`rows` (real names in locations); fixed Before-BS leaking trap accounts' real types (+ regression test); updated SHELL test selector.
 ## SHELL — ✅ merged (f572249)
 - Design tokens + light/dark/manual theme; sticky header (Sandbox, Cheat sheet drawer, theme toggle); collapsible sidebar; skip link.
 - Home, section template (primer, callouts, lens, problems grouped by role, prev/next, "Coming soon"), problem page for all kinds (copy link with attempt, Open in Sandbox, perspective pair link, prev/next, reference panel, worked/faded handling).

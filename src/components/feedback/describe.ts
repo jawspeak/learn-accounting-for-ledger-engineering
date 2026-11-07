@@ -1,4 +1,9 @@
-import type { Diagnostic, DiagnosticLocation } from '@contracts';
+import type { Account, Diagnostic, DiagnosticLocation, TransactionRow } from '@contracts';
+
+export interface LocationContext {
+  accounts?: Account[];
+  rows?: TransactionRow[];
+}
 
 /**
  * Human-readable location for a diagnostic ("Row 1 · Checking"), used at reveal level 2.
@@ -7,13 +12,16 @@ import type { Diagnostic, DiagnosticLocation } from '@contracts';
  * row ids ending in a number become "Row N"; kebab-case account ids are title-cased.
  * The account is omitted for MISSING_ACCOUNT — naming the solution's account would give the answer away.
  */
-export function describeLocation(d: Pick<Diagnostic, 'code' | 'location'>): string {
+export function describeLocation(d: Pick<Diagnostic, 'code' | 'location'>, ctx: LocationContext = {}): string {
   const loc: DiagnosticLocation = d.location;
   const parts: string[] = [];
   if (loc.itemIndex !== undefined) parts.push(`Item ${loc.itemIndex + 1}`);
-  if (loc.rowId) parts.push(rowName(loc.rowId));
+  if (loc.rowId) {
+    const i = ctx.rows?.findIndex((r) => r.id === loc.rowId) ?? -1;
+    parts.push(i >= 0 ? `Row ${i + 1}` : rowName(loc.rowId));
+  }
   if (loc.field === 'bs-line') parts.push('After balance sheet');
-  if (loc.accountId && d.code !== 'MISSING_ACCOUNT') parts.push(humanize(loc.accountId));
+  if (loc.accountId && d.code !== 'MISSING_ACCOUNT') parts.push(ctx.accounts?.find((a) => a.id === loc.accountId)?.name ?? humanize(loc.accountId));
   if (parts.length === 0) return d.code === 'EQUATION_BROKEN' ? 'Balance sheet' : 'Whole answer';
   return parts.join(' · ');
 }

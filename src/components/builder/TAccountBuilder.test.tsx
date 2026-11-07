@@ -323,3 +323,31 @@ describe('TAccountBuilder — balance sheets, overlays, journal', () => {
     expect(journal.querySelector('input')).toBeNull();
   });
 });
+
+describe('TAccountBuilder — balance sheets do not leak real types', () => {
+  it('Before panel shows learner-added accounts under the chosen type, not the real type', () => {
+    const rows: TransactionRow[] = [
+      {
+        id: 'r1',
+        postings: [
+          { accountId: 'cash', side: 'cr', amount: 10000, chosenType: 'asset' },
+          // Trap: really a liability, learner chose asset.
+          { accountId: 'customer-deposits', side: 'dr', amount: 10000, chosenType: 'asset' },
+        ],
+      },
+    ];
+    const opening: BalanceSheet = {
+      lines: [
+        { accountId: 'cash', amount: 10000 },
+        { accountId: 'net-worth', amount: 10000 },
+      ],
+    };
+    render(<Harness initialRows={rows} showBalanceSheets opening={opening} />);
+    const before = screen.getByText('Before').closest('section, div')!.parentElement!;
+    const text = before.textContent ?? '';
+    const liabIdx = text.search(/liabilities/i);
+    const depIdx = text.indexOf('Customer Deposits');
+    expect(depIdx).toBeGreaterThan(-1);
+    expect(depIdx).toBeLessThan(liabIdx);
+  });
+});

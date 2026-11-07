@@ -198,7 +198,12 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const bsIds = [...placed.map((c) => c.accountId), ...(opening?.lines ?? []).map((l) => l.accountId).filter((id) => !columnIds.has(id))];
   const editableAfter = !!afterBalanceSheet && !!onAfterBalanceSheetChange;
 
-  const realTypeOf = (id: AccountId): AccountType | undefined => accountById.get(id)?.type ?? colType.get(id);
+  /**
+   * Before-BS typing: accounts given in the opening balances show their real (given) type; anything the learner
+   * added shows the learner's chosen type — otherwise the Before panel would leak a trap account's real type.
+   */
+  const beforeTypeOf = (id: AccountId): AccountType | undefined =>
+    openingOf.has(id) ? (accountById.get(id)?.type ?? colType.get(id)) : (colType.get(id) ?? accountById.get(id)?.type);
 
   /** One fragment per column, with the `=` divider cell spliced in at the assets | right-hand boundary. */
   const eachCol = (render: (c: PlacedColumn, i: number) => ReactNode, divider: (() => ReactNode) | null): ReactNode[] => {
@@ -536,7 +541,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
               title="Before"
               bs={opening ?? { lines: [] }}
               accountIds={bsIds}
-              typeOf={realTypeOf}
+              typeOf={beforeTypeOf}
               nameOf={nameOf}
             />
           </div>
