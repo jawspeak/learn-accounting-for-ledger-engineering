@@ -111,6 +111,7 @@ export function QuestionView({
         hints={problem.hints}
         explanation={problem.explanation}
         walkthrough={problem.walkthrough}
+        accounts={'entityId' in problem ? entities[problem.entityId]?.accounts : undefined}
       />
     </div>
   );

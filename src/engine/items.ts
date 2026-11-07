@@ -117,10 +117,13 @@ export function checkCoaDesign(problem: CoaDesignProblem, attempt: AttemptState)
   const parts: CorrectPart[] = [];
   problem.candidates.forEach((c, i) => {
     const raw = at(attempt.items, i);
-    const ans = raw && typeof raw === 'object' ? (raw as { included?: unknown; type?: unknown }) : undefined;
-    if (!ans || typeof ans.included !== 'boolean') {
-      diagnostics.push(itemDiag(problem, i, MESSAGES.ITEM_UNANSWERED, c.explanation));
-    } else if (c.required && !ans.included) {
+    // An untouched row means "not included" — a real answer (leaving out irrelevant accounts is correct).
+    const given = raw && typeof raw === 'object' ? (raw as { included?: unknown; type?: unknown }) : undefined;
+    const ans = {
+      included: typeof given?.included === 'boolean' ? given.included : false,
+      type: given?.type ?? null,
+    };
+    if (c.required && !ans.included) {
       diagnostics.push(itemDiag(problem, i, MESSAGES.COA_MISSING, c.explanation));
     } else if (!c.required && ans.included) {
       diagnostics.push(itemDiag(problem, i, MESSAGES.COA_NOT_NEEDED, c.explanation));

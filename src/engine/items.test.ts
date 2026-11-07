@@ -166,10 +166,12 @@ describe('coa-design', () => {
       [2, 'item', "This business doesn't need this account."],
     ]);
   });
-  it('included without a type, and unanswered entries', () => {
+  it('included without a type is unanswered; untouched rows count as "not included"', () => {
     const r = checkProblem(prob, attempt(prob.id, [{ included: true, type: null }, null]), entities);
-    expect(summary(r).wrong).toEqual([0, 1, 2]);
-    expect(r.diagnostics.every((d) => d.message === "This one hasn't been answered yet.")).toBe(true);
+    // 0: included but no type; 1: untouched but required → missing; 2: untouched and not needed → correct.
+    expect(summary(r).wrong).toEqual([0, 1]);
+    expect(r.diagnostics[0]!.message).toBe("This one hasn't been answered yet.");
+    expect(r.correctParts).toEqual([{ itemIndex: 2 }]);
   });
 });
 

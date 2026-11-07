@@ -20,7 +20,8 @@ export function describeLocation(d: Pick<Diagnostic, 'code' | 'location'>, ctx: 
     const i = ctx.rows?.findIndex((r) => r.id === loc.rowId) ?? -1;
     parts.push(i >= 0 ? `Row ${i + 1}` : rowName(loc.rowId));
   }
-  if (loc.field === 'bs-line') parts.push('After balance sheet');
+  // Statement-fill lines are numbered items already; only booking problems have an editable after-BS.
+  if (loc.field === 'bs-line' && loc.itemIndex === undefined) parts.push('After balance sheet');
   if (loc.accountId && d.code !== 'MISSING_ACCOUNT') parts.push(ctx.accounts?.find((a) => a.id === loc.accountId)?.name ?? humanize(loc.accountId));
   if (parts.length === 0) return d.code === 'EQUATION_BROKEN' ? 'Balance sheet' : 'Whole answer';
   return parts.join(' · ');
