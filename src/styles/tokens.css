@@ -1,0 +1,79 @@
+/* Design tokens. Light default; dark via prefers-color-scheme (unless data-theme=light) or data-theme=dark. */
+:root {
+  --bg: #fbfaf7;
+  --fg: #1c1c1f;
+  --muted: #5d5d66;
+  --accent: #2a52c4;
+  --accent-fg: #ffffff;
+  --accent-soft: #e3eaff;
+  --border: #d6d2c8;
+  --surface: #ffffff;
+  --surface-2: #f3f1ea;
+  --ok: #17703a;
+  --ok-soft: #dff3e6;
+  --err: #b3261e;
+  --err-soft: #fde7e5;
+  --warn: #8a5a00;
+  --warn-soft: #fff1d0;
+  --shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 4px 16px rgb(0 0 0 / 6%);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131315;
+    --fg: #ececf0;
+    --muted: #a6a6b0;
+    --accent: #8fabff;
+    --accent-fg: #0d1430;
+    --accent-soft: #1f2a4d;
+    --border: #36363d;
+    --surface: #1b1b1f;
+    --surface-2: #232328;
+    --ok: #62d08a;
+    --ok-soft: #14301f;
+    --err: #ff8a80;
+    --err-soft: #3a1b19;
+    --warn: #f2c35c;
+    --warn-soft: #35290c;
+    --shadow: 0 1px 2px rgb(0 0 0 / 50%), 0 4px 16px rgb(0 0 0 / 40%);
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #131315;
+  --fg: #ececf0;
+  --muted: #a6a6b0;
+  --accent: #8fabff;
+  --accent-fg: #0d1430;
+  --accent-soft: #1f2a4d;
+  --border: #36363d;
+  --surface: #1b1b1f;
+  --surface-2: #232328;
+  --ok: #62d08a;
+  --ok-soft: #14301f;
+  --err: #ff8a80;
+  --err-soft: #3a1b19;
+  --warn: #f2c35c;
+  --warn-soft: #35290c;
+  --shadow: 0 1px 2px rgb(0 0 0 / 50%), 0 4px 16px rgb(0 0 0 / 40%);
+  color-scheme: dark;
+}
+:root {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+  --radius: 8px;
+  --sidebar-w: 17rem;
+  --header-h: 3.25rem;
+}
