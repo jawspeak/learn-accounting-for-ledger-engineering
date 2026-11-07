@@ -48,7 +48,13 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - `you` (19 accounts), `bank` (18; added securities, premises, salaries/occupancy expense). §00 4, §01 10, §02 11, §03 11, §04 11, §05 11, §06 10 problems; worked → faded → practice → review; rewrites + perspective pairs; callouts (Fed reserves, bank-statement "credit", loan creates a deposit).
 - Judgment calls listed in OWNER-REVIEW.md.
 - Manager: content gate now also checks askAfterBalanceSheet problems with the correct after-BS, perspective-pair ids resolve, and statement-fill answers match computed balances.
-## C2
+## C2 — ✅ merged
+- `coffee` (26 accounts), `zap` (22). §07 11, §08 10, §09 9, §10 9, §11 13, §12 9, Review 13 problems. Extra gate `content/review/c2-content.test.ts`.
+- Judgment calls in OWNER-REVIEW.md. Manager: aligned animation Coffee/Zap ids.
+
+## Phase 2 — verification
+- VER-2 (sections 00–06): 68/68 answers agree blind; 2 ambiguous prompts + 14 teaching fixes → sent back to C1 (`reports/verification/c1-report.md`).
+- VER-1 (sections 07–12 + review): running.
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 

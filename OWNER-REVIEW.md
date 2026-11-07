@@ -18,6 +18,19 @@ Maintained by the manager agent. Newest at the bottom of each list. Check off or
 - [ ] A person's car is an asset with no depreciation; "Gifts Received" is treated as income.
 - [ ] Faded examples in §01/§02 (non-T-account questions) can't be partly pre-filled (contract only supports prefill for bookings), so their walkthrough solves item 1 instead. Could add prefill for other kinds later.
 
+### Accounting judgment calls — sections 7–12 + Review (C2)
+- [ ] Coffee Co. is a small corporation: owner money → Paid-in Capital; draws → "Dividends (Owner Draws)" (primer notes sole-proprietor naming).
+- [ ] Inventory uses a periodic count: purchases → Inventory; month-end usage → COGS (sales don't also book COGS).
+- [ ] One "Cash" account for Coffee Co. (till + checking).
+- [ ] Card sales → Card Receivables; processor fee booked at settlement (explanation flags simplification).
+- [ ] Zap uses one liability account per customer (Alice/Bob/Carol) so P2P transfers are gradeable; the lens explains the real sub-ledger + control-account setup.
+- [ ] Zap Suspense typed as a liability; Accounts Payable vs Accrued Expenses split.
+- [ ] ACH cash-out failure modelled initiate → settle → return (credited straight back to the customer).
+- [ ] Wrong-customer correction = original (locked) + full reversal + correct entry (3 rows).
+- [ ] Closing entries go straight to Retained Earnings (3 rows); "Income Summary" is a trap, explanation says closing via it is also valid.
+- [ ] §10 December walkthrough deliberately ends in a $1,010 loss.
+- [ ] Review loan repayment assumes the bank had already accrued the interest (clears Interest Receivable).
+
 ## Stuck / blocked
 
 ## Needs your review later
