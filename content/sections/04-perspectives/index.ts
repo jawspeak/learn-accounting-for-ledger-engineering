@@ -125,7 +125,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         WRONG_SIDE:
           'Customer Deposits is a **liability** (credit-normal). The bank owes you *less*, so it is **debited**. Cash – Vault is an asset that went down → credited.',
         EXTRA_ACCOUNT:
-          'Bills left the ATM, so the change is to **Cash – Vault**, not Reserves at the Federal Reserve. Reserves only move when money moves between banks (or when the bank orders/ships cash with the Fed).',
+          'Only two accounts change. Bills left the ATM, so the asset that falls is **Cash – Vault**, not Reserves at the Federal Reserve. Reserves only move when money moves between banks (or when the bank orders/ships cash with the Fed).',
       },
       showBalanceSheets: true,
       opening: bankOpening,

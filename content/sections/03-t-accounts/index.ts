@@ -331,7 +331,7 @@ The **balance sheets** before and after the transaction must both satisfy \`A = 
         WRONG_SIDE: 'Salary Income is **revenue** — it increases equity, and equity increases on the **credit** side. Checking (an asset) increases on the debit side.',
         MISSING_ACCOUNT: 'Every increase in net worth from earning should go through an income account (here **Salary Income**) so you can tell where it came from.',
         EXTRA_ACCOUNT:
-          "Crediting **Net Worth** directly would keep the equation balanced, but you'd lose the information that this was *salary*. Use **Salary Income**; income accounts roll into Net Worth at period end.",
+          "Only Checking and an income account change. If you credited **Net Worth** directly, the equation stays balanced, but you'd lose the information that this was *salary*. Use **Salary Income**; income accounts roll into Net Worth at period end.",
       },
       showBalanceSheets: true,
       opening: {

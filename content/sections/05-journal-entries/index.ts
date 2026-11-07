@@ -400,7 +400,7 @@ Your journal shows these two entries:
       diagnosticExplanations: {
         WRONG_SIDE: 'Loan to a Friend is an asset going up → debit. Cash going down → credit.',
         EXTRA_ACCOUNT:
-          "**Loan Payable** is money *you* owe. Here your friend owes *you* — that's the asset **Loan to a Friend**.",
+          "Only Cash and one other account change. (If you used **Loan Payable**: that's money *you* owe. Here your friend owes *you* — the asset **Loan to a Friend**.)",
         MISSING_ACCOUNT: 'Your friend owes you $100; record that claim as an asset: **Loan to a Friend**.',
       },
       showBalanceSheets: false,
@@ -455,7 +455,7 @@ Your journal shows these two entries:
       diagnosticExplanations: {
         WRONG_SIDE: 'Checking (asset) ↑ → debit. Loan to a Friend (asset) ↓ → credit.',
         EXTRA_ACCOUNT:
-          "**Gifts Received** would mean your net worth went up — but the $100 was already counted as an asset (Loan to a Friend) when you lent it. Repayment just swaps the IOU for cash.",
+          "Only Checking and Loan to a Friend change. **Gifts Received** (or any income) would mean your net worth went up — but the $100 was already counted as an asset (Loan to a Friend) when you lent it. Repayment just swaps the IOU for cash.",
         MISSING_ACCOUNT: 'The IOU you recorded when you lent the money must be cleared: credit **Loan to a Friend**.',
       },
       showBalanceSheets: false,
