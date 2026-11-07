@@ -30,7 +30,13 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 
 ## ENG
 ## UI
-## SHELL
+## SHELL — ✅ merged (f572249)
+- Design tokens + light/dark/manual theme; sticky header (Sandbox, Cheat sheet drawer, theme toggle); collapsible sidebar; skip link.
+- Home, section template (primer, callouts, lens, problems grouped by role, prev/next, "Coming soon"), problem page for all kinds (copy link with attempt, Open in Sandbox, perspective pair link, prev/next, reference panel, worked/faded handling).
+- Question components: Classify (drag + click), DrCrPredict, EquationFill, StatementFill, MultipleChoice, CoaDesign, with fixtures/tests.
+- Cheat sheet SVG page + focus-trapped drawer.
+- Conventions: statement-fill itemIndex = index in answer lines; MC itemIndex = option index; blank inputs omitted.
+- Manager fixes at merge: dropped out-of-scope formatting changes; keyed problem views by id.
 ## C1
 ## C2
 ## ANIM
