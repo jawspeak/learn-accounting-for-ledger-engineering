@@ -1,0 +1,70 @@
+/* Phase-0 baseline. SHELL owns design tokens and theming. */
+:root {
+  --bg: #fdfcf9;
+  --fg: #1d1d1f;
+  --muted: #6b6b70;
+  --accent: #2f5bd3;
+  --border: #d9d6cf;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141416;
+    --fg: #ececf0;
+    --muted: #9a9aa2;
+    --accent: #7a9cff;
+    --border: #34343a;
+    color-scheme: dark;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+a {
+  color: var(--accent);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 18rem 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+.sidebar ol {
+  padding-left: 0;
+  list-style: none;
+}
+.sidebar li {
+  margin: 0.35rem 0;
+}
+.sidebar a[aria-current='page'] {
+  font-weight: 600;
+}
+.brand {
+  font-weight: 700;
+  text-decoration: none;
+}
+.content {
+  padding: 1.5rem 2rem;
+  max-width: 80rem;
+}
+.builder table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+.builder th,
+.builder td {
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
