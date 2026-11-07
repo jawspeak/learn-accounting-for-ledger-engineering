@@ -1,0 +1,593 @@
+/* T-account builder. Tokens come from SHELL (src/styles); every var has a fallback so it works standalone. */
+.tab-builder {
+  --tab-line: var(--fg, #1d1d1f);
+  --tab-soft: color-mix(in srgb, var(--border, #d9d6cf) 45%, transparent);
+  --tab-ok: var(--ok, #2e7d32);
+  --tab-err: var(--err, #c62828);
+  --tab-warn: var(--warn, #b26a00);
+  --tab-accent: var(--accent, #2f5bd3);
+  --tab-surface: var(--surface, #fff);
+  margin: 1rem 0;
+  color: var(--fg, #1d1d1f);
+}
+
+.tab-builder .sr-only,
+.tab-bs .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tab-builder button,
+.tab-builder select,
+.tab-builder input {
+  font: inherit;
+  color: inherit;
+}
+.tab-builder button {
+  background: var(--tab-surface);
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+.tab-builder button:hover:not(:disabled) {
+  border-color: var(--tab-accent);
+}
+.tab-builder button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tab-builder button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--tab-accent) 15%, var(--tab-surface));
+  border-color: var(--tab-accent);
+}
+.tab-builder :focus-visible {
+  outline: 2px solid var(--tab-accent);
+  outline-offset: 1px;
+}
+
+.tab-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ---------- picker ---------- */
+.tab-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem 1.25rem;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 8px;
+  background: var(--tab-surface);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  max-width: 48rem;
+}
+@media (max-width: 640px) {
+  .tab-picker {
+    grid-template-columns: 1fr;
+  }
+}
+.tab-picker-types {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.tab-picker-types legend,
+.tab-picker-name > label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  display: block;
+  padding: 0;
+}
+.tab-picker-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.25rem;
+}
+.tab-picker-type-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tab-picker-type-grid label.is-selected {
+  background: color-mix(in srgb, var(--tab-accent) 14%, transparent);
+  font-weight: 600;
+}
+.tab-picker-name input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 6px;
+  background: var(--bg, #fff);
+}
+.tab-picker-note {
+  color: var(--muted, #6b6b70);
+  font-size: 0.85rem;
+  margin: 0.4rem 0 0;
+}
+.tab-picker-list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0.2rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 6px;
+}
+.tab-picker-list li {
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tab-picker-list li.is-active {
+  background: color-mix(in srgb, var(--tab-accent) 16%, transparent);
+  outline: 1px solid var(--tab-accent);
+}
+.tab-picker-list .tab-picker-empty {
+  color: var(--muted, #6b6b70);
+  cursor: default;
+}
+.tab-picker-tag {
+  color: var(--muted, #6b6b70);
+  font-size: 0.8rem;
+}
+.tab-picker-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- layout: before BS | grid | after BS ----------
+   Container-query driven so it adapts to the space the page gives the builder:
+   wide → before | grid | after; medium → grid on top, before + after side by side below; narrow → stacked. */
+.tab-builder {
+  container-type: inline-size;
+  container-name: tab-builder;
+}
+.tab-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.tab-builder.has-bs .tab-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'grid grid'
+    'before after';
+}
+.tab-bs-before {
+  grid-area: before;
+}
+.tab-bs-after {
+  grid-area: after;
+}
+.tab-builder.has-bs .tab-scroll {
+  grid-area: grid;
+}
+@container tab-builder (min-width: 72rem) {
+  .tab-builder.has-bs .tab-layout {
+    grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr) minmax(10rem, 14rem);
+    grid-template-areas: 'before grid after';
+  }
+}
+@container tab-builder (max-width: 34rem) {
+  .tab-builder.has-bs .tab-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'before' 'grid' 'after';
+  }
+}
+.tab-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 0.25rem;
+}
+
+/* ---------- grid ---------- */
+.tab-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.tab-grid th,
+.tab-grid td {
+  padding: 0.25rem 0.4rem;
+  vertical-align: middle;
+}
+.tab-band {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #6b6b70);
+  border-bottom: 2px solid var(--border, #d9d6cf);
+  text-align: center;
+}
+.tab-band-assets {
+  background: color-mix(in srgb, var(--tab-accent) 7%, transparent);
+}
+.tab-band-liabilities {
+  background: color-mix(in srgb, var(--tab-warn) 8%, transparent);
+}
+.tab-band-equity {
+  background: color-mix(in srgb, var(--tab-ok) 8%, transparent);
+}
+.tab-subband {
+  font-size: 0.72rem;
+  color: var(--muted, #6b6b70);
+  text-align: center;
+  font-weight: 500;
+}
+.tab-subband.is-equity {
+  border-left: 1px dashed var(--border, #d9d6cf);
+}
+.tab-eq-col {
+  width: 1.4rem;
+  min-width: 1.4rem;
+  padding: 0 !important;
+  border-left: 3px double var(--tab-line);
+  border-right: 3px double var(--tab-line);
+}
+.tab-eq-sign {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Each account is a "T": name on top, a heavy bar under Dr|Cr, a heavy stem between Dr and Cr. */
+.tab-head {
+  text-align: center;
+  padding-top: 0.5rem !important;
+  min-width: 8rem;
+}
+.tab-head[draggable='true'] {
+  cursor: grab;
+}
+.tab-head.is-dragging {
+  opacity: 0.5;
+}
+.tab-head-name {
+  font-weight: 650;
+  white-space: nowrap;
+}
+.tab-head-tools {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+}
+.tab-type-badge {
+  font-size: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--border, #d9d6cf);
+  padding: 0.05rem 0.4rem;
+  background: var(--tab-surface);
+  cursor: pointer;
+}
+.tab-type-badge:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.tab-icon-btn {
+  padding: 0 0.35rem !important;
+  line-height: 1.4;
+  font-size: 0.8rem;
+}
+.tab-sides th {
+  font-size: 0.8rem;
+  color: var(--muted, #6b6b70);
+  border-bottom: 2px solid var(--tab-line);
+  font-weight: 600;
+}
+.tab-grid .tab-dr {
+  border-right: 2px solid var(--tab-line);
+  text-align: right;
+}
+.tab-grid .tab-cr {
+  text-align: left;
+}
+/* gap between T's */
+.tab-grid .tab-col.tab-dr {
+  border-left: 0.9rem solid transparent;
+  background-clip: padding-box;
+}
+.tab-grid .tab-head {
+  border-left: 0.9rem solid transparent;
+  background-clip: padding-box;
+}
+
+.tab-cell {
+  white-space: nowrap;
+  position: relative;
+}
+.tab-amount {
+  width: 4.75rem;
+  box-sizing: border-box;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--tab-soft);
+  border-radius: 4px;
+  background: var(--bg, #fff);
+  text-align: right;
+}
+.tab-cr .tab-amount {
+  text-align: left;
+}
+.tab-amount:hover {
+  border-color: var(--border, #d9d6cf);
+}
+.tab-num {
+  font-variant-numeric: tabular-nums;
+}
+.tab-rowhead {
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tab-rownum {
+  display: inline-block;
+  min-width: 1.4rem;
+  color: var(--muted, #6b6b70);
+}
+.tab-label-input {
+  width: 7rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--tab-soft);
+  border-radius: 4px;
+  background: transparent;
+}
+.tab-rowlabel {
+  margin-right: 0.35rem;
+}
+.tab-lock-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  color: var(--muted, #6b6b70);
+}
+tr.is-locked td,
+tr.is-locked th {
+  opacity: 0.7;
+}
+tr.is-locked .tab-cell {
+  font-style: italic;
+}
+.tab-opening-row th,
+.tab-opening-row td {
+  color: var(--muted, #6b6b70);
+  border-bottom: 1px dashed var(--border, #d9d6cf);
+}
+.tab-balance-row th,
+.tab-balance-row td {
+  border-top: 1px solid var(--tab-line);
+  font-weight: 650;
+}
+.tab-abnormal {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--tab-warn);
+}
+.tab-check-col {
+  white-space: nowrap;
+  padding-left: 0.9rem !important;
+  font-size: 0.85rem;
+}
+.tab-rowcheck.is-ok {
+  color: var(--tab-ok);
+}
+.tab-rowcheck.is-bad {
+  color: var(--tab-err);
+  font-weight: 600;
+}
+.tab-rowcheck.is-empty {
+  color: var(--muted, #6b6b70);
+}
+.tab-empty-head,
+.tab-empty-cell {
+  color: var(--muted, #6b6b70);
+  font-style: italic;
+  min-width: 14rem;
+  text-align: center;
+}
+
+/* ---------- feedback overlays ---------- */
+.tab-ok-mark {
+  color: var(--tab-ok);
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+/* Cells have a transparent left border as the gap between T's, so outline the content, not the cell. */
+.tab-cell.tab-hl .tab-amount,
+.tab-cell.tab-hl > .tab-num,
+.tab-grid .tab-head.tab-hl .tab-head-name,
+.tab-type-badge.tab-hl,
+.tab-bs li.tab-hl {
+  outline: 2px dashed var(--tab-err);
+  outline-offset: -2px;
+  border-radius: 3px;
+}
+.tab-type-badge.tab-hl {
+  outline-offset: 1px;
+}
+tr.tab-hl-row > * {
+  box-shadow: inset 0 2px 0 var(--tab-err), inset 0 -2px 0 var(--tab-err);
+}
+
+/* ---------- snap-into-place highlight ---------- */
+@keyframes tab-flash {
+  from {
+    background-color: color-mix(in srgb, var(--tab-accent) 30%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.tab-flash {
+  animation: tab-flash 1.1s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-flash {
+    animation: none;
+    background-color: color-mix(in srgb, var(--tab-accent) 12%, transparent);
+  }
+}
+
+/* ---------- balance sheets ---------- */
+.tab-bs {
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface, #fff);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.tab-bs h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+.tab-bs h4 {
+  margin: 0.5rem 0 0.2rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted, #6b6b70);
+}
+.tab-bs ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tab-bs li,
+.tab-bs-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.1rem 0;
+}
+.tab-bs-total {
+  margin: 0.15rem 0 0;
+  border-top: 1px solid var(--border, #d9d6cf);
+  font-weight: 600;
+}
+.tab-bs-less {
+  color: var(--muted, #6b6b70);
+  font-size: 0.8rem;
+}
+.tab-bs-empty {
+  margin: 0;
+  color: var(--muted, #6b6b70);
+}
+.tab-bs-note {
+  margin: 0 0 0.3rem;
+  color: var(--muted, #6b6b70);
+  font-size: 0.82rem;
+}
+.tab-bs-input {
+  width: 5.5rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 4px;
+  text-align: right;
+  background: var(--bg, #fff);
+  color: inherit;
+  font: inherit;
+}
+.tab-eq {
+  margin: 0.6rem 0 0;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 650;
+}
+.tab-eq.is-ok {
+  color: var(--ok, #2e7d32);
+  background: color-mix(in srgb, var(--ok, #2e7d32) 10%, transparent);
+}
+.tab-eq.is-bad {
+  color: var(--err, #c62828);
+  background: color-mix(in srgb, var(--err, #c62828) 10%, transparent);
+}
+.tab-eq-detail {
+  font-weight: 400;
+  font-size: 0.8rem;
+  display: block;
+}
+
+/* ---------- journal view ---------- */
+.tab-journal {
+  display: grid;
+  gap: 0.75rem;
+}
+.tab-journal-entry {
+  border-collapse: collapse;
+  min-width: 22rem;
+  font-variant-numeric: tabular-nums;
+}
+.tab-journal-entry caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.2rem;
+}
+.tab-journal-entry th {
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--muted, #6b6b70);
+  border-bottom: 1px solid var(--border, #d9d6cf);
+  padding: 0.15rem 0.5rem;
+}
+.tab-journal-entry td {
+  padding: 0.15rem 0.5rem;
+}
+.tab-journal-entry .tab-num {
+  text-align: right;
+  min-width: 5rem;
+}
+.tab-journal-entry tr.is-cr .tab-journal-acct {
+  padding-left: 2.5rem;
+}
+.tab-muted {
+  color: var(--muted, #6b6b70);
+}
+
+/* Keep the Dr = Cr check visible while the grid scrolls sideways (only when there's room for it). */
+.tab-grid .tab-check-col {
+  max-width: 9rem;
+  white-space: normal;
+}
+@container tab-builder (min-width: 44rem) {
+  .tab-grid .tab-check-col {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--bg, #fdfcf9);
+    box-shadow: -6px 0 6px -6px color-mix(in srgb, var(--fg, #000) 35%, transparent);
+  }
+}
+.tab-row-remove {
+  margin-left: 0.25rem;
+}
+
+.tab-cell.tab-hl > .tab-num {
+  display: inline-block;
+  min-width: 3rem;
+  padding: 0 0.25rem;
+}
+.tab-cell.tab-hl .tab-amount {
+  outline-offset: 0;
+}
