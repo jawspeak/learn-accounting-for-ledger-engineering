@@ -15,7 +15,8 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const [accountId, setAccountId] = useState('');
   const [cols, setCols] = useState<{ accountId: string; type: AccountType }[]>(() => {
     const seen = new Map<string, AccountType>();
-    for (const r of rows) for (const p of r.postings) if (p.chosenType) seen.set(p.accountId, p.chosenType);
+    for (const r of rows)
+      for (const p of r.postings) if (p.chosenType) seen.set(p.accountId, p.chosenType);
     return [...seen].map(([id, t]) => ({ accountId: id, type: t }));
   });
   const ordered = engine.orderColumns(
@@ -36,12 +37,18 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     onRowsChange(next);
   };
   const cell = (r: TransactionRow, acct: string, side: Side) =>
-    r.postings.filter((p) => p.accountId === acct && p.side === side).reduce((s, p) => s + p.amount, 0);
+    r.postings
+      .filter((p) => p.accountId === acct && p.side === side)
+      .reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="builder">
       <div className="picker">
-        <select aria-label="Account type" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
+        <select
+          aria-label="Account type"
+          value={type}
+          onChange={(e) => setType(e.target.value as AccountType)}
+        >
           <option value="">1. Type…</option>
           {TYPES.map((t) => (
             <option key={t} value={t}>
@@ -49,7 +56,12 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             </option>
           ))}
         </select>
-        <select aria-label="Account" value={accountId} disabled={!type} onChange={(e) => setAccountId(e.target.value)}>
+        <select
+          aria-label="Account"
+          value={accountId}
+          disabled={!type}
+          onChange={(e) => setAccountId(e.target.value)}
+        >
           <option value="">2. Account…</option>
           {accounts.map((a) => (
             <option key={a.id} value={a.id}>
@@ -60,14 +72,21 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         <button
           disabled={!type || !accountId}
           onClick={() => {
-            setCols((c) => [...c.filter((x) => x.accountId !== accountId), { accountId, type: type as AccountType }]);
+            setCols((c) => [
+              ...c.filter((x) => x.accountId !== accountId),
+              { accountId, type: type as AccountType },
+            ]);
             setAccountId('');
             setType('');
           }}
         >
           Add T-account
         </button>
-        <button onClick={() => onRowsChange([...rows, { id: `r${rows.length + 1}`, postings: [] }])}>Add row</button>
+        <button
+          onClick={() => onRowsChange([...rows, { id: `r${rows.length + 1}`, postings: [] }])}
+        >
+          Add row
+        </button>
       </div>
       <table>
         <thead>
@@ -82,7 +101,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           </tr>
           <tr>
             <th />
-            {ordered.map((c) => [<th key={c.accountId + 'd'}>Dr</th>, <th key={c.accountId + 'c'}>Cr</th>])}
+            {ordered.map((c) => [
+              <th key={c.accountId + 'd'}>Dr</th>,
+              <th key={c.accountId + 'c'}>Cr</th>,
+            ])}
             <th />
           </tr>
         </thead>
@@ -99,7 +121,9 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                         aria-label={`Row ${ri + 1} ${nameOf(c.accountId)} ${side}`}
                         inputMode="decimal"
                         size={6}
-                        value={cell(r, c.accountId, side) ? String(cell(r, c.accountId, side) / 100) : ''}
+                        value={
+                          cell(r, c.accountId, side) ? String(cell(r, c.accountId, side) / 100) : ''
+                        }
                         onChange={(e) => setCell(ri, c.accountId, side, e.target.value)}
                       />
                     </td>

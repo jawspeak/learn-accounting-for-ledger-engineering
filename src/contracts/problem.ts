@@ -97,7 +97,12 @@ export interface ClassifyProblem extends ProblemBase {
   kind: 'classify';
   /** Buckets to drag into. */
   buckets: AccountType[];
-  items: { label: string; /** whose books, if perspective matters */ entityId?: EntityId; answer: AccountType; explanation: Markdown }[];
+  items: {
+    label: string;
+    /** whose books, if perspective matters */ entityId?: EntityId;
+    answer: AccountType;
+    explanation: Markdown;
+  }[];
 }
 
 export interface DrCrPredictProblem extends ProblemBase {

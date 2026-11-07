@@ -22,7 +22,8 @@ export const checkBooking: EngineApi['checkBooking'] = (problem, entity, answer)
 
   const net = (row: TransactionRow | undefined) => {
     const m = new Map<string, number>();
-    for (const p of row?.postings ?? []) m.set(p.accountId, (m.get(p.accountId) ?? 0) + (p.side === 'dr' ? p.amount : -p.amount));
+    for (const p of row?.postings ?? [])
+      m.set(p.accountId, (m.get(p.accountId) ?? 0) + (p.side === 'dr' ? p.amount : -p.amount));
     return m;
   };
 
@@ -32,7 +33,12 @@ export const checkBooking: EngineApi['checkBooking'] = (problem, entity, answer)
     const ans = answer.rows[i];
     const rowId = ans?.id ?? sol?.id ?? String(i);
     if (ans && ans.postings.length > 0 && !rowTotals(ans).balanced) {
-      diagnostics.push({ code: 'UNBALANCED_ROW', severity: 'error', location: { rowId, field: 'row' }, message: 'Debits do not equal credits in this row.' });
+      diagnostics.push({
+        code: 'UNBALANCED_ROW',
+        severity: 'error',
+        location: { rowId, field: 'row' },
+        message: 'Debits do not equal credits in this row.',
+      });
     }
     const s = net(sol);
     const a = net(ans);
@@ -40,22 +46,42 @@ export const checkBooking: EngineApi['checkBooking'] = (problem, entity, answer)
       const av = a.get(accountId);
       const loc = { rowId, accountId };
       if (av === undefined || av === 0) {
-        diagnostics.push({ code: 'MISSING_ACCOUNT', severity: 'error', location: { ...loc, field: 'account' }, message: 'An account that should change is missing.' });
+        diagnostics.push({
+          code: 'MISSING_ACCOUNT',
+          severity: 'error',
+          location: { ...loc, field: 'account' },
+          message: 'An account that should change is missing.',
+        });
         continue;
       }
       let ok = true;
       if (Math.sign(av) !== Math.sign(sv)) {
         ok = false;
-        diagnostics.push({ code: 'WRONG_SIDE', severity: 'error', location: { ...loc, field: 'side' }, message: 'An account is on the wrong side (Dr vs Cr).' });
+        diagnostics.push({
+          code: 'WRONG_SIDE',
+          severity: 'error',
+          location: { ...loc, field: 'side' },
+          message: 'An account is on the wrong side (Dr vs Cr).',
+        });
       } else if (Math.abs(av) !== Math.abs(sv)) {
         ok = false;
-        diagnostics.push({ code: 'WRONG_AMOUNT', severity: 'error', location: { ...loc, field: 'amount' }, message: 'An amount is wrong.' });
+        diagnostics.push({
+          code: 'WRONG_AMOUNT',
+          severity: 'error',
+          location: { ...loc, field: 'amount' },
+          message: 'An amount is wrong.',
+        });
       }
       const chosen = ans?.postings.find((p) => p.accountId === accountId)?.chosenType;
       const real = actual.get(accountId)?.type;
       if (chosen && real && chosen !== real) {
         ok = false;
-        diagnostics.push({ code: 'WRONG_TYPE', severity: 'error', location: { ...loc, field: 'type' }, message: 'An account has the wrong type.' });
+        diagnostics.push({
+          code: 'WRONG_TYPE',
+          severity: 'error',
+          location: { ...loc, field: 'type' },
+          message: 'An account has the wrong type.',
+        });
       }
       if (ok) correctParts.push(loc);
     }
@@ -68,11 +94,19 @@ export const checkBooking: EngineApi['checkBooking'] = (problem, entity, answer)
           code: trap.trap.kind === 'counterparty' ? 'COUNTERPARTY_ACCOUNT' : 'TRAP_ACCOUNT',
           severity: 'error',
           location: loc,
-          message: trap.trap.kind === 'counterparty' ? "An account belongs to the other party's books." : 'One account is a common mix-up.',
+          message:
+            trap.trap.kind === 'counterparty'
+              ? "An account belongs to the other party's books."
+              : 'One account is a common mix-up.',
           explanation: trap.trap.explanation,
         });
       } else {
-        diagnostics.push({ code: 'EXTRA_ACCOUNT', severity: 'error', location: loc, message: "An account shouldn't be in this transaction." });
+        diagnostics.push({
+          code: 'EXTRA_ACCOUNT',
+          severity: 'error',
+          location: loc,
+          message: "An account shouldn't be in this transaction.",
+        });
       }
     }
   }
@@ -86,7 +120,10 @@ export const checkProblem: EngineApi['checkProblem'] = (problem, attempt, entiti
   if (problem.kind === 'booking') {
     const entity: EntityCoA | undefined = entities[problem.entityId];
     if (!entity) throw new Error(`Unknown entity ${problem.entityId}`);
-    return checkBooking(problem as BookingProblem, entity, { rows: attempt.rows ?? [], balanceSheet: attempt.balanceSheet });
+    return checkBooking(problem as BookingProblem, entity, {
+      rows: attempt.rows ?? [],
+      balanceSheet: attempt.balanceSheet,
+    });
   }
   const result: CheckResult = { correct: false, diagnostics: [], correctParts: [] };
   return result;

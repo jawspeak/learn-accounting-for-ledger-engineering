@@ -74,7 +74,12 @@ export interface EngineApi {
    * within a group, CoA order (`coaOrder`), unknown accounts appended alphabetically.
    */
   orderColumns(
-    columns: { accountId: AccountId; type: AccountType; contraOf?: AccountId; equityGroup?: Account['equityGroup'] }[],
+    columns: {
+      accountId: AccountId;
+      type: AccountType;
+      contraOf?: AccountId;
+      equityGroup?: Account['equityGroup'];
+    }[],
     coaOrder: AccountId[],
   ): OrderedColumn[];
   /** Full diagnostic check of a booking answer (VISION-2 §6). */
@@ -84,7 +89,11 @@ export interface EngineApi {
     answer: { rows: TransactionRow[]; balanceSheet?: BalanceSheet },
   ): CheckResult;
   /** Check any non-booking problem kind. `items` shape per kind (documented in engine). */
-  checkProblem(problem: Problem, attempt: AttemptState, entities: Record<string, EntityCoA>): CheckResult;
+  checkProblem(
+    problem: Problem,
+    attempt: AttemptState,
+    entities: Record<string, EntityCoA>,
+  ): CheckResult;
   /** Accounts offered in a booking problem's picker, alphabetical by name, deterministic. */
   pickerAccounts(problem: BookingProblem, entity: EntityCoA): Account[];
   encodeState(state: SandboxState | AttemptState): string;

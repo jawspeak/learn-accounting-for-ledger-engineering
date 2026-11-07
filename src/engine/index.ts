@@ -1,5 +1,12 @@
 import type { EngineApi } from '@contracts';
-import { normalSide, rowTotals, computeBalances, checkEquation, trialBalance, orderColumns } from './core';
+import {
+  normalSide,
+  rowTotals,
+  computeBalances,
+  checkEquation,
+  trialBalance,
+  orderColumns,
+} from './core';
 import { checkBooking, checkProblem, pickerAccounts } from './checker';
 import { encodeState, decodeSandbox, decodeAttempt } from './urlState';
 

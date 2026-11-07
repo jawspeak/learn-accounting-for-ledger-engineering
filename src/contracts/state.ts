@@ -2,7 +2,13 @@
  * URL-encoded state. FROZEN CONTRACT — only the manager changes this file.
  * Bump STATE_VERSION on any breaking change and keep a decoder for old versions.
  */
-import type { Account, BalanceSheet, EntityId, TransactionRow, TrialBalanceLine } from './accounting';
+import type {
+  Account,
+  BalanceSheet,
+  EntityId,
+  TransactionRow,
+  TrialBalanceLine,
+} from './accounting';
 
 export const STATE_VERSION = 1 as const;
 

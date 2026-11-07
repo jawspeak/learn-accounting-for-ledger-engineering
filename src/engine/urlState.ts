@@ -4,7 +4,10 @@ import { schemas, type AttemptState, type EngineApi, type SandboxState } from '@
 export const encodeState: EngineApi['encodeState'] = (state) =>
   compressToEncodedURIComponent(JSON.stringify(state));
 
-function decode<T>(encoded: string, schema: { safeParse(x: unknown): { success: boolean; data?: unknown } }): T | null {
+function decode<T>(
+  encoded: string,
+  schema: { safeParse(x: unknown): { success: boolean; data?: unknown } },
+): T | null {
   try {
     const json = decompressFromEncodedURIComponent(encoded);
     if (!json) return null;
@@ -15,5 +18,7 @@ function decode<T>(encoded: string, schema: { safeParse(x: unknown): { success: 
   }
 }
 
-export const decodeSandbox: EngineApi['decodeSandbox'] = (s) => decode<SandboxState>(s, schemas.sandboxStateSchema);
-export const decodeAttempt: EngineApi['decodeAttempt'] = (s) => decode<AttemptState>(s, schemas.attemptStateSchema);
+export const decodeSandbox: EngineApi['decodeSandbox'] = (s) =>
+  decode<SandboxState>(s, schemas.sandboxStateSchema);
+export const decodeAttempt: EngineApi['decodeAttempt'] = (s) =>
+  decode<AttemptState>(s, schemas.attemptStateSchema);

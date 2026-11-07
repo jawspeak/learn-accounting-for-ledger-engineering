@@ -15,7 +15,8 @@ export function parseHash(hash: string): Route {
   const parts = path.split('/').filter(Boolean);
   if (parts.length === 0) return { name: 'home' };
   if (parts[0] === 's' && parts[1]) return { name: 'section', id: parts[1] };
-  if (parts[0] === 'p' && parts[1]) return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
+  if (parts[0] === 'p' && parts[1])
+    return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
   if (parts[0] === 'sandbox') return { name: 'sandbox', data: params.get('d') ?? undefined };
   if (parts[0] === 'cheatsheet') return { name: 'cheatsheet' };
   return { name: 'not-found' };
@@ -35,7 +36,11 @@ const subscribe = (cb: () => void) => {
 };
 
 export function useRoute(): Route {
-  const hash = useSyncExternalStore(subscribe, () => window.location.hash, () => '');
+  const hash = useSyncExternalStore(
+    subscribe,
+    () => window.location.hash,
+    () => '',
+  );
   return parseHash(hash);
 }
 

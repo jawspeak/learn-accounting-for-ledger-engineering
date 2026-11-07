@@ -59,17 +59,30 @@ export const checkEquation = (
   let equity = 0;
   for (const { accountId, amount } of bs.lines) {
     switch (typeOf(accountId)) {
-      case 'asset': assets += amount; break;
-      case 'contra-asset': assets -= amount; break;
-      case 'liability': liabilities += amount; break;
-      case 'contra-liability': liabilities -= amount; break;
+      case 'asset':
+        assets += amount;
+        break;
+      case 'contra-asset':
+        assets -= amount;
+        break;
+      case 'liability':
+        liabilities += amount;
+        break;
+      case 'contra-liability':
+        liabilities -= amount;
+        break;
       case 'equity':
-      case 'revenue': equity += amount; break;
+      case 'revenue':
+        equity += amount;
+        break;
       case 'contra-equity':
       case 'contra-revenue':
       case 'expense':
-      case 'dividend': equity -= amount; break;
-      default: break;
+      case 'dividend':
+        equity -= amount;
+        break;
+      default:
+        break;
     }
   }
   return { assets, liabilities, equity, balanced: assets === liabilities + equity };
@@ -79,7 +92,11 @@ export const trialBalance: EngineApi['trialBalance'] = (rows, typeOf, opening) =
   computeBalances(rows, typeOf, opening).lines.map((l): TrialBalanceLine => {
     const normal = normalSide(typeOf(l.accountId) ?? 'asset');
     const other: Side = normal === 'dr' ? 'cr' : 'dr';
-    return { accountId: l.accountId, side: l.amount >= 0 ? normal : other, amount: Math.abs(l.amount) };
+    return {
+      accountId: l.accountId,
+      side: l.amount >= 0 ? normal : other,
+      amount: Math.abs(l.amount),
+    };
   });
 
 const GROUP_ORDER: ColumnGroup[] = [
@@ -95,15 +112,21 @@ const GROUP_ORDER: ColumnGroup[] = [
 function groupOf(type: AccountType, equityGroup?: 'paid-in' | 'retained'): ColumnGroup {
   switch (type) {
     case 'asset':
-    case 'contra-asset': return 'assets';
+    case 'contra-asset':
+      return 'assets';
     case 'liability':
-    case 'contra-liability': return 'liabilities';
+    case 'contra-liability':
+      return 'liabilities';
     case 'equity':
-    case 'contra-equity': return equityGroup === 'retained' ? 'equity-retained' : 'equity-paid-in';
+    case 'contra-equity':
+      return equityGroup === 'retained' ? 'equity-retained' : 'equity-paid-in';
     case 'revenue':
-    case 'contra-revenue': return 'revenue';
-    case 'expense': return 'expenses';
-    case 'dividend': return 'dividends';
+    case 'contra-revenue':
+      return 'revenue';
+    case 'expense':
+      return 'expenses';
+    case 'dividend':
+      return 'dividends';
   }
 }
 
