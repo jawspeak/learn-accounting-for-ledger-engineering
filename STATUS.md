@@ -54,7 +54,13 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 
 ## Phase 2 — verification
 - VER-2 (sections 00–06): 68/68 answers agree blind; 2 ambiguous prompts + 14 teaching fixes → all 16 fixed by C1 and merged (`reports/verification/c1-report.md`).
-- VER-1 (sections 07–12 + review): running.
+- VER-1 (sections 07–12 + review): 74/74 answers agree blind; 2 ambiguous prompts + 13 teaching fixes → all fixed by C2 and merged (`reports/verification/c2-report.md`).
+- Manager fixes found in visual QA: CoA-design untouched rows now mean "not included"; statement-fill feedback uses real account names; sandbox full width; page-overflow fix.
+
+## Phase 3 — awaiting owner review (2026-11-07)
+- 142 problems across §00–§12 + Mixed Review; 4 entities; 5 animations; sandbox; cheat sheet.
+- Green: typecheck, lint, 726 unit tests, 23 Playwright e2e, build.
+- Not done (needs owner): human review pass (see OWNER-REVIEW.md), enabling the GitHub Pages workflow + pushing.
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 

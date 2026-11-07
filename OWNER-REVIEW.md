@@ -31,6 +31,15 @@ Maintained by the manager agent. Newest at the bottom of each list. Check off or
 - [ ] §10 December walkthrough deliberately ends in a $1,010 loss.
 - [ ] Review loan repayment assumes the bank had already accrued the interest (clears Interest Receivable).
 
+### From verification of sections 7–12
+- [ ] §11 FBO callout mentions the real 2024 Synapse collapse as an example of incomplete records delaying customers' access to funds. Keep or remove the real-company reference?
+- [ ] 10-rv-grinder-contribution tells learners to book a grinder to "Equipment – Espresso Machine". Rename the account to a generic "Equipment" instead? (touches several problems)
+
 ## Stuck / blocked
+- Nothing blocked.
 
 ## Needs your review later
+- [ ] **Human review pass** — run `npm run dev` and click through. Suggested route: Home → §3 → `03-cash-to-checking` (try a wrong answer and "Tell me more") → §4 → §6 (loan animation) → §11 → §12 `12-coa-design-zap` → Sandbox → `#/animations`.
+- [ ] Verification reports with every finding and fix: `reports/verification/c1-report.md`, `c2-report.md`.
+- [ ] **Deploy**: `.github/workflows/pages.yml` is manual-trigger only. To go live: create the GitHub repo, push, enable Pages (source: GitHub Actions), run the workflow. I haven't pushed anything.
+- [ ] Optional ideas deferred: a `MISSING_ROW` diagnostic code; prefill for non-booking faded examples; per-account diagnostic explanation overrides; save sandbox journal view in links; JS bundle is ~500 KB (code-splitting would quiet the build warning).
