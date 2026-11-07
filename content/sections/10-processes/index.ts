@@ -103,7 +103,7 @@ Two classic tricks for an unbalanced TB:
 - Difference **divisible by 9** → suspect a transposed amount (540 vs 450 → off by 90).
 - Difference that is **twice** some amount → suspect that amount was posted on the wrong side.
 
-This section walks Bean There through all of December — the same 13 events across several problems, so the rows **accumulate**:
+This section walks Bean There through all of December — the same 13 events across several problems, so the rows **accumulate** (to keep December short, we ignore interest on the savings account this month):
 ${decemberTable}
 `;
 
@@ -296,7 +296,7 @@ const mod: SectionModule = {
       difficulty: 3,
       entityId: 'coffee',
       prompt:
-        'All of December’s operational events (1–9) are in the opening balances. Now book the **month-end adjustments**, one row each:\n\n10. December’s rent ($1,500) comes out of Prepaid Rent\n11. Depreciation on the espresso machine, $200\n12. Baristas earned **$700** for Dec 25–31, to be paid in January\n13. The month-end count finds **$1,000** of beans & supplies left',
+        'All of December’s operational events (1–9) are in the opening balances. Now book the **month-end adjustments**, one row each:\n\n10. December’s rent ($1,500) comes out of Prepaid Rent\n11. Depreciation on the espresso machine, $200\n12. Baristas earned **$700** for Dec 25–31, to be paid in January\n13. The month-end count finds **$1,000** of beans & supplies left\n\n(To keep December short, we ignore interest on the savings account this month.)',
       hints: [
         'None of these four rows touch Cash. Why not?',
         'Row 13: Inventory is $2,600 on the books, but only $1,000 is on the shelf. Where did the rest go?',
@@ -523,7 +523,7 @@ const mod: SectionModule = {
       difficulty: 2,
       entityId: 'coffee',
       prompt:
-        'Instead of cash, Maya contributes her own commercial coffee grinder, worth **$800**, to Bean There as additional investment. Book it in Bean There’s books.',
+        'Instead of cash, Maya contributes her own commercial coffee grinder, worth **$800**, to Bean There as additional investment. Book it in Bean There’s books. (Bean There records all its equipment, grinders included, in **Equipment – Espresso Machine**.)',
       hints: [
         'What did Bean There receive? It isn’t cash, but it is a long-lived asset.',
         'What did Bean There give in exchange? Same answer as when Maya invested cash.',

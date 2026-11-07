@@ -485,7 +485,7 @@ const mod: SectionModule = {
       hints: [
         'A load moves money into the FBO account and creates a liability. Revenue?',
         'In a P2P payment with a fee, which part is Zap’s?',
-        'Accrued costs are expenses this month even if unpaid.',
+        'Costs incurred this month are expenses even if they haven’t been paid yet.',
       ],
       explanation:
         '| Line | Amount |\n|---|---|\n| Transaction Fee Revenue (2 + 1) | 3 |\n| Salaries Expense | (8,000) |\n| Processing Expense | (45) |\n| **Net loss** | **(8,042)** |\n\nThe $500 load and the $100 and $30 transfers are customer money — liabilities, not revenue. Only the fees are Zap’s.',

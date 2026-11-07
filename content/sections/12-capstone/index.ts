@@ -19,6 +19,7 @@ const zapCoaTable = `
 | 1100 | Settlement Receivable | Asset | Dr | Debit-card top-ups owed by the card processor |
 | 1200 | Interest Receivable | Asset | Dr | |
 | 1300 | Prepaid Expenses | Asset | Dr | |
+| 2000 | Customer Balances Payable (control) | Liability | Cr | Total of 2010–2012; the one line on the balance sheet (not postable) |
 | 2010 | Customer Balances Payable – Alice | Liability | Cr | Sub-ledger of 2000 control |
 | 2011 | Customer Balances Payable – Bob | Liability | Cr | Sub-ledger of 2000 control |
 | 2012 | Customer Balances Payable – Carol | Liability | Cr | Sub-ledger of 2000 control |
@@ -63,7 +64,7 @@ const lens = `
 - **Type is effectively immutable** once postings exist — retyping an account silently changes every historical report. Treat it like a schema migration.
 - Adding accounts is cheap; splitting one later (e.g. one *Cash* into *Operating* and *FBO*) means reclassifying history. Design the obvious splits up front.
 - Keep high-cardinality detail (one wallet per user) in a **sub-ledger** keyed by customer, rolling up to a GL **control account**. Reconcile Σ sub-ledger = control account continuously.
-- Encode invariants next to the schema: *clearing accounts settle to zero*, *Suspense ages out*, *Cash – FBO = customer balances + pending + unswept fees*.
+- Encode invariants next to the schema: *clearing accounts settle to zero*, *Suspense ages out*, *Cash – FBO (+ in-flight receipts) = customer balances + pending cash-outs + suspense + unswept fees*.
 `;
 
 const callouts = [
@@ -154,7 +155,7 @@ const mod: SectionModule = {
         'When the processor pays, which asset goes away and which asset (careful: which **cash** account?) goes up?',
       ],
       explanation:
-        '**Row 1:** Dr 1100 Settlement Receivable 300 / Cr 2012 Customer Balances Payable – Carol 300 — Carol’s balance is credited immediately, while the money is owed by the processor.\n\n**Row 2: Dr 1020 Cash – FBO 300 / Cr 1100 Settlement Receivable 300.** The receivable becomes cash — in the **FBO** account, because it’s Carol’s money. No change to Carol’s balance in row 2.',
+        '**Row 1:** Dr 1100 Settlement Receivable 300 / Cr 2012 Customer Balances Payable – Carol 300 — Carol’s balance is credited immediately, while the money is owed by the processor.\n\n**Row 2: Dr 1020 Cash – FBO 300 / Cr 1100 Settlement Receivable 300.** The receivable becomes cash — in the **FBO** account, because it’s Carol’s money. No change to Carol’s balance in row 2.\n\nBetween rows 1 and 2, Cash – FBO (1,000) is $300 short of customer balances (1,300); the gap is the Settlement Receivable. Reconciliations include in-flight receivables, and many fintechs pre-fund the FBO account from operating cash so that customer balances are always fully backed.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs({ 'cash-operating': 50000, 'cash-fbo': 1000, 'cbp-alice': 600, 'cbp-bob': 400, 'paid-in-capital': 50000 }),

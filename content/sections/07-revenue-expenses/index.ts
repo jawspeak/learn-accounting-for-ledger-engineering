@@ -25,7 +25,7 @@ Assets = Liabilities + Paid-in Capital + Retained Earnings + Revenue − Expense
 The **income statement** for a period is just *Revenue − Expenses = Net Income*, read off those accounts. At period end, **closing entries** move each revenue and expense balance (and dividends) into **Retained Earnings**, so the next month starts at zero.
 
 Two Bean There conventions to know:
-- Bean There is a small corporation: Maya's investment goes to **Paid-in Capital**, and money she takes out goes to **Dividends (Owner Draws)**. (In a sole proprietorship the same accounts are called Owner's Capital and Owner's Draws — identical mechanics.)
+- Bean There is a small corporation: Maya's investment goes to **Paid-in Capital**, and money she takes out goes to **Dividends (Owner Draws)**. (In a sole proprietorship they're Owner's Capital and Owner's Draws, and there's no separate Retained Earnings: profit and draws close straight into Owner's Capital.)
 - Beans and cups are bought into **Inventory**. At month-end Maya counts what's left, and what was used becomes **Cost of Goods Sold**. So a sale only touches cash/receivables and Sales Revenue.
 
 Keep using the move: **start from the account you're sure about**, decide up or down, let its normal balance pick Dr or Cr, then balance the row.
@@ -37,7 +37,7 @@ const lens = `
 - Revenue and expense accounts are just equity sub-accounts with a reporting window. The income statement is a *query*: \`SUM(postings) WHERE account.type IN (revenue, expense) AND date IN period\`.
 - **Closing** is a period-end batch job that posts new entries zeroing those accounts into Retained Earnings. It never deletes or edits postings — history stays immutable.
 - Many modern ledgers skip physical closing entries and *derive* Retained Earnings from all prior-period P&L postings. Either way, the invariant holds: after closing, every temporary account's balance for the new period starts at zero.
-- Card sales are your first **in-flight money**: the sale is done, but the cash hasn't arrived. \`Card Receivables\` is the state of that money between "authorized" and "settled".
+- Card sales are your first **in-flight money**: the sale is done, but the cash hasn't arrived. \`Card Receivables\` is the state of that money between "captured" (sale complete) and "settled".
 `;
 
 const callouts = [
@@ -244,11 +244,11 @@ const mod: SectionModule = {
         '1. On Thursday Bean There sells **$400** of coffee paid by **card**. The card processor will deposit the money in two days.\n2. On Saturday the processor deposits **$388** into Bean There’s bank account — the $400 minus its **3% fee ($12)**.\n\nBook each event as its own row.',
       hints: [
         'Row 1: Revenue is earned on Thursday — the coffee was delivered. But did cash arrive? What does Bean There have instead?',
-        'Card money in flight is a receivable from the processor: **Card Receivables (Cash in Transit)**.',
+        'Card money in flight is owed to Bean There by the processor. Which asset in Bean There’s chart is for that?',
         'Row 2: The receivable is fully settled ($400 goes away), but only $388 arrives. Where do the missing $12 go?',
       ],
       explanation:
-        '**Row 1: Dr Card Receivables 400 / Cr Sales Revenue 400.** Revenue is earned when the coffee is sold, regardless of when the cash arrives (accrual basis). Until settlement, the processor owes Bean There $400 — an asset.\n\n**Row 2: Dr Cash 388, Dr Card Processing Fees 12 / Cr Card Receivables 400.** The whole $400 receivable is settled. $388 arrives as cash; the $12 the processor kept is an **expense** of taking cards. Revenue stays at $400 — the fee is a cost, not a reduction of the sale.\n\n(Strictly the fee is incurred at the moment of sale; booking it at settlement two days later is a common simplification that doesn’t change the month’s totals.)',
+        '**Row 1: Dr Card Receivables 400 / Cr Sales Revenue 400.** Revenue is earned when the coffee is sold, regardless of when the cash arrives (accrual basis). Until settlement, the processor owes Bean There $400 — an asset.\n\n**Row 2: Dr Cash 388, Dr Card Processing Fees 12 / Cr Card Receivables 400.** The whole $400 receivable is settled. $388 arrives as cash; the $12 the processor kept is an **expense** of taking cards. Revenue stays at $400 — the fee is a cost, not a reduction of the sale.\n\n(Strictly the fee is incurred at the moment of sale; booking it at settlement is a common simplification. It’s harmless within a month, but sales that settle after month-end need the fee accrued.)',
       showBalanceSheets: true,
       opening: bs({ cash: 1000, 'paid-in-capital': 1000 }),
       trapAccounts: [
@@ -550,7 +550,7 @@ const mod: SectionModule = {
         'To the bank, a customer’s deposit is a liability, not revenue.',
       ],
       explanation:
-        '**Dr Cash – Vault 600 / Cr Business Deposits 600.** The bank receives physical currency (Asset ↑ → debit) and now owes Bean There $600 more (Liability ↑ → credit).\n\nCompare with Bean There’s books: depositing till cash into its own bank account is just an asset-to-asset move (both are in Bean There’s Cash). The same event is a *swap* for the customer and a *new asset + new liability* for the bank.',
+        '**Dr Cash – Vault 600 / Cr Business Deposits 600.** The bank receives physical currency (Asset ↑ → debit) and now owes Bean There $600 more (Liability ↑ → credit).\n\nCompare with Bean There’s books: its Cash account covers both the till and the bank account, so moving till cash into the bank needs **no entry at all** (with separate accounts it would be an asset-to-asset swap). For the bank, the same event is a *new asset + new liability*.',
       showBalanceSheets: true,
       opening: bs({
         'vault-cash': 5000,

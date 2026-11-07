@@ -10,7 +10,7 @@ const bs = (o: Record<string, number>): BalanceSheet => ({
 });
 
 const primer = `
-**Cash basis** records revenue when cash arrives and expenses when cash leaves. **Accrual basis** records them when they are *earned* or *incurred* — whenever the cash moves. Bean There and First Example Bank both use accrual.
+**Cash basis** records revenue when cash arrives and expenses when cash leaves. **Accrual basis** records them when they are *earned* or *incurred* — **regardless of when** the cash moves. Bean There and First Example Bank both use accrual.
 
 When cash and the economic event happen at different times, a balance-sheet account holds the difference until they line up:
 
@@ -136,7 +136,7 @@ const mod: SectionModule = {
       difficulty: 2,
       entityId: 'coffee',
       prompt:
-        'It’s late November. Bean There has accrued interest for Nov 1–27 (**$27**, see the opening balance sheet). Rows 1–2 (Nov 28 and Nov 29 accruals) are done for you.\n\nBook:\n- **Row 3:** the Nov 30 accrual ($1).\n- **Row 4:** on Nov 30 the bank **posts the month’s $30 of interest** into Bean There’s savings account.\n\n_(Next month the bank will pay interest on $3,680 — that’s compounding — but we stop here.)_',
+        'It’s late November. Bean There has accrued interest for Nov 1–27 (**$27**, see the opening balance sheet). Rows 1–2 (Nov 28 and Nov 29 accruals) are done for you.\n\nBook:\n- **Row 3:** the Nov 30 accrual ($1).\n- **Row 4:** on Nov 30 the bank **posts the month’s $30 of interest** into Bean There’s savings account.\n\n_(Because the posted $30 joins the balance, next month’s interest is calculated on $3,680, so monthly posting effectively compounds the 10% simple rate. We stop here.)_',
       hints: [
         'Row 3 looks exactly like rows 1 and 2.',
         'Row 4: Which account are you sure about? The savings balance at the bank goes up by $30.',
@@ -452,7 +452,7 @@ const mod: SectionModule = {
       difficulty: 2,
       multi: false,
       prompt:
-        'In November, Bean There:\n- sold **$500** of gift cards for cash,\n- had **$120** of gift cards redeemed for coffee,\n- delivered **$400** of catering, invoiced and paid in December,\n- earned **$30** of savings interest, accrued daily and posted to savings on Nov 30.\n\nUsing **accrual** accounting, what is Bean There’s total revenue for November (counting only these items)?',
+        'In November, Bean There:\n- sold **$500** of gift cards for cash,\n- had **$120** of gift cards redeemed for coffee,\n- delivered **$400** of catering on Nov 29 (invoiced that day, paid in December),\n- earned **$30** of savings interest, accrued daily and posted to savings on Nov 30.\n\nUsing **accrual** accounting, what is Bean There’s total revenue for November (counting only these items)?',
       hints: [
         'Accrual: revenue counts when it’s *earned*, regardless of cash. Go item by item: was anything delivered or earned?',
         'Was anything earned by *selling* a gift card? What about redeeming one?',

@@ -35,7 +35,8 @@ Three patterns to master:
 
 The invariant Zap’s engineers check every day:
 \`\`\`
-Cash – FBO  =  Σ Customer Balances  +  Pending Cash-outs  +  Zap fees not yet swept
+Cash – FBO + in-flight receipts (Settlement Receivable, Cash in Transit)
+    =  Σ Customer Balances + Pending Cash-outs + Suspense + Zap fees not yet swept
 \`\`\`
 `;
 
@@ -52,13 +53,13 @@ const lens = `
 const callouts = [
   {
     title: 'What is an FBO account?',
-    body: `**FBO = "For Benefit Of."** It’s an account at a bank opened by a fintech, titled to show the money is held *for the benefit of* the fintech’s customers (something like "First Example Bank, custodian for the benefit of Zap customers").
+    body: `**FBO = "For Benefit Of."** It’s an account at a bank opened by a fintech, titled to show the money is held *for the benefit of* the fintech’s customers (something like "**Zap Inc., as custodian, FBO its customers**" or "Zap Inc. FBO Zap Customers").
 
 **Why fintechs use them.** Zap isn’t a bank: it has no bank charter and can’t take deposits itself. To let customers hold balances, it partners with a bank and keeps customer money in an FBO account there. Zap instructs the money’s movements; the bank holds it.
 
 **Why it protects customers.**
 - **Segregation:** customer money is kept apart from Zap’s operating account, so Zap can’t use it to pay salaries — and if Zap fails, those funds are meant to belong to the customers, not to Zap’s creditors.
-- **Pass-through deposit insurance (potentially):** if the account is titled correctly *and* Zap’s records show exactly how much belongs to each customer, FDIC insurance can "pass through" to each customer as if they had deposited directly, up to the usual limits. This protects against the **bank** failing — not against Zap failing.
+- **Pass-through deposit insurance (potentially):** if the account is titled correctly *and* Zap’s records show exactly how much belongs to each customer, FDIC insurance can "pass through" to each customer as if they had deposited directly, up to the usual limits. This protects against the **bank** failing — not against Zap failing. (When a fintech’s records were incomplete — as in the 2024 Synapse collapse — customers waited months to get their money.)
 - **Regulation:** many states’ money-transmitter laws require customer funds to be segregated or backed by safe "permissible investments."
 
 **Analogy: a landlord holding your security deposit.** The landlord controls the money and has it in their bank account, but it’s legally *yours* — they owe it back — and some states require it to be kept in a separate account. Zap is the landlord; the FBO account is the separate account.

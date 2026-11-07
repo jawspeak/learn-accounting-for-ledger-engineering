@@ -187,7 +187,7 @@ const mod: SectionModule = {
         'You can’t credit any one client’s receivable — you don’t know who will default. Which contra account holds an estimate?',
       ],
       explanation:
-        '**Dr Bad Debt Expense 150 / Cr Allowance for Doubtful Accounts 150** (5% × $3,000).\n\nThe expense lands in the month the revenue was earned (matching). The credit goes to the contra-asset because the loss is an **estimate**: Accounts Receivable still shows the $3,000 clients legally owe, and the balance sheet shows **net** receivables of $2,850 — what Bean There realistically expects to collect.',
+        '**Dr Bad Debt Expense 150 / Cr Allowance for Doubtful Accounts 150** (5% × $3,000).\n\nThe expected loss is recognised now, while the receivables are on the books, rather than later when a specific client defaults (matching). The credit goes to the contra-asset because the loss is an **estimate**: Accounts Receivable still shows the $3,000 clients legally owe, and the balance sheet shows **net** receivables of $2,850 — what Bean There realistically expects to collect.',
       showBalanceSheets: true,
       opening: bs({ cash: 2000, 'accounts-receivable': 3000, 'paid-in-capital': 5000 }),
       trapAccounts: [
