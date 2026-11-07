@@ -28,7 +28,11 @@ Each workstream appends to its own section: **Done / In progress / Stubbed / Que
 
 Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and `content/entities/bank.ts` (fixed bank account ids shared by C1/C2).
 
-## ENG
+## ENG — ✅ merged
+- Full booking checker (`booking.ts`): all diagnostic codes, row alignment (skips/extra rows), SPLIT_ENTRY near-miss, WRONG_ROW, traps/counterparty, BS_MISMATCH/EQUATION_BROKEN, stable ordering; generic explanations in `explanations.ts`.
+- Non-booking checkers (`items.ts`) per `contracts/items.ts` and SHELL's itemIndex conventions.
+- Notes: MISSING_ACCOUNT for an unbooked event has no rowId; BS-line correct parts are `{accountId}` without rowId.
+- Deferred (optional contract ideas): `MISSING_ROW` code; flag distinguishing BS-line correct parts.
 ## UI
 ## SHELL — ✅ merged (f572249)
 - Design tokens + light/dark/manual theme; sticky header (Sandbox, Cheat sheet drawer, theme toggle); collapsible sidebar; skip link.
