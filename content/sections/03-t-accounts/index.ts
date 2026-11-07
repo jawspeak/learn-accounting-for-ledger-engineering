@@ -181,6 +181,7 @@ The **balance sheets** before and after the transaction must both satisfy \`A = 
         },
         customerDepositsTrap,
       ],
+      perspectivePairId: '04-rewrite-rent-same-bank',
       prefill: {
         locked: true,
         rows: [{ id: 't1', label: 'Pay rent', postings: [{ accountId: 'checking', side: 'cr', amount: usd(1200) }] }],
@@ -416,6 +417,7 @@ The **balance sheets** before and after the transaction must both satisfy \`A = 
         },
         customerDepositsTrap,
       ],
+      perspectivePairId: '04-rewrite-utilities-other-bank',
       solution: [
         {
           id: 't1',
