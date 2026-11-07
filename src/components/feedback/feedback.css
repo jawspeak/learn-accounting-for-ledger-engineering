@@ -1,0 +1,116 @@
+.fb {
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 48rem;
+  color: var(--fg, #1d1d1f);
+}
+.fb-h {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+.fb-btn {
+  font: inherit;
+  color: inherit;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+.fb-btn:hover {
+  border-color: var(--accent, #2f5bd3);
+}
+.fb-btn:focus-visible {
+  outline: 2px solid var(--accent, #2f5bd3);
+  outline-offset: 1px;
+}
+.fb-primary {
+  border-color: var(--accent, #2f5bd3);
+  color: var(--accent, #2f5bd3);
+  font-weight: 600;
+}
+.fb-muted {
+  color: var(--muted, #6b6b70);
+  font-size: 0.88rem;
+  margin: 0.25rem 0;
+}
+.fb-step {
+  display: inline-block;
+  margin-left: 0.75rem;
+}
+.fb-hints,
+.fb-result:not(:empty) {
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--surface, #fff);
+}
+.fb-hint-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}
+.fb-hint-list .md > :first-child,
+.fb-diag .md > :first-child,
+.fb-walk .md > :first-child {
+  margin-top: 0;
+}
+.fb-hint-list .md > :last-child,
+.fb-diag .md > :last-child,
+.fb-walk .md > :last-child {
+  margin-bottom: 0;
+}
+.fb-summary p {
+  margin: 0.2rem 0;
+}
+.fb-headline {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.fb-summary.is-ok .fb-headline {
+  color: var(--ok, #2e7d32);
+}
+.fb-summary.is-bad .fb-headline {
+  color: var(--err, #c62828);
+}
+.fb-near {
+  color: var(--warn, #b26a00);
+}
+.fb-near ul {
+  margin: 0.2rem 0;
+}
+.fb-diags {
+  list-style: none;
+  margin: 0.6rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.fb-diag {
+  border-left: 3px solid var(--err, #c62828);
+  padding: 0.2rem 0 0.2rem 0.6rem;
+}
+.fb-diag.is-near-miss {
+  border-left-color: var(--warn, #b26a00);
+}
+.fb-diag p {
+  margin: 0.15rem 0;
+}
+.fb-loc {
+  font-weight: 600;
+}
+.fb-sev {
+  font-weight: 400;
+  color: var(--muted, #6b6b70);
+}
+.fb-expl {
+  font-size: 0.93rem;
+}
+.fb-solution {
+  margin: 0.6rem 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border, #d9d6cf);
+}
+.fb-walk {
+  padding-left: 1.25rem;
+}
