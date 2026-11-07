@@ -39,7 +39,7 @@ export const rowTotals = (row: TransactionRow): RowTotals => {
 
 export const computeBalances: EngineApi['computeBalances'] = (rows, typeOf, opening) => {
   const bal = new Map<AccountId, number>();
-  for (const l of opening?.lines ?? []) bal.set(l.accountId, l.amount);
+  for (const l of opening?.lines ?? []) bal.set(l.accountId, (bal.get(l.accountId) ?? 0) + l.amount);
   for (const row of rows) {
     for (const p of row.postings) {
       const normal = normalSide(typeOf(p.accountId) ?? 'asset');

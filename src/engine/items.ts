@@ -7,6 +7,7 @@ import type {
   AccountId,
   AccountType,
   AttemptState,
+  BalanceSheet,
   CheckResult,
   ClassifyProblem,
   CoaDesignProblem,
@@ -100,17 +101,13 @@ export function checkMultipleChoice(problem: MultipleChoiceProblem, attempt: Att
   );
   const diagnostics: Diagnostic[] = [];
   const parts: CorrectPart[] = [];
-  if (selected.size === 0) {
-    diagnostics.push({ code: 'WRONG_ITEM', severity: 'error', location: { field: 'item' }, message: MESSAGES.MC_NO_ANSWER, explanation: explanationFor(problem, 'WRONG_ITEM') });
-    return result(diagnostics, parts);
-  }
+  // itemIndex = option index. Wrongly selected and wrongly unselected options are both marked (manager convention).
   problem.options.forEach((opt, i) => {
     const picked = selected.has(i);
     if (picked && opt.correct) parts.push({ itemIndex: i });
     else if (picked && !opt.correct) diagnostics.push(itemDiag(problem, i, MESSAGES.MC_WRONG_PICK, opt.explanation));
-    // Missed correct options: reported for multi-select only (for single-choice, flagging it would reveal the answer
-    // and double-report the one wrong pick).
-    else if (!picked && opt.correct && problem.multi) diagnostics.push(itemDiag(problem, i, MESSAGES.MC_MISSED, opt.explanation));
+    else if (!picked && opt.correct)
+      diagnostics.push(itemDiag(problem, i, selected.size === 0 ? MESSAGES.MC_NO_ANSWER : MESSAGES.MC_MISSED, opt.explanation));
   });
   return result(diagnostics, parts);
 }
@@ -139,27 +136,40 @@ export function checkCoaDesign(problem: CoaDesignProblem, attempt: AttemptState)
 const INCOME_TYPES: AccountType[] = ['revenue', 'contra-revenue', 'expense'];
 
 /**
- * statement-fill. balance-sheet / income-statement compare `attempt.balanceSheet` line by line (zero lines may be
- * omitted); trial-balance compares `attempt.trialBalance` by signed (Dr+) amount. Mismatches are BS_MISMATCH with
- * accountId. A balance-sheet answer additionally gets EQUATION_BROKEN when A ≠ L + E. If the problem omits its
- * expected answer it is derived from `rows` + `opening`.
+ * statement-fill. balance-sheet / income-statement compare `attempt.balanceSheet` line by line (cents on the
+ * account's normal side; a blank input is omitted, which counts as wrong unless the expected amount is 0);
+ * trial-balance compares `attempt.trialBalance` by signed (Dr+) amount. Mismatches are BS_MISMATCH with accountId and
+ * itemIndex = position of the line in the expected answer (`problem.answer.balanceSheet.lines` /
+ * `problem.answer.trialBalance`); correct parts likewise. A learner line for an account not in the answer gets
+ * BS_MISMATCH with accountId only. A balance-sheet answer additionally gets EQUATION_BROKEN when A ≠ L + E.
+ * If the problem omits its expected answer it is derived from `rows` + `opening` (itemIndex = derived order).
  */
 export function checkStatementFill(problem: StatementFillProblem, attempt: AttemptState, entity: EntityCoA | undefined): CheckResult {
   const typeOf = (id: AccountId) => entity?.accounts.find((a) => a.id === id)?.type;
   const diagnostics: Diagnostic[] = [];
   const parts: CorrectPart[] = [];
   const bsExpl = explanationFor(problem, 'BS_MISMATCH');
+  /** itemIndex = first position of the account in the expected lines; learner-only accounts get no itemIndex. */
+  const compareStatement = (expected: BalanceSheet, actual: BalanceSheet, message: string) => {
+    const indexOf = new Map<AccountId, number>();
+    expected.lines.forEach((l, i) => {
+      if (!indexOf.has(l.accountId)) indexOf.set(l.accountId, i);
+    });
+    for (const r of compareLines(expected, actual)) {
+      const itemIndex = indexOf.get(r.accountId);
+      const loc = itemIndex === undefined ? { accountId: r.accountId } : { accountId: r.accountId, itemIndex };
+      if (r.ok) {
+        if (itemIndex !== undefined) parts.push(loc);
+      } else diagnostics.push({ code: 'BS_MISMATCH', severity: 'error', location: { ...loc, field: 'bs-line' }, message, explanation: bsExpl });
+    }
+  };
 
   if (problem.statement === 'trial-balance') {
     const expected = problem.answer.trialBalance ?? trialBalance(problem.rows, typeOf, problem.opening);
     const toBs = (tb: TrialBalanceLine[]) => ({
       lines: tb.map((l) => ({ accountId: l.accountId, amount: l.side === 'dr' ? l.amount : -l.amount })),
     });
-    for (const r of compareLines(toBs(expected), toBs(attempt.trialBalance ?? []))) {
-      if (r.ok) {
-        if (r.expected !== 0) parts.push({ accountId: r.accountId });
-      } else diagnostics.push({ code: 'BS_MISMATCH', severity: 'error', location: { accountId: r.accountId, field: 'bs-line' }, message: MESSAGES.TB_MISMATCH, explanation: bsExpl });
-    }
+    compareStatement(toBs(expected), toBs(attempt.trialBalance ?? []), MESSAGES.TB_MISMATCH);
     return result(diagnostics, parts);
   }
 
@@ -172,11 +182,7 @@ export function checkStatementFill(problem: StatementFillProblem, attempt: Attem
         : all;
   }
   const actual = attempt.balanceSheet ?? { lines: [] };
-  for (const r of compareLines(expected, actual)) {
-    if (r.ok) {
-      if (r.expected !== 0) parts.push({ accountId: r.accountId });
-    } else diagnostics.push({ code: 'BS_MISMATCH', severity: 'error', location: { accountId: r.accountId, field: 'bs-line' }, message: MESSAGES.BS_MISMATCH, explanation: bsExpl });
-  }
+  compareStatement(expected, actual, MESSAGES.BS_MISMATCH);
   if (problem.statement === 'balance-sheet' && entity && actual.lines.length > 0) {
     const eq = checkEquation(actual, typeOf);
     if (!eq.balanced) {

@@ -130,9 +130,13 @@ export function align(learner: Net[], sol: Net[]): AlignStep[] {
   while (i < m || j < n) {
     const s = choice[i]![j]!;
     steps.push(s);
-    if (s.kind === 'pair') (i++, j++);
-    else if (s.kind === 'split') ((i = s.learner[s.learner.length - 1]! + 1), j++);
-    else if (s.kind === 'extra') i++;
+    if (s.kind === 'pair') {
+      i++;
+      j++;
+    } else if (s.kind === 'split') {
+      i = s.learner[s.learner.length - 1]! + 1;
+      j++;
+    } else if (s.kind === 'extra') i++;
     else j++;
   }
   return steps;
