@@ -384,7 +384,7 @@ const mod: SectionModule = {
       difficulty: 2,
       multi: true,
       prompt:
-        'Bean There’s balance sheet shows:\n\n| | |\n|---|---|\n| Equipment – Espresso Machine | 12,000 |\n| Less: Accumulated Depreciation – Equipment | (3,000) |\n| **Net** | **9,000** |\n\nSelect **all** true statements.',
+        'Bean There’s balance sheet shows:\n\n| | |\n|---|---|\n| Equipment | 12,000 |\n| Less: Accumulated Depreciation – Equipment | (3,000) |\n| **Net** | **9,000** |\n\nSelect **all** true statements.',
       hints: ['What’s the normal side of a contra-asset?', 'When Bean There recorded the $3,000 of depreciation, did any cash move?'],
       explanation:
         'Accumulated Depreciation is a **contra-asset**: credit-normal, shown as a reduction of Equipment, giving a net book value of $9,000. It’s not a liability (nobody is owed) and not a cash reserve (depreciation moves no cash). At $200/month, $3,000 means 15 months of depreciation have been recorded.',

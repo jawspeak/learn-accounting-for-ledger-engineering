@@ -523,13 +523,13 @@ const mod: SectionModule = {
       difficulty: 2,
       entityId: 'coffee',
       prompt:
-        'Instead of cash, Maya contributes her own commercial coffee grinder, worth **$800**, to Bean There as additional investment. Book it in Bean There’s books. (Bean There records all its equipment, grinders included, in **Equipment – Espresso Machine**.)',
+        'Instead of cash, Maya contributes her own commercial coffee grinder, worth **$800**, to Bean There as additional investment. Book it in Bean There’s books.',
       hints: [
         'What did Bean There receive? It isn’t cash, but it is a long-lived asset.',
         'What did Bean There give in exchange? Same answer as when Maya invested cash.',
       ],
       explanation:
-        '**Dr Equipment – Espresso Machine 800 / Cr Paid-in Capital 800.** Owners can invest assets other than cash; the asset is recorded at its fair value and equity rises by the same amount. It isn’t revenue (no customer, nothing sold) and isn’t a loan (no repayment). From now on the grinder is depreciated like any other equipment.',
+        '**Dr Equipment 800 / Cr Paid-in Capital 800.** Owners can invest assets other than cash; the asset is recorded at its fair value and equity rises by the same amount. It isn’t revenue (no customer, nothing sold) and isn’t a loan (no repayment). From now on the grinder is depreciated like any other equipment.',
       showBalanceSheets: true,
       opening: bs({ cash: 5000, 'paid-in-capital': 5000 }),
       trapAccounts: [

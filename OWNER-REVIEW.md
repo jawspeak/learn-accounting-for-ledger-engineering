@@ -33,7 +33,7 @@ Maintained by the manager agent. Newest at the bottom of each list. Check off or
 
 ### From verification of sections 7–12
 - [ ] §11 FBO callout mentions the real 2024 Synapse collapse as an example of incomplete records delaying customers' access to funds. Keep or remove the real-company reference?
-- [ ] 10-rv-grinder-contribution tells learners to book a grinder to "Equipment – Espresso Machine". Rename the account to a generic "Equipment" instead? (touches several problems)
+- [x] Renamed Coffee Co. "Equipment – Espresso Machine" → "Equipment" (owner approved 2026-11-07).
 
 ## Stuck / blocked
 - Nothing blocked.

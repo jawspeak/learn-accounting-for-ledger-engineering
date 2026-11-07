@@ -38,7 +38,7 @@ const coffee: EntityCoA = {
     { id: 'interest-receivable', name: 'Interest Receivable', type: 'asset', description: 'Interest earned on savings but not yet paid into the account.' },
     { id: 'inventory', name: 'Inventory – Beans & Supplies', type: 'asset', description: 'Coffee beans, milk, cups and lids on hand.' },
     { id: 'prepaid-rent', name: 'Prepaid Rent', type: 'asset', description: 'Rent paid in advance for months not yet used.' },
-    { id: 'equipment', name: 'Equipment – Espresso Machine', type: 'asset', description: 'Espresso machine and grinders, at original cost.' },
+    { id: 'equipment', name: 'Equipment', type: 'asset', description: 'Espresso machine, grinders and other equipment, at original cost.' },
     {
       id: 'accum-depreciation',
       name: 'Accumulated Depreciation – Equipment',
