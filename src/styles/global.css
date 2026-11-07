@@ -750,3 +750,8 @@ textarea {
       background-color 0.12s;
   }
 }
+
+/* Sandbox needs the full width for side-by-side books. */
+.content.wide {
+  max-width: none;
+}

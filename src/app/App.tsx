@@ -111,7 +111,7 @@ export function App() {
             </li>
           </ol>
         </nav>
-        <main className="content" id="main" tabIndex={-1}>
+        <main className={route.name === 'sandbox' ? 'content wide' : 'content'} id="main" tabIndex={-1}>
           {route.name === 'home' && <HomePage />}
           {route.name === 'section' && <SectionPage id={route.id} />}
           {route.name === 'problem' && (
