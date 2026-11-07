@@ -44,8 +44,14 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - Cheat sheet SVG page + focus-trapped drawer.
 - Conventions: statement-fill itemIndex = index in answer lines; MC itemIndex = option index; blank inputs omitted.
 - Manager fixes at merge: dropped out-of-scope formatting changes; keyed problem views by id.
-## C1
+## C1 — ✅ merged
+- `you` (19 accounts), `bank` (18; added securities, premises, salaries/occupancy expense). §00 4, §01 10, §02 11, §03 11, §04 11, §05 11, §06 10 problems; worked → faded → practice → review; rewrites + perspective pairs; callouts (Fed reserves, bank-statement "credit", loan creates a deposit).
+- Judgment calls listed in OWNER-REVIEW.md.
+- Manager: content gate now also checks askAfterBalanceSheet problems with the correct after-BS, perspective-pair ids resolve, and statement-fill answers match computed balances.
 ## C2
+## SBX — ✅ merged
+- `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
+
 ## ANIM — ✅ merged
 - `StepAnimation` (Prev/Next/Restart, keys, reduced motion) + `LedgerAnimation`; 5 animations: cash-to-checking, bank-view-deposit, loan-creates-deposit, daily-accrual, fbo-gross-up. Data test asserts balanced rows + A = L + E on every step.
 - Manager: mounted on section pages 03/04/06/08/11 (`SECTION_ANIMATIONS` in SectionPage) + review gallery at `#/animations`.

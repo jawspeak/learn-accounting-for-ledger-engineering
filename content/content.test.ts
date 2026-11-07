@@ -31,6 +31,24 @@ describe('content', () => {
         const r = schemas.problemSchema.safeParse(p);
         expect(r.success, JSON.stringify(r.error?.issues)).toBe(true);
       });
+      if (p.perspectivePairId) {
+        it('perspective pair exists', () => {
+          expect(problems[p.perspectivePairId!], p.perspectivePairId).toBeDefined();
+        });
+      }
+      if (p.kind === 'statement-fill' && p.answer.balanceSheet) {
+        it('statement answer matches the balances its rows produce', () => {
+          const entity = entities[p.entityId];
+          expect(entity, `entity ${p.entityId}`).toBeDefined();
+          const typeOf = (id: string) => entity!.accounts.find((a) => a.id === id)?.type;
+          const computed = new Map(
+            engine.computeBalances(p.rows, typeOf, p.opening).lines.map((l) => [l.accountId, l.amount]),
+          );
+          for (const line of p.answer.balanceSheet!.lines) {
+            expect(computed.get(line.accountId) ?? 0, line.accountId).toBe(line.amount);
+          }
+        });
+      }
       if (p.kind === 'booking') {
         const bp = p as BookingProblem;
         it('references known entity and accounts', () => {
@@ -47,8 +65,13 @@ describe('content', () => {
             ...r,
             postings: r.postings.map((x) => ({ ...x, chosenType: typeOf(x.accountId) })),
           }));
-          const res = engine.checkBooking(bp, entity, { rows });
+          // Problems that ask for the after-BS must also accept the correct after-BS.
+          const balanceSheet = bp.askAfterBalanceSheet
+            ? engine.computeBalances(bp.solution, typeOf, bp.opening)
+            : undefined;
+          const res = engine.checkBooking(bp, entity, { rows, balanceSheet });
           expect(res.diagnostics).toEqual([]);
+          expect(res.correct).toBe(true);
           for (const r of bp.solution) expect(engine.rowTotals(r).balanced, `row ${r.id} balanced`).toBe(true);
         });
         if (bp.opening) {
