@@ -39,4 +39,7 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - Manager fixes at merge: dropped out-of-scope formatting changes; keyed problem views by id.
 ## C1
 ## C2
-## ANIM
+## ANIM — ✅ merged
+- `StepAnimation` (Prev/Next/Restart, keys, reduced motion) + `LedgerAnimation`; 5 animations: cash-to-checking, bank-view-deposit, loan-creates-deposit, daily-accrual, fbo-gross-up. Data test asserts balanced rows + A = L + E on every step.
+- Manager: mounted on section pages 03/04/06/08/11 (`SECTION_ANIMATIONS` in SectionPage) + review gallery at `#/animations`.
+- Follow-up (INT): align Coffee Co./Zap account ids in `animations/accounts.ts` with C2's entities once merged.

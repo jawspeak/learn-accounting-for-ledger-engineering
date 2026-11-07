@@ -1,3 +1,4 @@
+import { AnimationGallery } from '../components/animations';
 import { useCallback, useState } from 'react';
 import { sections } from '@content';
 import { href, useRoute } from './router';
@@ -118,6 +119,7 @@ export function App() {
           )}
           {route.name === 'sandbox' && <SandboxPage data={route.data} />}
           {route.name === 'cheatsheet' && <CheatSheetPage />}
+          {route.name === 'animations' && <AnimationGallery />}
           {route.name === 'not-found' && (
             <p>
               Page not found. <a href={href.home()}>Go home</a>

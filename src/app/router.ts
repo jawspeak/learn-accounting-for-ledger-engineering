@@ -7,6 +7,7 @@ export type Route =
   | { name: 'problem'; id: string; attempt?: string }
   | { name: 'sandbox'; data?: string }
   | { name: 'cheatsheet' }
+  | { name: 'animations' }
   | { name: 'not-found' };
 
 export function parseHash(hash: string): Route {
@@ -19,6 +20,7 @@ export function parseHash(hash: string): Route {
     return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
   if (parts[0] === 'sandbox') return { name: 'sandbox', data: params.get('d') ?? undefined };
   if (parts[0] === 'cheatsheet') return { name: 'cheatsheet' };
+  if (parts[0] === 'animations') return { name: 'animations' };
   return { name: 'not-found' };
 }
 
@@ -28,6 +30,7 @@ export const href = {
   problem: (id: string, attempt?: string) => `#/p/${id}${attempt ? `?a=${attempt}` : ''}`,
   sandbox: (data?: string) => `#/sandbox${data ? `?d=${data}` : ''}`,
   cheatsheet: () => '#/cheatsheet',
+  animations: () => '#/animations',
 };
 
 const subscribe = (cb: () => void) => {
