@@ -1,0 +1,174 @@
+/* Sandbox / Scenario Board. Uses tokens from src/styles/tokens.css. */
+.sbx-kicker {
+  margin: 0 0 var(--space-1);
+}
+.sbx-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  width: 100%;
+  border-color: transparent;
+  background: transparent;
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+}
+.sbx-title:hover,
+.sbx-title:focus {
+  border-color: var(--border);
+  background: var(--surface);
+}
+.sbx-toolbar {
+  margin: var(--space-3) 0;
+}
+.sbx-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.sbx-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--warn);
+}
+.sbx-notice {
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.sbx-notice-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+.sbx-scenario {
+  margin-bottom: var(--space-5);
+}
+.sbx-scenario-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.sbx-scenario-head h2 {
+  margin: var(--space-2) 0;
+}
+.sbx-scenario-head [role='group'] {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+.sbx-scenario-text {
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+.sbx-scenario-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+}
+.sbx-entities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+.sbx-entity {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+.sbx-entity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.sbx-entity-name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+.sbx-entity-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.sbx-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  margin: var(--space-2) 0;
+}
+.sbx-ok {
+  color: var(--ok);
+  font-weight: 700;
+}
+.sbx-err {
+  color: var(--err);
+  font-weight: 700;
+}
+.sbx-entity-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+.sbx-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.sbx-builder {
+  margin-bottom: var(--space-3);
+}
+.sbx-panel {
+  border-top: 1px solid var(--border);
+  padding: var(--space-2) 0;
+}
+.sbx-panel > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.sbx-table {
+  border-collapse: collapse;
+  margin: var(--space-2) 0;
+  font-size: var(--text-sm);
+}
+.sbx-table th,
+.sbx-table td {
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  vertical-align: middle;
+}
+.sbx-table thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.sbx-row-actions {
+  white-space: nowrap;
+}
+.sbx-row-actions .btn {
+  padding: 0.15rem 0.45rem;
+}
+.sbx-add-account {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
