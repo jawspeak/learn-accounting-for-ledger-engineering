@@ -48,7 +48,7 @@ A **T-account** is one account drawn as a big "T": debits on the left, credits o
 
 For a person, income and expense accounts are just a breakdown of changes to **Net Worth** — they're how you answer "where did my money go this month?".
 
-The **balance sheets** before and after the transaction must both satisfy \`A = L + E\`.
+The **balance sheets** before and after the transaction must both satisfy \`A = L + E\`. In the after balance sheet, Net Worth keeps its opening balance until period-end; income and expenses appear as their own lines on the equity side.
 `.trim(),
     lens: `
 **Ledger-engineer's lens.** A transaction is a set of **postings**; \`SUM(debits) = SUM(credits)\` per transaction is an invariant to enforce **in the database at commit** (a deferred constraint or a check inside the posting function), not in the UI. A balance is \`SUM(postings)\` for the account — cache it if you must, but the postings are the source of truth. Store amounts as **integer minor units** (cents) — never floats: \`0.1 + 0.2 !== 0.3\`.
@@ -144,7 +144,7 @@ The **balance sheets** before and after the transaction must both satisfy \`A = 
         'Things that make you poorer, and are gone, are expenses. Expenses increase on which side?',
       ],
       explanation:
-        "Checking (Asset) ↓ → **Cr Checking Account 1,200** (given). You got nothing you still own — the month's housing is consumed — so the debit goes to an **expense**: **Dr Rent Expense 1,200**. Assets fell by 1,200 and equity fell by 1,200 (Rent Expense reduces Net Worth), so A = L + E still holds: 5,100 → 3,900.",
+        "Checking (Asset) ↓ → **Cr Checking Account 1,200** (given). You got nothing you still own — the month's housing is consumed — so the debit goes to an **expense**: **Dr Rent Expense 1,200**. Assets fell by 1,200 and equity fell by 1,200 (Rent Expense reduces Net Worth), so A = L + E still holds: assets 5,100 → 3,900; equity = Net Worth 5,100 − Rent Expense 1,200 = 3,900.",
       diagnosticExplanations: {
         WRONG_SIDE: 'Rent Expense is an **expense** — debit-normal, because expenses reduce equity (which is credit-normal). An increase in rent expense is a **debit**.',
         WRONG_TYPE: "Rent you've already used up is an **Expense**, not an asset. You don't own anything afterwards.",
@@ -384,11 +384,11 @@ The **balance sheets** before and after the transaction must both satisfy \`A = 
       difficulty: 2,
       entityId: 'you',
       prompt:
-        "You pay your **$90 electric bill** from your **checking account**. Book it in **your** books, then **fill in the after balance sheet** yourself.",
+        "You pay your **$90 electric bill** from your **checking account**. Book it in **your** books, then **fill in the after balance sheet** yourself. (In the after balance sheet, Net Worth keeps its opening balance until period-end; the expense appears as its own line on the equity side.)",
       hints: [
         'Start from Checking: up or down?',
         "What did you get for $90? Something you still own, or something you've used up?",
-        'For the after balance sheet: only the accounts in your entry change. Remember an expense reduces the equity side.',
+        'For the after balance sheet: only the accounts in your entry change. Utilities Expense appears as its own line on the equity side; Net Worth itself doesn\'t change until period-end.',
       ],
       explanation:
         'Checking (Asset) ↓ → **Cr Checking Account 90**. The electricity is used up → **Dr Utilities Expense 90**. After: Checking 2,210; on the right side, Net Worth 2,300 minus Utilities Expense 90 = 2,210 of equity. Assets fell by 90 and equity fell by 90.',

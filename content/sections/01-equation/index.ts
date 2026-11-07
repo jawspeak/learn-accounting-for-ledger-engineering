@@ -33,6 +33,8 @@ The **expanded equation**:
 A = L + Paid-in Capital + Revenue − Expenses − Dividends
 \`\`\`
 
+*(This is for an entity's first period. Later periods add the Retained Earnings carried over: \`A = L + PIC + RE + Rev − Exp − Div\`.)*
+
 **Why are expenses debit-normal?** Equity sits on the right of the equation and grows with **credits**. Expenses *shrink* equity, so an increase in an expense is recorded on the opposite side — a **debit**. Same for dividends. (You'll meet debits and credits properly in §2.)
 
 **Type depends on whose books you're in.** Your checking balance is *your* asset, but the same $1,000 is the bank's **liability** — it owes it to you.
@@ -144,8 +146,8 @@ A = L + Paid-in Capital + Revenue − Expenses − Dividends
       prompt:
         "Each account below belongs to **either you or First Example Bank** — check the label. Classify it **from the point of view of whoever's books it is in**.",
       hints: [
-        "Ask: in *this* entity's books, is it owned, owed, or a flow? Your deposit is something the bank **owes** you.",
-        'A loan is an asset for the lender and a liability for the borrower. Interest is income for the one receiving it.',
+        "In *this* entity's books, is it owned, owed, or a flow?",
+        'Every claim has two holders: who is owed, and who owes?',
       ],
       explanation:
         "Every claim between two parties appears twice: as an **asset** for the one who is owed and a **liability** for the one who owes. Your checking balance is your asset and the bank's liability (Customer Deposits). Your loan is your liability and the bank's asset (Loans Receivable). Interest you pay is your expense and the bank's income.",
@@ -199,7 +201,7 @@ Fill in the blank (whole dollars) for each situation:
       difficulty: 2,
       multi: false,
       prompt: `
-A small company's books show:
+A small company **in its first year of business** (so no retained earnings carried over yet) shows:
 
 | Account group | Amount |
 |---|---|
@@ -276,7 +278,7 @@ Using \`A = L + PIC + Rev − Exp − Div\`, what are total **assets**?
       prompt: 'Review from §0. You **withdraw $100 in cash from your checking account** at an ATM. Book it in **your** books. (This time you pick from your full chart of accounts.)',
       hints: [
         "Which account are you sure changes? Your wallet now has more cash.",
-        'Cash went up, checking went down. Both are assets — which side increases an asset?',
+        'One asset went up and one went down. Which is which, and which side increases an asset?',
       ],
       explanation:
         'Cash (Asset) up → **Dr Cash 100**. Checking (Asset) down → **Cr Checking Account 100**. It\'s an asset swap: total assets and net worth are unchanged. Withdrawing your own money isn\'t income or an expense.',

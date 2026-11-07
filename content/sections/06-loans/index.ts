@@ -113,7 +113,7 @@ When First Example Bank lends you $1,000, it doesn't take $1,000 out of anyone e
 
 The bank's balance sheet **grows on both sides**. The $1,000 in your checking account is a **brand-new deposit** — new money that didn't exist before the loan. (When you repay, the reverse happens and the deposit disappears.)
 
-Reserves only come into it when you **spend** the money at another bank: then the bank must settle by sending reserves at the Fed. That — along with capital rules, liquidity needs and whether the loan is profitable — is what limits how much a bank lends, not a fixed slice of existing deposits.
+Reserves (or vault cash) only come into it when you **spend** the money at another bank or withdraw it as cash: then the bank must settle by sending reserves at the Fed, or hand over bills from the vault. That — along with capital rules, liquidity needs and whether the loan is profitable — is what limits how much a bank lends, not a fixed slice of existing deposits.
 `.trim(),
       },
     ],
@@ -346,11 +346,11 @@ Reserves only come into it when you **spend** the money at another bank: then th
       difficulty: 3,
       entityId: 'you',
       prompt:
-        'Your car-loan statement says this month\'s **$400 payment** is **$350 principal and $50 interest**. You pay it from **checking**. Book it in **your** books, then **fill in the after balance sheet**.',
+        'Your car-loan statement says this month\'s **$400 payment** is **$350 principal and $50 interest**. You pay it from **checking**. Book it in **your** books, then **fill in the after balance sheet**. (In the after balance sheet, Net Worth keeps its opening balance until period-end; the expense appears as its own line on the equity side.)',
       hints: [
         'Start from Checking: down 400 → which side?',
         'Split the $400 the way the statement does. Which part reduces what you owe?',
-        'For the balance sheet: the car itself is unaffected. Interest Expense shows up as a reduction of equity.',
+        "For the balance sheet: the car itself is unaffected. Interest Expense appears as its own line on the equity side; Net Worth itself doesn't change until period-end.",
       ],
       explanation:
         '```\nDr  Car Loan Payable     350\nDr  Interest Expense      50\n    Cr  Checking Account      400\n```\nAfter: Checking 1,600; Car 18,000 (unchanged — paying the loan doesn\'t change the car); Car Loan Payable 14,650; equity = Net Worth 5,000 − Interest Expense 50 = 4,950. Check: 19,600 = 14,650 + 4,950 ✓.',
@@ -537,7 +537,7 @@ Reserves only come into it when you **spend** the money at another bank: then th
       entityId: 'you',
       prompt:
         'Review from §5. You pay your **$1,200 rent**: **$1,000 by transfer from checking** and **$200 in cash**. Book it in **your** books as **one** journal entry.',
-      hints: ['One event, one entry — how many lines?', 'Two assets went down; one expense went up by the total.'],
+      hints: ['One event, one entry — how many lines?', 'Which accounts did the money come out of, and what did it pay for?', 'Two credits, one debit.'],
       explanation:
         '```\nDr  Rent Expense        1,200\n    Cr  Checking Account      1,000\n    Cr  Cash                    200\n```\nOne rent payment, paid from two sources: a compound entry with one debit and two credits.',
       diagnosticExplanations: {
@@ -587,7 +587,7 @@ Reserves only come into it when you **spend** the money at another bank: then th
       role: 'review',
       difficulty: 2,
       entityId: 'bank',
-      prompt: "Review from §4. First Example Bank charges a customer a **$35 fee** for a returned payment, taken from the customer's **checking account**. Book it in **the bank's** books.",
+      prompt: "Review from §4. First Example Bank charges a customer a **$35 overdraft fee**, taken from the customer's **checking account**. Book it in **the bank's** books.",
       hints: ['What does the bank owe the customer after the fee?', 'Did the bank earn something? What type of account?'],
       explanation:
         "The bank owes the customer $35 less → **Dr Customer Deposits – Checking 35**. It earned a fee → **Cr Fee Income 35**. Liabilities fall 35, equity rises 35. (The customer books the mirror image: Dr Bank Fees Expense / Cr Checking.)",
@@ -611,7 +611,7 @@ Reserves only come into it when you **spend** the money at another bank: then th
       solution: [
         {
           id: 't1',
-          label: 'Returned-payment fee',
+          label: 'Overdraft fee',
           postings: [
             { accountId: 'deposits-checking', side: 'dr', amount: usd(35) },
             { accountId: 'fee-income', side: 'cr', amount: usd(35) },

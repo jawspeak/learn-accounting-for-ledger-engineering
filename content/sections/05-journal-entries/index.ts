@@ -194,7 +194,7 @@ Here are three of your T-accounts with two transactions posted (numbers in brack
  (1) 120 |               (2) 120  | (1) 120                  | (2) 120
 \`\`\`
 
-**Enter the same two transactions** (two rows) and check them in the **journal view**. What happened in each?
+**Enter the same two transactions** (two rows) and check them in the **journal view**. Then say to yourself what happened in each (the explanation tells you).
 `.trim(),
       hints: [
         'Read each transaction number across the accounts: which postings belong to (1), which to (2)?',
@@ -262,7 +262,7 @@ Your journal shows these two entries:
       Cr  Checking Account       100
 \`\`\`
 
-**Post both entries in the T-account builder** (two rows). Then: what is the net change in Checking?
+**Post both entries in the T-account builder** (two rows). Then work out the net change in Checking (check it against the explanation).
 `.trim(),
       hints: [
         'Each journal line is one posting: the account, the side (Dr or Cr), the amount.',
@@ -621,7 +621,7 @@ Both balance, and the final balances are correct. What's the best critique?
       diagnosticExplanations: {
         WRONG_SIDE: 'Interest Expense ↑ → debit. Customer Deposits – Savings (liability) ↑ → credit.',
         EXTRA_ACCOUNT:
-          "Interest Income is the bank's revenue from *loans*. Here the bank is *paying* interest — its expense. (And Accrued Interest Payable isn't needed because we assume the bank books interest the day it pays it.)",
+          "Interest Income is the bank's revenue from loans and securities. Here the bank is *paying* interest — its expense. (And Accrued Interest Payable isn't needed because we assume the bank books interest the day it pays it.)",
       },
       showBalanceSheets: false,
       journalView: true,
