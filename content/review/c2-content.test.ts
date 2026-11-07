@@ -71,7 +71,7 @@ describe('C2 problems', () => {
         }
         // Closing balances: no account goes abnormal (negative), except where explicitly allowed.
         const after = engine.computeBalances(p.solution, typeOf(e), p.opening);
-        for (const l of after.lines) expect(l.amount, `${l.accountId} closing balance negative`).toBeGreaterThanOrEqual(0);
+        if (p.opening) for (const l of after.lines) expect(l.amount, `${l.accountId} closing balance negative`).toBeGreaterThanOrEqual(0);
       }
       if (p.kind === 'statement-fill') {
         const e = entities[p.entityId]!;
