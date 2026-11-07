@@ -24,8 +24,13 @@ Each workstream appends to its own section: **Done / In progress / Stubbed / Que
 - Money is integer cents; content uses whole dollars (×100).
 - System `git` is broken by an Xcode install issue; use `DEVELOPER_DIR=/Library/Developer/CommandLineTools git …` until fixed.
 
+## Phase 1 — launched 2026-11-06 (ENG, UI, SHELL, C1, C2 + ANIM started early)
+
+Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and `content/entities/bank.ts` (fixed bank account ids shared by C1/C2).
+
 ## ENG
 ## UI
 ## SHELL
 ## C1
 ## C2
+## ANIM
