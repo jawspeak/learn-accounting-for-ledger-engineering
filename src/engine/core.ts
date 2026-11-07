@@ -39,7 +39,7 @@ export const rowTotals = (row: TransactionRow): RowTotals => {
 
 export const computeBalances: EngineApi['computeBalances'] = (rows, typeOf, opening) => {
   const bal = new Map<AccountId, number>();
-  for (const l of opening?.lines ?? []) bal.set(l.accountId, l.amount);
+  for (const l of opening?.lines ?? []) bal.set(l.accountId, (bal.get(l.accountId) ?? 0) + l.amount);
   for (const row of rows) {
     for (const p of row.postings) {
       const normal = normalSide(typeOf(p.accountId) ?? 'asset');
@@ -107,32 +107,37 @@ function groupOf(type: AccountType, equityGroup?: 'paid-in' | 'retained'): Colum
   }
 }
 
-/** Phase-0 implementation: groups + CoA order + contra after parent. ENG may refine. */
+/**
+ * Canonical column order (VISION-2 §5). Groups follow `A = L + E`; within a group, CoA order, unknown accounts
+ * appended alphabetically by id. A contra account sits directly after its parent when the parent is a column in the
+ * same group (several contras of one parent keep CoA order among themselves); otherwise it is ordered by its own
+ * CoA position. Group placement uses the given `type` (the learner's chosen type in the builder).
+ */
 export const orderColumns: EngineApi['orderColumns'] = (columns, coaOrder) => {
-  const rank = (id: string) => {
-    const i = coaOrder.indexOf(id);
-    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
-  };
+  const rankMap = new Map<string, number>();
+  coaOrder.forEach((id, i) => {
+    if (!rankMap.has(id)) rankMap.set(id, i);
+  });
+  const rank = (id: string) => rankMap.get(id) ?? Number.MAX_SAFE_INTEGER;
   const byId = new Map(columns.map((c) => [c.accountId, c]));
-  const sortKey = (c: (typeof columns)[number]): [number, number, number, string] => {
-    const parent = c.contraOf && byId.get(c.contraOf) ? byId.get(c.contraOf)! : undefined;
+  type Key = [number, number, string, number, number, string];
+  const sortKey = (c: (typeof columns)[number]): Key => {
+    const group = GROUP_ORDER.indexOf(groupOf(c.type, c.equityGroup));
+    const parentCol = c.contraOf && c.contraOf !== c.accountId ? byId.get(c.contraOf) : undefined;
+    const parent =
+      parentCol && GROUP_ORDER.indexOf(groupOf(parentCol.type, parentCol.equityGroup)) === group ? parentCol : undefined;
     const anchor = parent ?? c;
-    return [
-      GROUP_ORDER.indexOf(groupOf(c.type, c.equityGroup)),
-      rank(anchor.accountId),
-      parent ? 1 : 0,
-      anchor.accountId,
-    ];
+    return [group, rank(anchor.accountId), anchor.accountId, parent ? 1 : 0, rank(c.accountId), c.accountId];
   };
-  return [...columns]
-    .sort((a, b) => {
-      const ka = sortKey(a);
-      const kb = sortKey(b);
-      for (let i = 0; i < 4; i++) {
-        if (ka[i]! < kb[i]!) return -1;
-        if (ka[i]! > kb[i]!) return 1;
-      }
-      return a.accountId.localeCompare(b.accountId);
-    })
-    .map((c): OrderedColumn => ({ accountId: c.accountId, group: groupOf(c.type, c.equityGroup) }));
+  const keyed = columns.map((c) => ({ c, k: sortKey(c) }));
+  keyed.sort((a, b) => {
+    for (let i = 0; i < a.k.length; i++) {
+      const x = a.k[i]!;
+      const y = b.k[i]!;
+      if (x < y) return -1;
+      if (x > y) return 1;
+    }
+    return 0;
+  });
+  return keyed.map(({ c }): OrderedColumn => ({ accountId: c.accountId, group: groupOf(c.type, c.equityGroup) }));
 };
