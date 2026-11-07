@@ -53,7 +53,7 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - Judgment calls in OWNER-REVIEW.md. Manager: aligned animation Coffee/Zap ids.
 
 ## Phase 2 — verification
-- VER-2 (sections 00–06): 68/68 answers agree blind; 2 ambiguous prompts + 14 teaching fixes → sent back to C1 (`reports/verification/c1-report.md`).
+- VER-2 (sections 00–06): 68/68 answers agree blind; 2 ambiguous prompts + 14 teaching fixes → all 16 fixed by C1 and merged (`reports/verification/c1-report.md`).
 - VER-1 (sections 07–12 + review): running.
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
