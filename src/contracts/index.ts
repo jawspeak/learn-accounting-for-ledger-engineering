@@ -5,4 +5,5 @@ export * from './problem';
 export * from './state';
 export * from './engine';
 export * from './ui';
+export * from './items';
 export * as schemas from './schemas';
