@@ -52,6 +52,9 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 
+## E2E — ✅ merged
+- 23 Playwright tests: all routes + every linked problem error-free, 820px no horizontal scroll, keyboard booking flow, reveal levels, hints, trap explanation, attempt URL + copy link + reload, Open in Sandbox, prev/next reset, each non-booking kind (except coa-design — none in content yet), worked/faded, cheat-sheet focus trap, theme persistence, animation keys, sandbox URL restore + XSS inertness. No bugs found.
+
 ## ANIM — ✅ merged
 - `StepAnimation` (Prev/Next/Restart, keys, reduced motion) + `LedgerAnimation`; 5 animations: cash-to-checking, bank-view-deposit, loan-creates-deposit, daily-accrual, fbo-gross-up. Data test asserts balanced rows + A = L + E on every step.
 - Manager: mounted on section pages 03/04/06/08/11 (`SECTION_ANIMATIONS` in SectionPage) + review gallery at `#/animations`.
