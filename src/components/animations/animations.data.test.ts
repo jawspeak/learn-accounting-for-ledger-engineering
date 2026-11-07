@@ -153,8 +153,8 @@ describe('specific accounting outcomes', () => {
     const beforeP2p = d.steps.findIndex((s) => s.draft?.row.id === 'p2p');
     expect(d.steps[beforeP2p]!.posted.bank).toEqual(bankRowsAtEnd);
     expect(balanceAt(d.id, -1, 'zap', 'cash-fbo')).toBe(usd(100));
-    expect(balanceAt(d.id, -1, 'zap', 'customer-balances-alice')).toBe(usd(80));
-    expect(balanceAt(d.id, -1, 'zap', 'customer-balances-bob')).toBe(usd(20));
+    expect(balanceAt(d.id, -1, 'zap', 'cbp-alice')).toBe(usd(80));
+    expect(balanceAt(d.id, -1, 'zap', 'cbp-bob')).toBe(usd(20));
     expect(balanceAt(d.id, -1, 'bank', 'deposits-fbo')).toBe(usd(100));
     expect(balanceAt(d.id, -1, 'bank', 'reserves-fed')).toBe(usd(1100));
   });

@@ -25,7 +25,7 @@ export const BANK = {
 } satisfies Record<string, Account>;
 
 export const COFFEE = {
-  savings: { id: 'savings', name: 'Savings Account', type: 'asset' },
+  savings: { id: 'savings', name: 'Savings Account – First Example Bank', type: 'asset' },
   interestReceivable: { id: 'interest-receivable', name: 'Interest Receivable', type: 'asset' },
   paidInCapital: { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   interestIncome: { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
@@ -34,10 +34,10 @@ export const COFFEE = {
 export const ZAP = {
   cashFbo: {
     id: 'cash-fbo',
-    name: 'Cash – FBO (restricted)',
+    name: 'Cash – FBO (Restricted)',
     type: 'asset',
     description: 'Customer money held in the For-Benefit-Of account at the bank. Restricted: not Zap’s to spend.',
   },
-  cbpAlice: { id: 'customer-balances-alice', name: 'Customer Balances Payable – Alice', type: 'liability' },
-  cbpBob: { id: 'customer-balances-bob', name: 'Customer Balances Payable – Bob', type: 'liability' },
+  cbpAlice: { id: 'cbp-alice', name: 'Customer Balances Payable – Alice', type: 'liability' },
+  cbpBob: { id: 'cbp-bob', name: 'Customer Balances Payable – Bob', type: 'liability' },
 } satisfies Record<string, Account>;

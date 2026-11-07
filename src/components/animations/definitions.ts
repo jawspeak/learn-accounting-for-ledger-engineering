@@ -336,7 +336,7 @@ function fboGrossUp(): LedgerAnimationDef {
     id: 'zap',
     title: 'Zap’s books',
     accounts: [ZAP.cashFbo, ZAP.cbpAlice, ZAP.cbpBob],
-    tAccounts: ['cash-fbo', 'customer-balances-alice', 'customer-balances-bob'],
+    tAccounts: ['cash-fbo', 'cbp-alice', 'cbp-bob'],
     opening: [],
     showBalanceSheet: true,
   };
@@ -351,9 +351,9 @@ function fboGrossUp(): LedgerAnimationDef {
     ],
     showBalanceSheet: true,
   };
-  const zapIn = row('zap-in', 'Alice funds her Zap balance', dr('cash-fbo', 100), cr('customer-balances-alice', 100));
+  const zapIn = row('zap-in', 'Alice funds her Zap balance', dr('cash-fbo', 100), cr('cbp-alice', 100));
   const bankIn = row('bank-in', 'Funds arrive for Zap’s FBO account', dr('reserves-fed', 100), cr('deposits-fbo', 100));
-  const p2p = row('p2p', 'Alice pays Bob $20', dr('customer-balances-alice', 20), cr('customer-balances-bob', 20));
+  const p2p = row('p2p', 'Alice pays Bob $20', dr('cbp-alice', 20), cr('cbp-bob', 20));
   const steps: StepInput[] = [
     {
       caption:
@@ -369,7 +369,7 @@ function fboGrossUp(): LedgerAnimationDef {
       caption:
         '**But it isn’t Zap’s money.** Zap owes it to Alice on demand → **Customer Balances Payable – Alice ↑** (liability) → *Cr 100*. Zap’s balance sheet **grosses up**: assets and liabilities both +$100, equity unchanged. Like a landlord holding a tenant’s security deposit: the cash is in the landlord’s account, and so is the debt to give it back.',
       post: [{ ledger: 'zap', row: zapIn }],
-      highlight: [{ ledger: 'zap', account: 'customer-balances-alice', note: '↑ Cr' }],
+      highlight: [{ ledger: 'zap', account: 'cbp-alice', note: '↑ Cr' }],
     },
     {
       caption:
@@ -384,8 +384,8 @@ function fboGrossUp(): LedgerAnimationDef {
     {
       caption:
         '**Alice pays Bob $20 inside Zap.** Zap now owes Alice $20 less → **Customer Balances Payable – Alice ↓** → *Dr 20*.',
-      draft: { ledger: 'zap', row: row('p2p', p2p.label!, dr('customer-balances-alice', 20)) },
-      highlight: [{ ledger: 'zap', account: 'customer-balances-alice', note: '↓ Dr' }],
+      draft: { ledger: 'zap', row: row('p2p', p2p.label!, dr('cbp-alice', 20)) },
+      highlight: [{ ledger: 'zap', account: 'cbp-alice', note: '↓ Dr' }],
     },
     {
       caption:
@@ -393,12 +393,12 @@ function fboGrossUp(): LedgerAnimationDef {
       post: [{ ledger: 'zap', row: p2p }],
       flows: [
         {
-          from: { ledger: 'zap', account: 'customer-balances-alice' },
-          to: { ledger: 'zap', account: 'customer-balances-bob' },
+          from: { ledger: 'zap', account: 'cbp-alice' },
+          to: { ledger: 'zap', account: 'cbp-bob' },
           amount: usd(20),
         },
       ],
-      highlight: [{ ledger: 'zap', account: 'customer-balances-bob', note: '↑ Cr' }],
+      highlight: [{ ledger: 'zap', account: 'cbp-bob', note: '↑ Cr' }],
     },
     {
       caption:
