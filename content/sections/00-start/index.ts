@@ -159,7 +159,7 @@ The **cheat sheet** (one click from anywhere) shows \`A = L + E\` and which side
         "At the teller window you **withdraw $40 in cash from your savings account**. Book it in **your** books — both sides, on your own. Try **Check** even if you're unsure: the feedback tells you what's right before it tells you what's wrong.",
       hints: [
         'Two of your accounts change. Which one are you most sure about?',
-        'Savings went down; Cash went up. Both are assets — assets increase on the debit side.',
+        'Did your cash go up or down? And savings? Both are assets — which side increases an asset?',
       ],
       explanation:
         'Cash (Asset) up → **Dr Cash 40**. Savings (Asset) down → **Cr Savings Account 40**. Another asset swap: your total assets and net worth are unchanged.',

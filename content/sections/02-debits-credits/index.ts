@@ -88,10 +88,10 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
       id: '02-predict-faded',
       sectionId: '02-debits-credits',
       kind: 'dr-cr-predict',
-      title: 'Dr or Cr? (decreases, partly worked)',
+      title: 'Dr or Cr? (increases and decreases, partly worked)',
       role: 'faded',
       difficulty: 1,
-      prompt: 'Now some **decreases**. The walkthrough does the first one; you do the rest.',
+      prompt: 'Now a mix of **increases and decreases** — read each arrow. The walkthrough does the first one; you do the rest.',
       walkthrough: [
         '**Savings Account decreases.** Asset → normal side Dr → a *decrease* goes on the **other** side = **Cr**.',
         'Now you: for each remaining account, find its normal side, then flip it if the account went down.',
