@@ -133,7 +133,8 @@ export interface EntitySummary {
 
 export function summarize(e: SandboxEntity): EntitySummary {
   const typeOf = typeResolver(e);
-  const unbalancedRows = e.rows.flatMap((r, i) => (engine.rowTotals(r).balanced ? [] : [i + 1]));
+  // An empty row isn't an error yet — it's just a row waiting to be filled in.
+  const unbalancedRows = e.rows.flatMap((r, i) => (r.postings.length === 0 || engine.rowTotals(r).balanced ? [] : [i + 1]));
   const closing = engine.computeBalances(e.rows, typeOf, e.opening);
   return {
     rowsBalanced: unbalancedRows.length === 0,

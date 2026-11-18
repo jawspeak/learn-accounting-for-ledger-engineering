@@ -755,3 +755,48 @@ textarea {
 .content.wide {
   max-width: none;
 }
+/* Booking problems with balance sheets: room for Before | T-accounts | After side by side. Prose stays 44rem (.md). */
+.content.wide-problem {
+  max-width: 86rem;
+}
+
+/* Section page: compact jump list of the section's problems. */
+.jump-list {
+  margin: var(--space-3) 0 var(--space-5);
+  max-width: 44rem;
+}
+.jump-list h2 {
+  font-size: 1rem;
+  margin: 0 0 var(--space-2);
+}
+.jump-list ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.jump-list a {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: baseline;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface);
+}
+.jump-list a:hover {
+  border-color: var(--accent);
+}
+.jump-list .num {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.jump-list .role {
+  color: var(--muted);
+  font-size: 0.75rem;
+}

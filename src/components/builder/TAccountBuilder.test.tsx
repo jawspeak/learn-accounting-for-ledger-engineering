@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Account, BalanceSheet, TAccountBuilderProps, TransactionRow } from '@contracts';
 import { TAccountBuilder } from './TAccountBuilder';
-import { parseDollars, placeColumns } from './model';
+import { parseDollars, placeColumns, rankAccounts } from './model';
 
 afterEach(cleanup);
 
@@ -179,7 +179,14 @@ describe('TAccountBuilder — account picker', () => {
     await act(async () => {
       fireEvent.keyDown(combo, { key: 'Enter' });
     });
-    expect(screen.queryByRole('listbox')).toBeNull(); // picker closed
+    // the picker stays open for the next account, reset to step 1 (type is chosen afresh each time)
+    expect(screen.getByRole('group', { name: 'Add a T-account' })).toBeTruthy();
+    expect(screen.queryByRole('listbox')).toBeNull();
+    const picker = screen.getByRole('group', { name: 'Add a T-account' });
+    expect((within(picker).getByRole('combobox') as HTMLInputElement).disabled).toBe(true);
+    expect(within(picker).getByRole('status').textContent).toContain('Added Checking Account as Liability');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByRole('group', { name: 'Add a T-account' })).toBeNull();
     // the column exists with no postings yet, and sits where the chosen type puts it
     expect(headOrder(container)).toEqual(['=', 'checking']);
     expect((screen.getByLabelText('Type of Checking Account') as HTMLSelectElement).value).toBe('liability');
@@ -191,6 +198,41 @@ describe('TAccountBuilder — account picker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove Checking Account' }));
     expect(container.querySelector('th[data-col-head]')).toBeNull();
     expect(headOrder(container)).toEqual([]);
+  });
+
+  it('ranks an exact or prefix match above other substring matches', async () => {
+    const list = [{ name: 'Card Receivables (Cash in Transit)' }, { name: 'Cash' }, { name: 'Prepaid Utilities' }, { name: 'Utilities Expense' }];
+    expect(rankAccounts(list, 'cash').map((a) => a.name)).toEqual(['Cash', 'Card Receivables (Cash in Transit)']);
+    expect(rankAccounts(list, 'utilities').map((a) => a.name)).toEqual(['Utilities Expense', 'Prepaid Utilities']);
+    expect(rankAccounts(list, '')).toBe(list);
+
+    const { container } = render(<Harness accounts={[{ id: 'card', name: 'Card Receivables (Cash in Transit)', type: 'asset' }, ...accounts]} />);
+    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
+    fireEvent.click(screen.getByLabelText('Asset'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Cash' } });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
+    });
+    expect(headOrder(container)).toEqual(['cash', '=']);
+  });
+
+  it('offers only the given types (contra types hidden in early sections)', () => {
+    render(<Harness pickerTypes={['asset', 'liability', 'equity', 'revenue', 'expense', 'dividend']} />);
+    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
+    const radios = screen.getAllByRole('radio').map((r) => (r as HTMLInputElement).value);
+    expect(radios).toEqual(['asset', 'liability', 'equity', 'revenue', 'expense', 'dividend']);
+  });
+
+  it('Escape clears the search first, then closes the picker', () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
+    fireEvent.click(screen.getByLabelText('Asset'));
+    const combo = screen.getByRole('combobox') as HTMLInputElement;
+    fireEvent.change(combo, { target: { value: 'ca' } });
+    fireEvent.keyDown(combo, { key: 'Escape' });
+    expect(combo.value).toBe('');
+    fireEvent.keyDown(combo, { key: 'Escape' });
+    expect(screen.queryByRole('group', { name: 'Add a T-account' })).toBeNull();
   });
 
   it('supports arrow-key navigation in the listbox', async () => {
@@ -265,6 +307,18 @@ describe('TAccountBuilder — balance sheets, overlays, journal', () => {
     expect(within(after).getByTestId('equation').textContent).toContain('A = L + E');
     const before = screen.getByRole('region', { name: 'Before' });
     expect(within(before).getByText('Cash').closest('li')!.textContent).toContain('$100');
+  });
+
+  it('marks after-BS lines that changed, with the amount and direction', () => {
+    render(<Harness initialRows={rows} showBalanceSheets opening={opening} />);
+    const after = screen.getByRole('region', { name: 'After' });
+    const checking = within(after).getByText('Checking Account').closest('li')!;
+    expect(checking.classList.contains('is-changed')).toBe(true);
+    expect(checking.textContent).toContain('up $100');
+    expect(within(after).getByText('Cash').closest('li')!.textContent).toContain('down $100');
+    expect(within(after).getByText('Net Worth').closest('li')!.classList.contains('is-changed')).toBe(false);
+    // the Before panel never shows deltas
+    expect(screen.getByRole('region', { name: 'Before' }).querySelector('.is-changed')).toBeNull();
   });
 
   it('lets the learner fill in the after balance sheet when asked', () => {

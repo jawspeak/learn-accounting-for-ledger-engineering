@@ -39,6 +39,25 @@ export function SectionPage({ id }: { id: string }) {
       <p className="note" style={{ marginTop: 0 }}>
         {section.summary}
       </p>
+      {probs.length > 0 && (
+        <nav className="jump-list" aria-labelledby="jump-h">
+          <h2 id="jump-h">Jump to a problem</h2>
+          <ol>
+            {section.problemIds.map((pid, i) => {
+              const p = probs.find((x) => x.id === pid);
+              if (!p) return null;
+              return (
+                <li key={pid}>
+                  <a href={href.problem(pid)}>
+                    <span className="num">{i + 1}.</span> {p.title}
+                    {p.role !== 'practice' && <span className="role">{ROLE_LABEL[p.role]}</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      )}
 
       <div className="section-grid">
         <div>
@@ -69,7 +88,11 @@ export function SectionPage({ id }: { id: string }) {
             if (!anim) return null;
             const Anim = anim.component;
             return (
-              <section key={aid} className="animation-block" aria-label={`Animation: ${anim.title}`}>
+              <section
+                key={aid}
+                className="animation-block"
+                aria-label={`Animation: ${anim.title}`}
+              >
                 <h2>Watch it: {anim.title}</h2>
                 <Anim />
               </section>

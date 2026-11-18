@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CheckResult, Diagnostic, FeedbackPanelProps } from '@contracts';
+import type { CheckResult, Diagnostic, DiagnosticLocation, FeedbackPanelProps } from '@contracts';
 import { Markdown } from '../../app/Markdown';
 import { describeLocation, type LocationContext } from './describe';
 import './feedback.css';
@@ -20,6 +20,8 @@ export function FeedbackPanel({
   walkthrough,
   accounts,
   rows,
+  onLocate,
+  next,
 }: FeedbackPanelProps) {
   const [hintCount, setHintCount] = useState(0);
   /** "Why does this work?" is tied to the result it was asked for, so a new check hides it again. */
@@ -65,7 +67,7 @@ export function FeedbackPanel({
             {!correct && level >= 2 && (
               <ul className="fb-diags">
                 {ordered.map((d, i) => (
-                  <DiagnosticItem key={i} d={d} level={level} ctx={{ accounts, rows }} />
+                  <DiagnosticItem key={i} d={d} level={level} ctx={{ accounts, rows }} onLocate={onLocate} />
                 ))}
               </ul>
             )}
@@ -89,10 +91,19 @@ export function FeedbackPanel({
               </div>
             )}
 
-            {correct && !showSolution && (
-              <button type="button" className="fb-btn fb-primary" onClick={() => setWhyFor(result)}>
-                Why does this work?
-              </button>
+            {correct && (
+              <div className="fb-actions">
+                {!showSolution && (
+                  <button type="button" className="fb-btn" onClick={() => setWhyFor(result)}>
+                    Why does this work?
+                  </button>
+                )}
+                {next && (
+                  <a className="fb-btn fb-primary fb-next" href={next.href}>
+                    Next: {next.title} <span aria-hidden="true">→</span>
+                  </a>
+                )}
+              </div>
             )}
             {!correct && level < 5 && (
               <button type="button" className="fb-btn fb-primary" onClick={onEscalate}>
@@ -159,12 +170,31 @@ function Summary({
   );
 }
 
-function DiagnosticItem({ d, level, ctx }: { d: Diagnostic; level: number; ctx: LocationContext }) {
+/** Locations that point at something visible in the builder (not just "the whole answer"). */
+const locatable = (loc: DiagnosticLocation) => !!(loc.rowId || loc.accountId);
+
+function DiagnosticItem({
+  d,
+  level,
+  ctx,
+  onLocate,
+}: {
+  d: Diagnostic;
+  level: number;
+  ctx: LocationContext;
+  onLocate?(loc: DiagnosticLocation): void;
+}) {
+  const where = describeLocation(d, ctx);
   return (
     <li className={`fb-diag is-${d.severity}`}>
       <p className="fb-loc">
         <span aria-hidden="true">{d.severity === 'error' ? '✗' : '⚠'}</span>{' '}
-        <span className="fb-sev">{d.severity === 'error' ? 'Issue' : 'Near-miss'}:</span> {describeLocation(d, ctx)}
+        <span className="fb-sev">{d.severity === 'error' ? 'Issue' : 'Near-miss'}:</span> {where}
+        {onLocate && locatable(d.location) && (
+          <button type="button" className="fb-locate" aria-label={`Show me: ${where}`} onClick={() => onLocate(d.location)}>
+            Show me <span aria-hidden="true">↑</span>
+          </button>
+        )}
       </p>
       {level >= 3 && <p className="fb-msg">{d.message}</p>}
       {level >= 4 &&

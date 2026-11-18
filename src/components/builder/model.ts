@@ -37,6 +37,30 @@ export const PICKER_TYPES: { type: AccountType; label: string }[] = [
   { type: 'contra-revenue', label: 'Contra-revenue' },
 ];
 
+const CONTRA_TYPES = new Set<AccountType>(['contra-asset', 'contra-liability', 'contra-equity', 'contra-revenue']);
+export const isContraType = (t: AccountType) => CONTRA_TYPES.has(t);
+
+/**
+ * Filter accounts by a search query and rank the matches: exact name, then name prefix, then a word prefix,
+ * then any substring. Ties keep the incoming (deterministic, alphabetical) order. An empty query keeps everything.
+ */
+export function rankAccounts<T extends { name: string }>(accounts: T[], query: string): T[] {
+  const q = query.trim().toLowerCase();
+  if (q === '') return accounts;
+  const score = (name: string): number => {
+    const n = name.toLowerCase();
+    if (n === q) return 0;
+    if (n.startsWith(q)) return 1;
+    if (n.split(/[^a-z0-9]+/).some((w) => w.startsWith(q))) return 2;
+    return n.includes(q) ? 3 : -1;
+  };
+  return accounts
+    .map((a, i) => ({ a, i, s: score(a.name) }))
+    .filter((x) => x.s >= 0)
+    .sort((x, y) => x.s - y.s || x.i - y.i)
+    .map((x) => x.a);
+}
+
 const TYPE_LABEL: Record<AccountType, string> = {
   asset: 'Asset',
   'contra-asset': 'Contra-asset',

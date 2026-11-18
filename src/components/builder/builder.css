@@ -63,14 +63,15 @@
 /* ---------- picker ---------- */
 .tab-picker {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.75rem 1.25rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 0.5rem 1.25rem;
   border: 1px solid var(--border, #d9d6cf);
   border-radius: 8px;
   background: var(--tab-surface);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.9rem;
   margin-bottom: 0.75rem;
-  max-width: 48rem;
+  max-width: 46rem;
+  box-shadow: 0 2px 10px -4px color-mix(in srgb, var(--fg, #000) 25%, transparent);
 }
 @media (max-width: 640px) {
   .tab-picker {
@@ -90,20 +91,27 @@
   padding: 0;
 }
 .tab-picker-type-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 .tab-picker-type-grid label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 6px;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem 0.15rem 0.35rem;
+  border: 1px solid var(--border, #d9d6cf);
+  border-radius: 999px;
   cursor: pointer;
+  font-size: 0.92rem;
+}
+.tab-picker-type-grid label:has(input:focus-visible) {
+  outline: 2px solid var(--tab-accent);
+  outline-offset: 1px;
 }
 .tab-picker-type-grid label.is-selected {
   background: color-mix(in srgb, var(--tab-accent) 14%, transparent);
+  border-color: var(--tab-accent);
   font-weight: 600;
 }
 .tab-picker-name input {
@@ -123,7 +131,7 @@
   list-style: none;
   margin: 0.35rem 0 0;
   padding: 0.2rem;
-  max-height: 14rem;
+  max-height: 11rem;
   overflow-y: auto;
   border: 1px solid var(--border, #d9d6cf);
   border-radius: 6px;
@@ -148,7 +156,13 @@
 .tab-picker-actions {
   grid-column: 1 / -1;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.tab-picker-added {
+  color: var(--tab-ok);
+  font-size: 0.88rem;
 }
 
 /* ---------- layout: before BS | grid | after BS ----------
@@ -179,9 +193,10 @@
 .tab-builder.has-bs .tab-scroll {
   grid-area: grid;
 }
-@container tab-builder (min-width: 72rem) {
-  .tab-builder.has-bs .tab-layout {
-    grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr) minmax(10rem, 14rem);
+/* Before | grid | After only while the grid is small enough to fit between them (≤ 2 accounts, see .bs-side); bigger grids get the full width. */
+@container tab-builder (min-width: 60rem) {
+  .tab-builder.has-bs.bs-side .tab-layout {
+    grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr) minmax(10rem, 13rem);
     grid-template-areas: 'before grid after';
   }
 }
@@ -253,7 +268,8 @@
 .tab-head {
   text-align: center;
   padding-top: 0.5rem !important;
-  min-width: 8rem;
+  min-width: 7rem;
+  vertical-align: bottom !important;
 }
 .tab-head[draggable='true'] {
   cursor: grab;
@@ -263,7 +279,10 @@
 }
 .tab-head-name {
   font-weight: 650;
-  white-space: nowrap;
+  max-width: 9.5rem;
+  margin: 0 auto;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .tab-head-tools {
   display: flex;
@@ -272,8 +291,9 @@
   gap: 0.2rem;
   margin-top: 0.2rem;
 }
-.tab-type-badge {
-  font-size: 0.72rem;
+.tab-builder .tab-type-badge {
+  font-size: 0.75rem;
+  max-width: 7.5rem;
   border-radius: 999px;
   border: 1px solid var(--border, #d9d6cf);
   padding: 0.05rem 0.4rem;
@@ -316,8 +336,9 @@
   white-space: nowrap;
   position: relative;
 }
-.tab-amount {
-  width: 4.75rem;
+.tab-builder .tab-amount {
+  width: 4.25rem;
+  font-size: 0.95rem;
   box-sizing: border-box;
   padding: 0.2rem 0.35rem;
   border: 1px solid var(--tab-soft);
@@ -344,8 +365,10 @@
   min-width: 1.4rem;
   color: var(--muted, #6b6b70);
 }
-.tab-label-input {
-  width: 7rem;
+.tab-builder .tab-label-input {
+  width: 7.5rem;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
   padding: 0.2rem 0.35rem;
   border: 1px solid var(--tab-soft);
   border-radius: 4px;
@@ -387,6 +410,7 @@ tr.is-locked .tab-cell {
 }
 .tab-check-col {
   white-space: nowrap;
+  min-width: 5.5rem;
   padding-left: 0.9rem !important;
   font-size: 0.85rem;
 }
@@ -403,9 +427,23 @@ tr.is-locked .tab-cell {
 .tab-empty-head,
 .tab-empty-cell {
   color: var(--muted, #6b6b70);
-  font-style: italic;
   min-width: 14rem;
   text-align: center;
+}
+.tab-empty-cell {
+  padding: 0.75rem 1rem !important;
+}
+.tab-builder .tab-empty-add {
+  border-style: dashed;
+  border-color: var(--tab-accent);
+  color: var(--tab-accent);
+  font-weight: 600;
+}
+.tab-empty-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 /* ---------- feedback overlays ---------- */
@@ -428,7 +466,30 @@ tr.is-locked .tab-cell {
   outline-offset: 1px;
 }
 tr.tab-hl-row > * {
-  box-shadow: inset 0 2px 0 var(--tab-err), inset 0 -2px 0 var(--tab-err);
+  box-shadow:
+    inset 0 2px 0 var(--tab-err),
+    inset 0 -2px 0 var(--tab-err);
+}
+
+/* "Show me" from the feedback panel: a brief ring around the located element. */
+@keyframes tab-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tab-accent) 55%, transparent);
+  }
+}
+.tab-pulse {
+  animation: tab-pulse 1.2s ease-out 2;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tab-accent) 55%, transparent);
+  }
 }
 
 /* ---------- snap-into-place highlight ---------- */
@@ -487,6 +548,25 @@ tr.tab-hl-row > * {
   margin: 0.15rem 0 0;
   border-top: 1px solid var(--border, #d9d6cf);
   font-weight: 600;
+}
+.tab-bs li.is-changed {
+  background: color-mix(in srgb, var(--tab-accent) 9%, transparent);
+  margin: 0 -0.35rem;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.tab-bs-delta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tab-bs-delta.is-up {
+  color: var(--tab-ok);
+}
+.tab-bs-delta.is-down {
+  color: var(--tab-err);
 }
 .tab-bs-less {
   color: var(--muted, #6b6b70);

@@ -36,6 +36,34 @@ test('wrong answer: issue count, then Tell me more through levels 2-5', async ({
   await expect(page.getByRole('heading', { name: 'Solution' })).toBeVisible();
 });
 
+test('"Show me" focuses the flagged cell; a correct answer offers the next problem', async ({ page }) => {
+  const w = watchErrors(page);
+  await addAccountByKeyboard(page, 'Asset', 'Checking Account');
+  await addAccountByKeyboard(page, 'Asset', 'Cash');
+  await page.getByRole('textbox', { name: 'Row 1 Checking Account Dr' }).fill('100');
+  await page.getByRole('textbox', { name: 'Row 1 Cash Dr' }).fill('100'); // wrong side
+  await page.getByRole('button', { name: 'Check answer' }).click();
+  await page.getByRole('button', { name: 'Tell me more' }).click();
+  await page.getByRole('button', { name: 'Show me: Row 1 · Cash' }).first().click();
+  await expect(page.getByRole('textbox', { name: 'Row 1 Cash Dr' })).toBeFocused();
+
+  await page.getByRole('textbox', { name: 'Row 1 Cash Dr' }).fill('');
+  await page.getByRole('textbox', { name: 'Row 1 Cash Cr' }).fill('100');
+  await page.getByRole('button', { name: 'Check answer' }).click();
+  await expect(page.locator('.fb-headline')).toContainText('Correct!');
+  await page.getByRole('link', { name: /^Next: Transfer checking/ }).click();
+  await expect(page.getByRole('heading', { name: 'Transfer checking → savings' })).toBeVisible();
+  w.assertClean();
+});
+
+test('multi-event problem starts with one labelled row per numbered event', async ({ page }) => {
+  await page.goto('/#/p/10-december-midmonth');
+  await expect(page.getByText('Problem 3 of 9')).toBeVisible();
+  const labels = page.locator('tr[data-row] .tab-label-input');
+  await expect(labels).toHaveCount(3);
+  await expect(labels.first()).toHaveValue('Catering client pays invoice');
+});
+
 test('hints reveal one at a time', async ({ page }) => {
   const list = page.locator('.fb-hint-list li');
   await expect(list).toHaveCount(0);

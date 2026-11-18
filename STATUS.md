@@ -61,6 +61,13 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - 142 problems across §00–§12 + Mixed Review; 4 entities; 5 animations; sandbox; cheat sheet.
 - Green: typecheck, lint, 726 unit tests, 23 Playwright e2e, build.
 - Not done (needs owner): human review pass (see OWNER-REVIEW.md), enabling the GitHub Pages workflow + pushing.
+## Usability pass — 2026-11-18 (branch `worktree-builder-usability`)
+- Booking problem pages are wider (86rem) so Before | T-accounts | After sit side by side while the grid has ≤ 2 accounts; bigger grids take the full width with Before/After below. Narrower T columns (wrapping names, smaller type menu and inputs).
+- Account picker: exact/prefix matches rank first; stays open after each pick (type resets each time on purpose), Done/Escape closes; contra types hidden before §9 unless the problem's own accounts include one (`pickerTypes` prop).
+- Feedback: "Show me" per located diagnostic scrolls to and focuses the cell; Check scrolls the verdict into view; correct answers link to the next problem. "Problem N of M" badge.
+- After-BS marks changed lines with ▲/▼ and the amount. Multi-event prompts (numbered list matching solution rows) start with one labelled row per event. Section pages open with a "Jump to a problem" list. Sandbox no longer reports an empty row as unbalanced.
+- Not done: Enter/arrow-key movement between amount cells; an account column with no amounts still isn't saved in the URL.
+
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 

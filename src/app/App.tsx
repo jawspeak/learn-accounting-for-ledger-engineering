@@ -11,6 +11,16 @@ import { CheatSheetDrawer } from './CheatSheetDrawer';
 import { problems } from '@content';
 import { useTheme } from './theme';
 
+/** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
+function mainClass(route: ReturnType<typeof useRoute>): string {
+  if (route.name === 'sandbox') return 'content wide';
+  if (route.name === 'problem') {
+    const p = problems[route.id];
+    if (p?.kind === 'booking') return 'content wide-problem';
+  }
+  return 'content';
+}
+
 export function App() {
   const route = useRoute();
   const [navOpen, setNavOpen] = useState(false);
@@ -111,7 +121,7 @@ export function App() {
             </li>
           </ol>
         </nav>
-        <main className={route.name === 'sandbox' ? 'content wide' : 'content'} id="main" tabIndex={-1}>
+        <main className={mainClass(route)} id="main" tabIndex={-1}>
           {route.name === 'home' && <HomePage />}
           {route.name === 'section' && <SectionPage id={route.id} />}
           {route.name === 'problem' && (

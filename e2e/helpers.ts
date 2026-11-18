@@ -13,7 +13,7 @@ export function watchErrors(page: Page) {
   };
 }
 
-/** Add a T-account using the keyboard only: focus "Add account", pick type radio, type name, Enter. */
+/** Add a T-account using the keyboard only: focus "Add account", pick type radio, type name, Enter, Escape. */
 export async function addAccountByKeyboard(page: Page, typeLabel: string, search: string) {
   const add = page.getByRole('button', { name: /Add account/ });
   await add.focus();
@@ -27,6 +27,9 @@ export async function addAccountByKeyboard(page: Page, typeLabel: string, search
   await expect(combo).toBeFocused();
   await page.keyboard.type(search);
   await page.keyboard.press('Enter');
+  // The picker stays open for the next account (focus returns to the type choices); Escape closes it.
+  await expect(group.getByRole('status')).toContainText('Added');
+  await page.keyboard.press('Escape');
   await expect(group).toBeHidden();
 }
 

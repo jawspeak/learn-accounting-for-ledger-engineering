@@ -115,6 +115,15 @@ describe('examples', () => {
   });
 });
 
+describe('summarize', () => {
+  it('does not report an empty row as unbalanced', () => {
+    const e: SandboxEntity = { id: 'x', name: 'X', accounts: [], rows: [{ id: 'r1', postings: [] }], showBalanceSheets: false };
+    expect(summarize(e).unbalancedRows).toEqual([]);
+    const half: SandboxEntity = { ...e, accounts: [{ id: 'cash', name: 'Cash', type: 'asset' }], rows: [{ id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 100 }] }] };
+    expect(summarize(half).unbalancedRows).toEqual([1]);
+  });
+});
+
 describe('untrusted markdown', () => {
   it('does not render raw HTML', () => {
     const html = renderUntrustedMarkdown('Hi <img src=x onerror=alert(1)> there\n\n<script>alert(1)</script>');

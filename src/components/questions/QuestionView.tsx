@@ -66,8 +66,10 @@ export function QuestionView({
   problem,
   initial,
   onAttemptChange,
+  next,
 }: {
   problem: NonBookingProblem;
+  next?: { href: string; title: string };
   initial?: AttemptState;
   onAttemptChange?(a: AttemptState): void;
 }) {
@@ -112,6 +114,7 @@ export function QuestionView({
         explanation={problem.explanation}
         walkthrough={problem.walkthrough}
         accounts={'entityId' in problem ? entities[problem.entityId]?.accounts : undefined}
+        next={next}
       />
     </div>
   );

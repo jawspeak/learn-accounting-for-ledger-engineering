@@ -1,16 +1,19 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { Account, AccountId, AccountType } from '@contracts';
-import { PICKER_TYPES } from './model';
+import { PICKER_TYPES, rankAccounts, typeLabel } from './model';
 
 export interface AccountPickerProps {
   /** All choices, already in deterministic (alphabetical) order. Never filtered by type. */
   accounts: Account[];
   /** Accounts that already have a column (picking one again just changes its type). */
   existing: Set<AccountId>;
+  /** Types offered in step 1 (defaults to every picker type). */
+  types?: AccountType[];
   /** Sandbox: allow creating a new account from the search text. */
   allowCreate?: boolean;
   onPick(accountId: AccountId, type: AccountType): void;
   onCreate?(name: string, type: AccountType): void;
+  /** Close the picker ("Done" / Escape). */
   onCancel(): void;
 }
 
@@ -19,18 +22,36 @@ type Option = { kind: 'account'; account: Account } | { kind: 'create'; name: st
 /**
  * Two-step picker (VISION-2 §5): commit to a type first, then search the full, unfiltered account list.
  * The list shows names only — no type labels — so a type/name mismatch stays a diagnosable choice.
+ *
+ * It stays open after each pick so several accounts can be added in a row. The type resets every time on
+ * purpose: each account's type is its own decision (that's the point of choosing it first).
  */
-export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreate, onCancel }: AccountPickerProps) {
+export function AccountPicker({
+  accounts,
+  existing,
+  types,
+  allowCreate,
+  onPick,
+  onCreate,
+  onCancel,
+}: AccountPickerProps) {
   const uid = useId();
   const [type, setType] = useState<AccountType | null>(null);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  const [added, setAdded] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typesRef = useRef<HTMLFieldSetElement>(null);
+
+  const typeChoices = types
+    ? types.map((t) => PICKER_TYPES.find((p) => p.type === t) ?? { type: t, label: typeLabel(t) })
+    : PICKER_TYPES;
 
   const q = query.trim().toLowerCase();
-  const options: Option[] = accounts
-    .filter((a) => q === '' || a.name.toLowerCase().includes(q))
-    .map((account) => ({ kind: 'account', account }));
+  const options: Option[] = rankAccounts(accounts, query).map((account) => ({
+    kind: 'account',
+    account,
+  }));
   if (allowCreate && q !== '' && !accounts.some((a) => a.name.toLowerCase() === q))
     options.push({ kind: 'create', name: query.trim() });
   const activeIdx = Math.min(active, Math.max(0, options.length - 1));
@@ -39,8 +60,15 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
 
   const choose = (opt: Option | undefined) => {
     if (!opt || !type) return;
+    const name = opt.kind === 'account' ? opt.account.name : opt.name;
     if (opt.kind === 'account') onPick(opt.account.id, type);
     else onCreate?.(opt.name, type);
+    setAdded(`Added ${name} as ${typeLabel(type)}.`);
+    setType(null);
+    setQuery('');
+    setActive(0);
+    // Back to step 1 for the next account.
+    queueMicrotask(() => typesRef.current?.querySelector<HTMLInputElement>('input')?.focus());
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -66,9 +94,12 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
         choose(options[activeIdx]);
         break;
       case 'Escape':
-        e.preventDefault();
-        if (query) setQuery('');
-        else onCancel();
+        // First Escape clears the search; the next one (handled by the group) closes the picker.
+        if (query) {
+          e.preventDefault();
+          e.stopPropagation();
+          setQuery('');
+        }
         break;
     }
   };
@@ -79,13 +110,16 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
       role="group"
       aria-label="Add a T-account"
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && e.target === e.currentTarget) onCancel();
+        if (e.key === 'Escape' && !e.defaultPrevented) {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     >
-      <fieldset className="tab-picker-types">
+      <fieldset className="tab-picker-types" ref={typesRef}>
         <legend>1. What type of account is it?</legend>
         <div className="tab-picker-type-grid">
-          {PICKER_TYPES.map((t) => (
+          {typeChoices.map((t) => (
             <label key={t.type} className={type === t.type ? 'is-selected' : undefined}>
               <input
                 type="radio"
@@ -94,6 +128,7 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
                 checked={type === t.type}
                 onChange={() => {
                   setType(t.type);
+                  setAdded(null);
                   // Move straight on to step 2 for keyboard users.
                   queueMicrotask(() => inputRef.current?.focus());
                 }}
@@ -118,7 +153,13 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
           aria-activedescendant={type && options.length ? optId(activeIdx) : undefined}
           aria-describedby={type ? undefined : `${uid}-needtype`}
           disabled={type === null}
-          placeholder={type ? (allowCreate ? 'Search or type a new name…' : 'Search accounts…') : 'Choose a type first'}
+          placeholder={
+            type
+              ? allowCreate
+                ? 'Search or type a new name…'
+                : 'Search accounts…'
+              : 'Choose a type first'
+          }
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -152,7 +193,9 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
                 {opt.kind === 'account' ? (
                   <>
                     {opt.account.name}
-                    {existing.has(opt.account.id) && <span className="tab-picker-tag"> (already added — sets its type)</span>}
+                    {existing.has(opt.account.id) && (
+                      <span className="tab-picker-tag"> (already added — sets its type)</span>
+                    )}
                   </>
                 ) : (
                   <>
@@ -165,8 +208,16 @@ export function AccountPicker({ accounts, existing, allowCreate, onPick, onCreat
         )}
       </div>
       <div className="tab-picker-actions">
+        <span role="status" className="tab-picker-added">
+          {added && (
+            <>
+              <span aria-hidden="true">✓ </span>
+              {added} Add another, or Done.
+            </>
+          )}
+        </span>
         <button type="button" onClick={onCancel}>
-          Cancel
+          Done
         </button>
       </div>
     </div>

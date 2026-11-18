@@ -14,6 +14,8 @@ export interface BalanceSheetPanelProps {
   /** When given, every listed account gets an editable whole-dollar input. */
   onChange?(bs: BalanceSheet): void;
   highlighted?: Set<AccountId>;
+  /** Mark lines that differ from this balance sheet (the opening) and show the change. */
+  compareTo?: BalanceSheet;
 }
 
 type Section = 'assets' | 'liabilities' | 'equity';
@@ -34,8 +36,14 @@ const REDUCES = new Set<AccountType>(['contra-asset', 'contra-liability', 'contr
 const SECTION_LABEL: Record<Section, string> = { assets: 'Assets', liabilities: 'Liabilities', equity: 'Equity' };
 
 /** Grouped balance sheet with totals and a live A = L + E indicator (text + icon, never color only). */
-export function BalanceSheetPanel({ title, bs, accountIds, typeOf, nameOf, onChange, highlighted }: BalanceSheetPanelProps) {
+export function BalanceSheetPanel({ title, bs, accountIds, typeOf, nameOf, onChange, highlighted, compareTo }: BalanceSheetPanelProps) {
   const amountOf = new Map(bs.lines.map((l) => [l.accountId, l.amount]));
+  const beforeOf = compareTo ? new Map(compareTo.lines.map((l) => [l.accountId, l.amount])) : null;
+  /** Change vs. the opening; only for lines that have a value (a blank learner input is "unanswered", not 0). */
+  const deltaOf = (id: AccountId): Money => {
+    if (!beforeOf || (onChange && !amountOf.has(id))) return 0;
+    return (amountOf.get(id) ?? 0) - (beforeOf.get(id) ?? 0);
+  };
   const ids = [...accountIds, ...bs.lines.map((l) => l.accountId).filter((id) => !accountIds.includes(id))];
   const eq = engine.checkEquation(bs, typeOf);
   const totals: Record<Section, Money> = { assets: eq.assets, liabilities: eq.liabilities, equity: eq.equity };
@@ -70,11 +78,20 @@ export function BalanceSheetPanel({ title, bs, accountIds, typeOf, nameOf, onCha
                   const t = typeOf(id)!;
                   const amt = amountOf.get(id) ?? 0;
                   const hl = highlighted?.has(id);
+                  const delta = deltaOf(id);
+                  const cls = [hl && 'tab-hl', delta !== 0 && 'is-changed'].filter(Boolean).join(' ') || undefined;
                   return (
-                    <li key={id} className={hl ? 'tab-hl' : undefined} data-account={id}>
+                    <li key={id} className={cls} data-account={id}>
                       <span className="tab-bs-name">
                         {nameOf(id)}
                         {REDUCES.has(t) && <span className="tab-bs-less"> (less)</span>}
+                        {delta !== 0 && (
+                          <span className={`tab-bs-delta ${delta > 0 ? 'is-up' : 'is-down'}`}>
+                            <span aria-hidden="true">{delta > 0 ? ' ▲ ' : ' ▼ '}</span>
+                            <span className="sr-only">{delta > 0 ? ' up ' : ' down '}</span>
+                            {formatDollars(Math.abs(delta))}
+                          </span>
+                        )}
                       </span>
                       {onChange ? (
                         <AmountInput

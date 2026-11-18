@@ -55,6 +55,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     highlights,
     columnOrder,
     onColumnOrderChange,
+    pickerTypes,
   } = props;
 
   const [cols, setCols] = useState<Column[]>(() => columnsFromRows(rows));
@@ -134,11 +135,8 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     setFlash(id);
   };
 
-  const addColumn = (id: AccountId, type: AccountType) => {
-    setColumnType(id, type);
-    setPickerOpen(false);
-    queueMicrotask(() => addBtnRef.current?.focus());
-  };
+  /** The picker stays open after a pick (it resets itself for the next account); "Done" closes it. */
+  const addColumn = (id: AccountId, type: AccountType) => setColumnType(id, type);
 
   const createAccount = (name: string, type: AccountType) => {
     const account: Account = { id: slugId(name, allAccounts.map((a) => a.id)), name, type };
@@ -238,9 +236,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     );
   });
 
+  const offered = pickerTypes ? PICKER_TYPES.filter((t) => pickerTypes.includes(t.type)) : PICKER_TYPES;
   const typeOptions = (current: AccountType) => [
-    ...PICKER_TYPES,
-    ...(PICKER_TYPES.some((t) => t.type === current) ? [] : [{ type: current, label: typeLabel(current) }]),
+    ...offered,
+    ...(offered.some((t) => t.type === current) ? [] : [{ type: current, label: typeLabel(current) }]),
   ];
 
   const rowCheck = (r: TransactionRow) => {
@@ -420,7 +419,8 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                   <input
                     className="tab-label-input"
                     aria-label={`Row ${ri + 1} label`}
-                    placeholder="Label (optional)"
+                    placeholder="Label"
+                    title={r.label || 'Optional label for this transaction'}
                     value={r.label ?? ''}
                     onChange={(e) =>
                       updateRow(ri, (row) => {
@@ -447,7 +447,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
               </th>
               {placed.length === 0 && ri === 0 && (
                 <td rowSpan={rows.length} className="tab-empty-cell">
-                  Add an account to start — choose its type, then its name.
+                  {pickerOpen ? (
+                    'Choose a type, then a name, above.'
+                  ) : (
+                    <button type="button" className="tab-empty-add" onClick={() => setPickerOpen(true)}>
+                      <span aria-hidden="true">＋ </span>Add your first account
+                    </button>
+                  )}
+                  <span className="tab-empty-hint">Start with the account you’re sure changes.</span>
                 </td>
               )}
               {eachCol((c) => {
@@ -498,7 +505,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   );
 
   return (
-    <div className={`tab-builder${showBalanceSheets ? ' has-bs' : ''}`}>
+    <div className={`tab-builder${showBalanceSheets ? ' has-bs' : ''}${placed.length <= 2 ? ' bs-side' : ''}`}>
       <div className="tab-toolbar">
         {!showJournal && (
           <>
@@ -525,6 +532,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         <AccountPicker
           accounts={sandbox ? [...allAccounts].sort((a, b) => a.name.localeCompare(b.name)) : allAccounts}
           existing={columnIds}
+          types={pickerTypes ? offered.map((t) => t.type) : undefined}
           allowCreate={sandbox && !!onAccountsChange}
           onPick={addColumn}
           onCreate={createAccount}
@@ -560,6 +568,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             <BalanceSheetPanel
               title="After"
               bs={editableAfter ? afterBalanceSheet! : balances}
+              compareTo={opening ?? { lines: [] }}
               accountIds={bsIds}
               typeOf={typeOf}
               nameOf={nameOf}

@@ -36,6 +36,27 @@ const base = {
 const renderAt = (level: RevealLevel, result: CheckResult | null = wrong, onEscalate = vi.fn()) =>
   render(<FeedbackPanel {...base} result={result} level={level} onEscalate={onEscalate} />);
 
+describe('FeedbackPanel navigation aids', () => {
+  it('offers "Show me" for located diagnostics from level 2 when onLocate is given', () => {
+    const onLocate = vi.fn();
+    const { rerender } = render(<FeedbackPanel {...base} result={wrong} level={1} onEscalate={vi.fn()} onLocate={onLocate} />);
+    expect(screen.queryByRole('button', { name: /Show me/ })).toBeNull();
+    rerender(<FeedbackPanel {...base} result={wrong} level={2} onEscalate={vi.fn()} onLocate={onLocate} />);
+    const buttons = screen.getAllByRole('button', { name: /Show me/ });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]!);
+    expect(onLocate).toHaveBeenCalledWith({ rowId: 'r1', accountId: 'checking', field: 'type' });
+  });
+
+  it('links to the next problem once correct', () => {
+    const ok: CheckResult = { correct: true, diagnostics: [], correctParts: [] };
+    render(<FeedbackPanel {...base} result={ok} level={1} onEscalate={vi.fn()} next={{ href: '#/p/next', title: 'Payday' }} />);
+    const link = screen.getByRole('link', { name: /Next: Payday/ });
+    expect(link.getAttribute('href')).toBe('#/p/next');
+    expect(screen.getByRole('button', { name: 'Why does this work?' })).toBeTruthy();
+  });
+});
+
 describe('FeedbackPanel progressive reveal', () => {
   it('shows nothing about the answer before checking', () => {
     renderAt(0, null);

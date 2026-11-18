@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import type {
   Account,
+  AccountType,
   AttemptState,
   BookingProblem,
   CheckResult,
@@ -12,6 +13,8 @@ import type {
 import { engine } from '@engine';
 import { entities, problems, sections } from '@content';
 import { TAccountBuilder } from '../../components/builder/TAccountBuilder';
+import { locateInBuilder } from '../../components/builder/locate';
+import { PICKER_TYPES, isContraType } from '../../components/builder/model';
 import { FeedbackPanel } from '../../components/feedback/FeedbackPanel';
 import { QuestionView, type NonBookingProblem } from '../../components/questions/QuestionView';
 import { JournalTable } from '../../components/questions/JournalTable';
@@ -36,6 +39,7 @@ export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
       <QuestionView
         key={id}
         problem={problem as NonBookingProblem}
+        next={nextLink(problem)}
         initial={initial}
         onAttemptChange={(a) => saveAttempt(problem.id, a)}
       />
@@ -45,6 +49,66 @@ export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
 
 function saveAttempt(problemId: string, a: AttemptState) {
   replaceHash(href.problem(problemId, engine.encodeState(a)));
+}
+
+/** Previous / next problem within the section, and this problem's position in it. */
+function neighbors(problem: Problem) {
+  const section = sections.find((s) => s.id === problem.sectionId);
+  const ids = section?.problemIds ?? [];
+  const idx = ids.indexOf(problem.id);
+  return {
+    section,
+    index: idx,
+    total: ids.length,
+    prev: idx > 0 ? problems[ids[idx - 1]!] : undefined,
+    next: idx >= 0 ? problems[ids[idx + 1]!] : undefined,
+  };
+}
+
+function nextLink(problem: Problem): { href: string; title: string } | undefined {
+  const { next, section } = neighbors(problem);
+  if (next) return { href: href.problem(next.id), title: next.title };
+  const si = sections.findIndex((s) => s.id === section?.id);
+  const nextSection = si >= 0 ? sections[si + 1] : undefined;
+  return nextSection
+    ? { href: href.section(nextSection.id), title: `section ${nextSection.title}` }
+    : undefined;
+}
+
+/**
+ * Contra types are introduced in §9; before that they'd just be noise in the picker. They're still offered
+ * earlier if the problem's own accounts include a contra account (e.g. an opening BS with accumulated depreciation).
+ */
+function pickerTypesFor(problem: BookingProblem, accounts: Account[]): AccountType[] | undefined {
+  const sectionNumber = sections.find((s) => s.id === problem.sectionId)?.number ?? 99;
+  if (sectionNumber >= 9) return undefined;
+  const inPlay = new Set(
+    [...problem.solution, ...(problem.prefill?.rows ?? [])].flatMap((r) =>
+      r.postings.map((p) => p.accountId),
+    ),
+  );
+  problem.opening?.lines.forEach((l) => inPlay.add(l.accountId));
+  if (accounts.some((a) => inPlay.has(a.id) && isContraType(a.type))) return undefined;
+  return PICKER_TYPES.map((t) => t.type).filter((t) => !isContraType(t));
+}
+
+/** Count the top-level numbered list items in a markdown prompt ("7. A catering client pays…"). */
+const numberedEvents = (md: string) => md.split('\n').filter((l) => /^\d+\.\s/.test(l)).length;
+
+/**
+ * Starting rows. When the prompt numbers its events and the solution has one row per event, start with one
+ * labelled row per event so the learner can go straight to booking. Otherwise a single empty row — the
+ * number of rows is part of the answer there (e.g. reversal + correction).
+ */
+function startingRows(problem: BookingProblem): TransactionRow[] {
+  const n = problem.solution.length;
+  if (n > 1 && numberedEvents(problem.prompt) === n)
+    return problem.solution.map((r, i) => ({
+      id: `r${i + 1}`,
+      ...(r.label ? { label: r.label } : {}),
+      postings: [],
+    }));
+  return [{ id: 'r1', postings: [] }];
 }
 
 function entityNameOf(p: Problem): string | undefined {
@@ -90,11 +154,7 @@ function ProblemFrame({
   toolbarExtra?: ReactNode;
   children: ReactNode;
 }) {
-  const section = sections.find((s) => s.id === problem.sectionId);
-  const ids = section?.problemIds ?? [];
-  const idx = ids.indexOf(problem.id);
-  const prev = idx > 0 ? problems[ids[idx - 1]!] : undefined;
-  const next = idx >= 0 ? problems[ids[idx + 1]!] : undefined;
+  const { section, index, total, prev, next } = neighbors(problem);
   const pair = problem.perspectivePairId ? problems[problem.perspectivePairId] : undefined;
   const entityName = entityNameOf(problem);
 
@@ -112,6 +172,11 @@ function ProblemFrame({
       </div>
       <h1>{problem.title}</h1>
       <div className="meta-row">
+        {index >= 0 && (
+          <span className="badge">
+            Problem {index + 1} of {total}
+          </span>
+        )}
         <span className="badge">{ROLE_LABEL[problem.role]}</span>
         <KindBadge kind={problem.kind} />
         <DifficultyBadge level={problem.difficulty} />
@@ -191,12 +256,14 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
     if (worked) return withTypes(problem.solution, accounts);
     return (
       initial?.rows ??
-      (problem.prefill ? withTypes(problem.prefill.rows, accounts) : [{ id: 'r1', postings: [] }])
+      (problem.prefill ? withTypes(problem.prefill.rows, accounts) : startingRows(problem))
     );
   });
   const [bs, setBs] = useState(initial?.balanceSheet ?? { lines: [] });
   const [result, setResult] = useState<CheckResult | null>(null);
   const [level, setLevel] = useState<RevealLevel>(0);
+  const builderRef = useRef<HTMLDivElement>(null);
+  const feedbackRef = useRef<HTMLDivElement>(null);
 
   if (!entity) return <p>Unknown entity {problem.entityId}.</p>;
 
@@ -236,31 +303,34 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
           />
         </section>
       )}
-      <TAccountBuilder
-        mode="problem"
-        accounts={accounts}
-        coaOrder={entity.accounts.map((a) => a.id)}
-        rows={rows}
-        onRowsChange={(next) => {
-          setRows(next);
-          persist(next, bs);
-        }}
-        lockedRowCount={locked}
-        showBalanceSheets={problem.showBalanceSheets}
-        opening={problem.opening}
-        afterBalanceSheet={askBs && !worked ? bs : undefined}
-        onAfterBalanceSheetChange={
-          askBs && !worked
-            ? (next) => {
-                setBs(next);
-                persist(rows, next);
-              }
-            : undefined
-        }
-        journalView={problem.journalView}
-        correctParts={level >= 1 ? result?.correctParts : undefined}
-        highlights={level >= 2 ? result?.diagnostics.map((d) => d.location) : undefined}
-      />
+      <div ref={builderRef}>
+        <TAccountBuilder
+          mode="problem"
+          accounts={accounts}
+          coaOrder={entity.accounts.map((a) => a.id)}
+          rows={rows}
+          onRowsChange={(next) => {
+            setRows(next);
+            persist(next, bs);
+          }}
+          lockedRowCount={locked}
+          showBalanceSheets={problem.showBalanceSheets}
+          opening={problem.opening}
+          afterBalanceSheet={askBs && !worked ? bs : undefined}
+          onAfterBalanceSheetChange={
+            askBs && !worked
+              ? (next) => {
+                  setBs(next);
+                  persist(rows, next);
+                }
+              : undefined
+          }
+          journalView={problem.journalView}
+          pickerTypes={pickerTypesFor(problem, accounts)}
+          correctParts={level >= 1 ? result?.correctParts : undefined}
+          highlights={level >= 2 ? result?.diagnostics.map((d) => d.location) : undefined}
+        />
+      </div>
       {worked ? (
         <>
           {problem.walkthrough && problem.walkthrough.length > 0 && (
@@ -295,21 +365,29 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
                 };
                 setResult(engine.checkProblem(problem, attempt, entities));
                 setLevel(1);
+                // Bring the verdict into view without jumping away from the grid more than needed.
+                requestAnimationFrame(() =>
+                  feedbackRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }),
+                );
               }}
             >
               Check answer
             </button>
           </div>
-          <FeedbackPanel
-            result={result}
-            level={level}
-            onEscalate={() => setLevel((l) => Math.min(5, l + 1) as RevealLevel)}
-            hints={problem.hints}
-            explanation={problem.explanation}
-            walkthrough={problem.walkthrough}
-            accounts={accounts}
-            rows={rows}
-          />
+          <div ref={feedbackRef}>
+            <FeedbackPanel
+              result={result}
+              level={level}
+              onEscalate={() => setLevel((l) => Math.min(5, l + 1) as RevealLevel)}
+              hints={problem.hints}
+              explanation={problem.explanation}
+              walkthrough={problem.walkthrough}
+              accounts={accounts}
+              rows={rows}
+              onLocate={(loc) => builderRef.current && locateInBuilder(builderRef.current, loc)}
+              next={nextLink(problem)}
+            />
+          </div>
         </>
       )}
     </ProblemFrame>
