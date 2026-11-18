@@ -46,6 +46,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     onRowsChange,
     onAccountsChange,
     lockedRowCount = 0,
+    lockedPostings,
     readOnly = false,
     showBalanceSheets,
     opening,
@@ -68,6 +69,8 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const [created, setCreated] = useState<Account[]>([]);
   const gridRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
+  /** The account added most recently through the picker (for "Enter amounts"). */
+  const lastAdded = useRef<AccountId | null>(null);
 
   const allAccounts = [...accounts, ...created.filter((c) => !accounts.some((a) => a.id === c.id))];
   const accountById = new Map(allAccounts.map((a) => [a.id, a]));
@@ -83,7 +86,15 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const dividerAt = placed.length === 0 ? -1 : eqIdx >= 0 ? eqIdx : placed.every((c) => c.group === 'assets') ? placed.length : -1;
 
   const isLocked = (ri: number) => ri < lockedRowCount;
-  const lockedAccounts = new Set(rows.slice(0, lockedRowCount).flatMap((r) => r.postings.map((p) => p.accountId)));
+  /** Faded examples lock only the prefilled cells; otherwise a locked row is locked completely. */
+  const lockedCells = lockedPostings ? new Set(lockedPostings.map((l) => `${l.rowId}|${l.accountId}|${l.side}`)) : null;
+  const isCellLocked = (ri: number, rowId: string, acct: AccountId, side: Side) =>
+    isLocked(ri) && (!lockedCells || lockedCells.has(`${rowId}|${acct}|${side}`));
+  const lockedAccounts = new Set(
+    lockedPostings
+      ? lockedPostings.map((l) => l.accountId)
+      : rows.slice(0, lockedRowCount).flatMap((r) => r.postings.map((p) => p.accountId)),
+  );
 
   // ---- feedback overlays ----
   const columnIds = new Set(columns.map((c) => c.accountId));
@@ -123,9 +134,11 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const retypeRows = (id: AccountId, type: AccountType) => {
     let changed = false;
     const next = rows.map((r, ri) => {
-      if (isLocked(ri) || !r.postings.some((p) => p.accountId === id && p.chosenType !== type)) return r;
+      const editable = (p: TransactionRow['postings'][number]) =>
+        p.accountId === id && p.chosenType !== type && !isCellLocked(ri, r.id, p.accountId, p.side);
+      if (!r.postings.some(editable)) return r;
       changed = true;
-      return { ...r, postings: r.postings.map((p) => (p.accountId === id ? { ...p, chosenType: type } : p)) };
+      return { ...r, postings: r.postings.map((p) => (editable(p) ? { ...p, chosenType: type } : p)) };
     });
     if (changed) onRowsChange(next);
   };
@@ -137,7 +150,22 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   };
 
   /** The picker stays open after a pick (it resets itself for the next account); "Done" closes it. */
-  const addColumn = (id: AccountId, type: AccountType) => setColumnType(id, type);
+  const addColumn = (id: AccountId, type: AccountType) => {
+    lastAdded.current = id;
+    setColumnType(id, type);
+  };
+
+  /** "Enter amounts": close the picker and put the cursor in the new account's first open amount cell. */
+  const finishAdding = () => {
+    setPickerOpen(false);
+    const id = lastAdded.current;
+    queueMicrotask(() => {
+      const cell = id
+        ? gridRef.current?.querySelector<HTMLInputElement>(`td[data-account="${CSS.escape(id)}"] input.tab-amount`)
+        : null;
+      (cell ?? addBtnRef.current)?.focus();
+    });
+  };
 
   const createAccount = (name: string, type: AccountType) => {
     const account: Account = { id: slugId(name, allAccounts.map((a) => a.id)), name, type };
@@ -148,8 +176,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
 
   const removeColumn = (id: AccountId) => {
     setCols((cs) => cs.filter((c) => c.accountId !== id));
-    if (rows.some((r, ri) => !isLocked(ri) && r.postings.some((p) => p.accountId === id)))
-      onRowsChange(rows.map((r, ri) => (isLocked(ri) ? r : { ...r, postings: r.postings.filter((p) => p.accountId !== id) })));
+    const removable = (ri: number, r: TransactionRow, p: TransactionRow['postings'][number]) =>
+      p.accountId === id && !isCellLocked(ri, r.id, p.accountId, p.side);
+    if (rows.some((r, ri) => r.postings.some((p) => removable(ri, r, p))))
+      onRowsChange(rows.map((r, ri) => ({ ...r, postings: r.postings.filter((p) => !removable(ri, r, p)) })));
     if (canReorder && columnOrder?.includes(id)) onColumnOrderChange!(columnOrder.filter((x) => x !== id));
     queueMicrotask(() => addBtnRef.current?.focus());
   };
@@ -465,9 +495,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                   const amt = cellAmount(r, id, side);
                   const flagged = cellHighlighted(r, id, side);
                   const ok = amt > 0 && isCorrectCell(correctParts, r.id, id);
+                  const cellLocked = isCellLocked(ri, r.id, id, side);
                   return (
-                    <td key={side} data-account={id} className={colCls(c, 'tab-cell', `tab-${side}`, flagged && 'tab-hl')}>
-                      {locked ? (
+                    <td
+                      key={side}
+                      data-account={id}
+                      className={colCls(c, 'tab-cell', `tab-${side}`, flagged && 'tab-hl', cellLocked && 'is-locked-cell')}
+                    >
+                      {cellLocked ? (
                         <span className="tab-num">{amt ? formatDollars(amt) : ''}</span>
                       ) : (
                         <AmountInput
@@ -541,6 +576,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             setPickerOpen(false);
             addBtnRef.current?.focus();
           }}
+          onFinish={finishAdding}
         />
       )}
       <div className="tab-layout">

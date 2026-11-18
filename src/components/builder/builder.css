@@ -386,11 +386,12 @@
   padding: 0 0.4rem;
   color: var(--muted, #6b6b70);
 }
-tr.is-locked td,
-tr.is-locked th {
+/* Locked (example) cells read as given; open cells in the same row stay inviting. */
+tr.is-locked th,
+tr.is-locked td.is-locked-cell {
   opacity: 0.7;
 }
-tr.is-locked .tab-cell {
+tr.is-locked .tab-cell.is-locked-cell {
   font-style: italic;
 }
 .tab-opening-row th,
@@ -672,4 +673,36 @@ tr.tab-hl-row > * {
 }
 .tab-cell.tab-hl .tab-amount {
   outline-offset: 0;
+}
+
+/* Picker, step 2 before a type is chosen: a heading and a hint — never an empty text box. */
+.tab-picker-step2-title {
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+/* Picker after an account is added: one line of confirmation + what to do next. */
+.tab-picker.tab-picker-done {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+.tab-picker-done .tab-picker-added {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--fg, #1d1d1f);
+}
+.tab-picker-done .tab-picker-added > span[aria-hidden] {
+  color: var(--tab-ok);
+  font-weight: 700;
+}
+.tab-picker-next {
+  color: var(--muted, #6b6b70);
+}
+.tab-picker-done .tab-picker-actions {
+  justify-content: flex-start;
+}
+.tab-builder .tab-picker-primary {
+  background: var(--tab-accent);
+  border-color: var(--tab-accent);
+  color: var(--accent-fg, #fff);
+  font-weight: 600;
 }

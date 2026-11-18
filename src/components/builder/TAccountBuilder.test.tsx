@@ -165,11 +165,13 @@ describe('TAccountBuilder — account picker', () => {
   it('requires a type first, then searches the full unfiltered list by name', async () => {
     const { container } = render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
-    const combo = screen.getByRole('combobox') as HTMLInputElement;
-    expect(combo.disabled).toBe(true);
+    // Before a type is chosen there is no text box at all — just the hint (it used to look like "type a name").
+    const pickerEl = screen.getByRole('group', { name: 'Add a T-account' });
+    expect(within(pickerEl).queryByRole('combobox')).toBeNull();
+    expect(within(pickerEl).getByText(/Choose a type first/)).toBeTruthy();
 
     fireEvent.click(screen.getByLabelText('Liability'));
-    expect(combo.disabled).toBe(false);
+    const combo = within(pickerEl).getByRole('combobox') as HTMLInputElement;
     // not filtered by type and no type labels
     const options = screen.getAllByRole('option').map((o) => o.textContent);
     expect(options).toEqual(accounts.map((a) => a.name));
@@ -179,13 +181,16 @@ describe('TAccountBuilder — account picker', () => {
     await act(async () => {
       fireEvent.keyDown(combo, { key: 'Enter' });
     });
-    // the picker stays open for the next account, reset to step 1 (type is chosen afresh each time)
-    expect(screen.getByRole('group', { name: 'Add a T-account' })).toBeTruthy();
-    expect(screen.queryByRole('listbox')).toBeNull();
+    // after a pick: a confirmation with the next step, not a reset form with empty fields
     const picker = screen.getByRole('group', { name: 'Add a T-account' });
-    expect((within(picker).getByRole('combobox') as HTMLInputElement).disabled).toBe(true);
-    expect(within(picker).getByRole('status').textContent).toContain('Added Checking Account as Liability');
-    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(within(picker).queryByRole('listbox')).toBeNull();
+    expect(within(picker).queryByRole('combobox')).toBeNull();
+    expect(within(picker).getByRole('status').textContent).toContain('Added Checking Account as a Liability');
+    expect(within(picker).getByRole('status').textContent).toContain('Next: type its amount');
+    // "Add another account" goes back to step 1, with the type chosen afresh
+    fireEvent.click(within(picker).getByRole('button', { name: /Add another account/ }));
+    expect((within(picker).getByLabelText('Liability') as HTMLInputElement).checked).toBe(false);
+    fireEvent.keyDown(within(picker).getByLabelText('Asset'), { key: 'Escape' });
     expect(screen.queryByRole('group', { name: 'Add a T-account' })).toBeNull();
     // the column exists with no postings yet, and sits where the chosen type puts it
     expect(headOrder(container)).toEqual(['=', 'checking']);
@@ -214,6 +219,24 @@ describe('TAccountBuilder — account picker', () => {
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
     });
     expect(headOrder(container)).toEqual(['cash', '=']);
+  });
+
+  it('"Enter amounts" closes the picker and puts the cursor in the new account’s first open cell', async () => {
+    const rows: TransactionRow[] = [
+      { id: 'r1', postings: [{ accountId: 'checking', side: 'dr', amount: 2000, chosenType: 'asset' }] },
+    ];
+    render(<Harness initialRows={rows} lockedRowCount={0} />);
+    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
+    fireEvent.click(screen.getByLabelText('Asset'));
+    fireEvent.change(screen.getByRole('combobox', { name: /Pick the account/ }), { target: { value: 'Cash' } });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('combobox', { name: /Pick the account/ }), { key: 'Enter' });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enter amounts' }));
+    });
+    expect(screen.queryByRole('group', { name: 'Add a T-account' })).toBeNull();
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Row 1 Cash Dr');
   });
 
   it('offers only the given types (contra types hidden in early sections)', () => {
@@ -260,7 +283,7 @@ describe('TAccountBuilder — account picker', () => {
     });
     expect(onAccountsChange).toHaveBeenCalledWith([...accounts, { id: 'coffee-beans', name: 'Coffee Beans', type: 'expense' }]);
     expect(headOrder(container)).toEqual(['=', 'coffee-beans']);
-    expect(screen.getByText('Coffee Beans')).toBeTruthy();
+    expect(container.querySelector('[data-col-head="coffee-beans"]')!.textContent).toContain('Coffee Beans');
   });
 
   it('sandbox: keyboard reorder and reset', () => {

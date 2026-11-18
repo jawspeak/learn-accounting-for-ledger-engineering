@@ -350,6 +350,14 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
             persist(next, bs);
           }}
           lockedRowCount={locked}
+          lockedPostings={
+            // Faded examples: lock only the given half, so the missing side goes in the same row.
+            !worked && problem.prefill?.locked
+              ? problem.prefill.rows.flatMap((r) =>
+                  r.postings.map((p) => ({ rowId: r.id, accountId: p.accountId, side: p.side })),
+                )
+              : undefined
+          }
           showBalanceSheets={problem.showBalanceSheets}
           opening={problem.opening}
           afterBalanceSheet={askBs && !worked ? bs : undefined}

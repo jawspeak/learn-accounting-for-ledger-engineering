@@ -13,18 +13,23 @@ export interface AccountPickerProps {
   allowCreate?: boolean;
   onPick(accountId: AccountId, type: AccountType): void;
   onCreate?(name: string, type: AccountType): void;
-  /** Close the picker ("Done" / Escape). */
+  /** Close the picker (Escape / Cancel). */
   onCancel(): void;
+  /** "Enter amounts" after adding: close and move on to typing the new account's amount. */
+  onFinish?(): void;
 }
 
 type Option = { kind: 'account'; account: Account } | { kind: 'create'; name: string };
 
+const withArticle = (label: string) => `${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label}`;
+
 /**
- * Two-step picker (VISION-2 §5): commit to a type first, then search the full, unfiltered account list.
+ * Two-step picker (VISION-2 §5): commit to a type first, then pick from the full, unfiltered account list.
  * The list shows names only — no type labels — so a type/name mismatch stays a diagnosable choice.
  *
- * It stays open after each pick so several accounts can be added in a row. The type resets every time on
- * purpose: each account's type is its own decision (that's the point of choosing it first).
+ * Three clear states, so it never shows an empty field that looks like "type a name here":
+ * 1. choose a type → 2. pick the account from the list → ✓ added (Enter amounts | Add another account).
+ * The type resets for every account on purpose: each account's type is its own decision.
  */
 export function AccountPicker({
   accounts,
@@ -34,14 +39,16 @@ export function AccountPicker({
   onPick,
   onCreate,
   onCancel,
+  onFinish,
 }: AccountPickerProps) {
   const uid = useId();
   const [type, setType] = useState<AccountType | null>(null);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const [added, setAdded] = useState<string | null>(null);
+  const [added, setAdded] = useState<{ name: string; type: AccountType } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typesRef = useRef<HTMLFieldSetElement>(null);
+  const finishRef = useRef<HTMLButtonElement>(null);
 
   const typeChoices = types
     ? types.map((t) => PICKER_TYPES.find((p) => p.type === t) ?? { type: t, label: typeLabel(t) })
@@ -63,11 +70,15 @@ export function AccountPicker({
     const name = opt.kind === 'account' ? opt.account.name : opt.name;
     if (opt.kind === 'account') onPick(opt.account.id, type);
     else onCreate?.(opt.name, type);
-    setAdded(`Added ${name} as ${typeLabel(type)}.`);
+    setAdded({ name, type });
     setType(null);
     setQuery('');
     setActive(0);
-    // Back to step 1 for the next account.
+    queueMicrotask(() => finishRef.current?.focus());
+  };
+
+  const addAnother = () => {
+    setAdded(null);
     queueMicrotask(() => typesRef.current?.querySelector<HTMLInputElement>('input')?.focus());
   };
 
@@ -94,7 +105,7 @@ export function AccountPicker({
         choose(options[activeIdx]);
         break;
       case 'Escape':
-        // First Escape clears the search; the next one (handled by the group) closes the picker.
+        // First Escape clears the filter; the next one (handled by the group) closes the picker.
         if (query) {
           e.preventDefault();
           e.stopPropagation();
@@ -104,18 +115,44 @@ export function AccountPicker({
     }
   };
 
+  const groupKeys = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape' && !e.defaultPrevented) {
+      e.preventDefault();
+      onCancel();
+    }
+  };
+
+  if (added)
+    return (
+      <div
+        className="tab-picker tab-picker-done"
+        role="group"
+        aria-label="Add a T-account"
+        onKeyDown={groupKeys}
+      >
+        <p className="tab-picker-added" role="status">
+          <span aria-hidden="true">✓ </span>
+          Added <strong>{added.name}</strong> as {withArticle(typeLabel(added.type))}.{' '}
+          <span className="tab-picker-next">Next: type its amount on the Dr or Cr side.</span>
+        </p>
+        <div className="tab-picker-actions">
+          <button
+            type="button"
+            ref={finishRef}
+            className="tab-picker-primary"
+            onClick={() => (onFinish ?? onCancel)()}
+          >
+            Enter amounts
+          </button>
+          <button type="button" onClick={addAnother}>
+            <span aria-hidden="true">＋ </span>Add another account
+          </button>
+        </div>
+      </div>
+    );
+
   return (
-    <div
-      className="tab-picker"
-      role="group"
-      aria-label="Add a T-account"
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && !e.defaultPrevented) {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    >
+    <div className="tab-picker" role="group" aria-label="Add a T-account" onKeyDown={groupKeys}>
       <fieldset className="tab-picker-types" ref={typesRef}>
         <legend>1. What type of account is it?</legend>
         <div className="tab-picker-type-grid">
@@ -128,7 +165,6 @@ export function AccountPicker({
                 checked={type === t.type}
                 onChange={() => {
                   setType(t.type);
-                  setAdded(null);
                   // Move straight on to step 2 for keyboard users.
                   queueMicrotask(() => inputRef.current?.focus());
                 }}
@@ -140,84 +176,73 @@ export function AccountPicker({
       </fieldset>
 
       <div className="tab-picker-name">
-        <label htmlFor={`${uid}-input`}>2. Which account?</label>
-        <input
-          ref={inputRef}
-          id={`${uid}-input`}
-          type="text"
-          role="combobox"
-          autoComplete="off"
-          aria-autocomplete="list"
-          aria-expanded={type !== null}
-          aria-controls={listId}
-          aria-activedescendant={type && options.length ? optId(activeIdx) : undefined}
-          aria-describedby={type ? undefined : `${uid}-needtype`}
-          disabled={type === null}
-          placeholder={
-            type
-              ? allowCreate
-                ? 'Search or type a new name…'
-                : 'Search accounts…'
-              : 'Choose a type first'
-          }
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-        />
-        {type === null && (
-          <p id={`${uid}-needtype`} className="tab-picker-note">
-            Commit to a type first — then pick the name.
-          </p>
-        )}
-        {type !== null && (
-          <ul id={listId} role="listbox" aria-label="Accounts" className="tab-picker-list">
-            {options.length === 0 && (
-              <li className="tab-picker-empty" role="presentation">
-                No matching accounts.
-              </li>
-            )}
-            {options.map((opt, i) => (
-              <li
-                key={opt.kind === 'account' ? opt.account.id : '__create'}
-                id={optId(i)}
-                role="option"
-                aria-selected={i === activeIdx}
-                className={i === activeIdx ? 'is-active' : undefined}
-                onMouseDown={(e) => e.preventDefault()}
-                onMouseEnter={() => setActive(i)}
-                onClick={() => choose(opt)}
-              >
-                {opt.kind === 'account' ? (
-                  <>
-                    {opt.account.name}
-                    {existing.has(opt.account.id) && (
-                      <span className="tab-picker-tag"> (already added — sets its type)</span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <span aria-hidden="true">＋ </span>Create account “{opt.name}”
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+        {type === null ? (
+          <>
+            <p className="tab-picker-step2-title">2. Pick the account from the list</p>
+            <p className="tab-picker-note">
+              Choose a type first — then the list of accounts appears here.
+            </p>
+          </>
+        ) : (
+          <>
+            <label htmlFor={`${uid}-input`}>2. Pick the account from the list</label>
+            <input
+              ref={inputRef}
+              id={`${uid}-input`}
+              type="text"
+              role="combobox"
+              autoComplete="off"
+              aria-autocomplete="list"
+              aria-expanded
+              aria-controls={listId}
+              aria-activedescendant={options.length ? optId(activeIdx) : undefined}
+              placeholder={allowCreate ? 'Filter, or type a new account name…' : 'Filter the list…'}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(0);
+              }}
+              onKeyDown={onKeyDown}
+            />
+            <ul id={listId} role="listbox" aria-label="Accounts" className="tab-picker-list">
+              {options.length === 0 && (
+                <li className="tab-picker-empty" role="presentation">
+                  No matching accounts.
+                </li>
+              )}
+              {options.map((opt, i) => (
+                <li
+                  key={opt.kind === 'account' ? opt.account.id : '__create'}
+                  id={optId(i)}
+                  role="option"
+                  aria-selected={i === activeIdx}
+                  className={i === activeIdx ? 'is-active' : undefined}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(opt)}
+                >
+                  {opt.kind === 'account' ? (
+                    <>
+                      {opt.account.name}
+                      {existing.has(opt.account.id) && (
+                        <span className="tab-picker-tag"> (already added — sets its type)</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden="true">＋ </span>Create account “{opt.name}”
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
       <div className="tab-picker-actions">
-        <span role="status" className="tab-picker-added">
-          {added && (
-            <>
-              <span aria-hidden="true">✓ </span>
-              {added} Add another, or Done.
-            </>
-          )}
-        </span>
+        <span />
         <button type="button" onClick={onCancel}>
-          Done
+          Cancel
         </button>
       </div>
     </div>

@@ -14,13 +14,25 @@ test('worked example: locked solution plus walkthrough', async ({ page }) => {
   await expect(check(page)).toHaveCount(0);
 });
 
-test('faded example: prefilled postings are locked, learner can still add', async ({ page }) => {
+test('faded example: the given half is locked; the missing side goes in the same row and checks correct', async ({ page }) => {
+  const w = watchErrors(page);
   await page.goto('/#/p/00-tour-cash-to-savings');
   const locked = page.locator('tr[data-row].is-locked');
   await expect(locked).toHaveCount(1);
-  await expect(locked).toContainText('20');
-  await expect(locked.locator('input.tab-amount')).toHaveCount(0);
-  await expect(check(page)).toBeVisible();
+  await expect(locked.locator('td.is-locked-cell')).toContainText('20');
+  // Add Cash; "Enter amounts" lands in Cash's cell in the example row (which is still editable there).
+  await page.getByRole('button', { name: /Add account/ }).first().click();
+  const picker = page.getByRole('group', { name: 'Add a T-account' });
+  await picker.getByRole('radio', { name: 'Asset', exact: true }).check();
+  await picker.getByRole('option', { name: 'Cash', exact: true }).click();
+  await expect(picker.getByRole('status')).toContainText('Added Cash as an Asset');
+  await picker.getByRole('button', { name: 'Enter amounts' }).click();
+  await expect(page.getByRole('textbox', { name: 'Row 1 Cash Dr' })).toBeFocused();
+  await page.getByRole('textbox', { name: 'Row 1 Cash Cr' }).fill('20');
+  await expect(locked.locator('.tab-rowcheck.is-ok')).toContainText('Balanced');
+  await check(page).click();
+  await expect(headline(page)).toContainText('Correct!');
+  w.assertClean();
 });
 
 test('multiple choice: graded on each pick, explains why, key concept when right (no Check button)', async ({ page }) => {

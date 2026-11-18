@@ -18,6 +18,12 @@ export interface TAccountBuilderProps {
   onAccountsChange?(accounts: Account[]): void;
   /** First N rows are read-only (faded examples). */
   lockedRowCount?: number;
+  /**
+   * Faded examples: when given, only these cells of the locked rows are read-only (the prefilled half of the
+   * entry); the other cells of those rows stay editable so the learner can add the missing side in the same row.
+   * Omit to lock locked rows completely (worked examples, solutions).
+   */
+  lockedPostings?: { rowId: string; accountId: AccountId; side: 'dr' | 'cr' }[];
   /** Display only (e.g. a revealed solution): no add/remove controls; pass lockedRowCount = rows.length too. */
   readOnly?: boolean;
   showBalanceSheets: boolean;
