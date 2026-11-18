@@ -21,7 +21,7 @@ const mod: SectionModule = {
     title: 'Journal Entries',
     summary: 'The compact, line-by-line form of a transaction — what ledgers actually store.',
     primer: `
-T-accounts are great for seeing balances. A **journal entry** is the same transaction written as lines — the form accountants write and ledgers store:
+[[T-accounts]] are great for seeing balances. A **[[journal entry]]** is the same transaction written as lines — the form accountants write and [[ledgers]] store:
 
 \`\`\`journal
 2026-11-02  Deposit cash
@@ -31,8 +31,8 @@ T-accounts are great for seeing balances. A **journal entry** is the same transa
 
 Conventions:
 
-- **Debits first, credits after** (credits are indented). Each line is one **posting**: account, side, amount.
-- An entry can have **any number of lines** — a **compound entry** — as long as Σ Dr = Σ Cr.
+- **Debits first, credits after** (credits are indented). Each line is one **[[posting]]**: account, side, amount.
+- An entry can have **any number of lines** — a **[[compound entry]]** — as long as Σ Dr = Σ Cr.
 - Each entry has a date and a description; one business event = one entry.
 - Inline shorthand: \`Dr Checking 100 / Cr Cash 100\`.
 
@@ -44,7 +44,7 @@ Conventions:
 Toggle the **journal view** in the builder to see your T-account entry as journal lines (and back). It's the same data.
 `.trim(),
     lens: `
-**Ledger-engineer's lens.** A journal entry maps directly to your schema: one \`transactions\` row (id, effective date, description, **idempotency key**) and N \`postings\` rows (transaction_id, account_id, side/sign, amount in minor units). Book each business event as **one atomic transaction** — splitting a compound event into two entries leaves a window where the books show half an event, and retries can double-post one half. Entries are **immutable**: fix mistakes with a reversing entry plus a correct one, never an UPDATE.
+**Ledger-engineer's lens.** A journal entry maps directly to your schema: one \`transactions\` row (id, effective date, description, **[[idempotency key]]**) and N \`postings\` rows (transaction_id, account_id, side/sign, amount in [[minor units]]). Book each business event as **one [[atomic transaction]]** — splitting a compound event into two entries leaves a window where the books show half an event, and retries can double-post one half. Entries are **immutable**: fix mistakes with a [[reversing entry]] plus a correct one, never an UPDATE.
 `.trim(),
     problemIds: [
       '05-gas-journal',

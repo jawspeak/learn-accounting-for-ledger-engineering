@@ -71,16 +71,16 @@ Notice:
         body: `
 When you deposit $100, where does "your" money go? Not into a box with your name on it.
 
-- **A bank's "cash" is mostly its reserve balance at the Federal Reserve** — the bank's own account at the Fed, used to settle payments with other banks — plus **vault cash** (bills in the vault, teller drawers and ATMs). (Some smaller banks hold much of it as balances at a larger *correspondent* bank instead — same idea, one more hop.)
-- **Your deposit is the bank's liability**, not a pot of money. The bank owes you $100. The $100 of bills you handed over became the bank's asset (Cash – Vault), and it's **fungible**: the bank may ship surplus bills to the Fed (vault cash ↓, reserves ↑), use reserves to settle other customers' payments, buy securities, or fund loans.
-- **There is no 1:1 mapping** from your deposit to a slice of the Fed balance — and there won't be. Deposits sit on the right side of the bank's balance sheet; reserves, securities and loans sit on the left. Only the totals tie out (A = L + E).
-- **Banks hold only a fraction of deposits as reserves.** For accuracy: the US statutory reserve requirement has been **0% since March 2020**. Banks hold reserves for liquidity, payment settlement and other regulatory reasons (such as liquidity rules), not because of a fixed ratio.
+- **A bank's "cash" is mostly its [[reserve balance]] at the Federal Reserve** — the bank's own account at the Fed, used to settle payments with other banks — plus **vault cash** (bills in the vault, teller drawers and ATMs). (Some smaller banks hold much of it as balances at a larger *correspondent* bank instead — same idea, one more hop.)
+- **Your deposit is the bank's liability**, not a pot of money. The bank owes you $100. The $100 of bills you handed over became the bank's asset (Cash – Vault), and it's **[[fungible]]**: the bank may ship surplus bills to the Fed (vault cash ↓, reserves ↑), use reserves to settle other customers' payments, buy securities, or fund loans.
+- **There is no 1:1 mapping** from your deposit to a slice of the Fed balance — and there won't be. Deposits sit on the right side of the bank's [[balance sheet]]; reserves, securities and loans sit on the left. Only the totals tie out (A = L + E).
+- **Banks hold only a fraction of deposits as reserves.** For accuracy: the US statutory reserve requirement has been **0% since March 2020**. Banks hold reserves for [[liquidity]], payment [[settlement]] and other regulatory reasons (such as liquidity rules), not because of a fixed ratio.
 - What protects you is the bank's **equity** (a loss-absorbing cushion), regulation, and deposit insurance (FDIC, up to the insured limit — currently $250,000 per depositor, per bank, per ownership category) — not segregation of your particular dollars.
 `.trim(),
       },
     ],
     lens: `
-**Ledger-engineer's lens.** Each entity has its **own ledger**; one real-world event produces **one transaction per ledger**, never a shared one. In a bank's core ledger, every customer's balance is a **sub-ledger account** that rolls up into a **GL control account** (\`Customer Deposits – Checking\`) — and both are **liabilities** (credit-normal). If your fintech or bank data model shows customer balances as assets, you've modeled the customer's perspective by mistake. A good test: the sum of all customer sub-ledger balances must equal the GL control account, every day.
+**Ledger-engineer's lens.** Each entity has its **own [[ledger]]**; one real-world event produces **one transaction per ledger**, never a shared one. In a bank's core ledger, every customer's balance is a **[[sub-ledger]] account** that rolls up into a **GL [[control account]]** (\`Customer Deposits – Checking\`) — and both are **liabilities** (credit-normal). If your fintech or bank data model shows customer balances as assets, you've modeled the customer's perspective by mistake. A good test: the sum of all customer sub-ledger balances must equal the GL control account, every day.
 `.trim(),
     problemIds: [
       '04-bank-atm-withdrawal',

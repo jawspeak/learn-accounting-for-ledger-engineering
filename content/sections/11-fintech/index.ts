@@ -14,9 +14,9 @@ const zapAB = { 'cash-operating': 50000, 'cash-fbo': 150, 'cbp-alice': 100, 'cbp
 const zapABC = { 'cash-operating': 50000, 'cash-fbo': 200, 'cbp-alice': 100, 'cbp-bob': 50, 'cbp-carol': 50, 'paid-in-capital': 50000 };
 
 const primer = `
-**Zap** is a P2P payments app. Customers load money into a Zap wallet, pay each other instantly, and cash out to their regular bank account. Zap earns fees. Zap is **not a bank**: customer money sits in an **FBO account** at First Example Bank (see the callout), while Zap’s own money sits in a separate **operating account** at the same bank.
+**Zap** is a P2P payments app. Customers load money into a Zap wallet, pay each other instantly, and cash out to their regular bank account. Zap earns fees. Zap is **not a bank**: customer money sits in an **[[FBO account]]** at First Example Bank (see the callout), while Zap’s own money sits in a separate **operating account** at the same bank.
 
-In **Zap’s** books (the *gross-up* model):
+In **Zap’s** books (the *[[gross-up]]* model):
 
 | Account | Type | Meaning |
 |---|---|---|
@@ -33,7 +33,7 @@ Three patterns to master:
 - **Money between customers** touches only customer liabilities — no cash moves, the bank sees nothing.
 - **Money in flight** sits in a **clearing** account until it settles.
 
-The invariant Zap’s engineers check every day:
+The [[invariant]] Zap’s engineers check every day:
 \`\`\`
 Cash – FBO + in-flight receipts (Settlement Receivable, Cash in Transit)
     =  Σ Customer Balances + Pending Cash-outs + Suspense + Zap fees not yet swept
@@ -41,13 +41,13 @@ Cash – FBO + in-flight receipts (Settlement Receivable, Cash in Transit)
 `;
 
 const lens = `
-**Ledger-engineer's lens: in-flight money, sub-ledgers and reversals**
+**Ledger-engineer's lens: in-flight money, [[sub-ledgers]] and [[reversals]]**
 
-- **Clearing accounts are state.** "Cash-out requested but not settled" is a real state of real money. Model it as a balance in a clearing account rather than a status flag on a row — then your balance sheet is always correct, and a non-zero clearing balance after settlement windows is an alert.
-- **Sub-ledger vs. GL.** Real Zap would have millions of wallets. The GL has **one** control account, *Customer Balances Payable*; the per-customer balances live in a **sub-ledger**. Daily reconciliation: Σ sub-ledger = GL control account, and the FBO bank statement = Cash – FBO.
-- **Never edit, reverse.** A wrong posting is fixed by a **reversal** (exact mirror) plus a **correcting** entry, each linked to the original by id. Netting the fix into one entry (“Dr Carol / Cr Bob”) hides what happened.
-- **Idempotency keys** on every payment request: a retried “Alice pays Bob $20” must not post twice.
-- **Suspense** is a quarantine queue: unmatched money goes there, an operator (or matcher job) resolves it, and the balance should trend to zero.
+- **[[Clearing accounts]] are state.** "Cash-out requested but not settled" is a real state of real money. Model it as a balance in a clearing account rather than a status flag on a row — then your [[balance sheet]] is always correct, and a non-zero clearing balance after [[settlement]] windows is an alert.
+- **Sub-ledger vs. GL.** Real Zap would have millions of wallets. The GL has **one** [[control account]], *Customer Balances Payable*; the per-customer balances live in a **sub-ledger**. Daily reconciliation: Σ sub-ledger = GL control account, and the FBO bank statement = Cash – FBO.
+- **Never edit, reverse.** A wrong [[posting]] is fixed by a **reversal** (exact mirror) plus a **correcting** entry, each linked to the original by id. Netting the fix into one entry (“Dr Carol / Cr Bob”) hides what happened.
+- **[[Idempotency keys]]** on every payment request: a retried “Alice pays Bob $20” must not post twice.
+- **[[Suspense|suspense-account]]** is a quarantine queue: unmatched money goes there, an operator (or matcher job) resolves it, and the balance should trend to zero.
 `;
 
 const callouts = [
@@ -59,18 +59,18 @@ const callouts = [
 
 **Why it protects customers.**
 - **Segregation:** customer money is kept apart from Zap’s operating account, so Zap can’t use it to pay salaries — and if Zap fails, those funds are meant to belong to the customers, not to Zap’s creditors.
-- **Pass-through deposit insurance (potentially):** if the account is titled correctly *and* Zap’s records show exactly how much belongs to each customer, FDIC insurance can "pass through" to each customer as if they had deposited directly, up to the usual limits. This protects against the **bank** failing — not against Zap failing. (When a fintech’s records were incomplete — as in the 2024 Synapse collapse — customers waited months to get their money.)
+- **[[Pass-through deposit insurance]] (potentially):** if the account is titled correctly *and* Zap’s records show exactly how much belongs to each customer, FDIC insurance can "pass through" to each customer as if they had deposited directly, up to the usual limits. This protects against the **bank** failing — not against Zap failing. (When a fintech’s records were incomplete — as in the 2024 Synapse collapse — customers waited months to get their money.)
 - **Regulation:** many states’ money-transmitter laws require customer funds to be segregated or backed by safe "permissible investments."
 
 **Analogy: a landlord holding your security deposit.** The landlord controls the money and has it in their bank account, but it’s legally *yours* — they owe it back — and some states require it to be kept in a separate account. Zap is the landlord; the FBO account is the separate account.
 
-The catch: the bank sees one pooled balance. **Who owns which dollar exists only in Zap’s ledger.** That’s why the ledger you build has to be right.`,
+The catch: the bank sees one pooled balance. **Who owns which dollar exists only in Zap’s [[ledger]].** That’s why the ledger you build has to be right.`,
   },
   {
     title: 'Gross-up vs. off-balance-sheet',
     body: `In this course Zap uses the **gross-up** model: the FBO cash appears on Zap’s balance sheet as a **restricted asset**, with an **equal liability** to customers. Customer money never touches Zap’s equity — it just makes both sides of the balance sheet bigger.
 
-Some companies instead keep customer funds **off-balance-sheet**, tracking them only in a sub-ledger, on the view that the funds aren’t the company’s assets at all. Which presentation is appropriate depends on the legal arrangements and accounting judgment (and auditors). We don’t use it here — but the gross-up model makes every movement of customer money visible in the double-entry, which is ideal for learning and for reconciliation.`,
+Some companies instead keep customer funds **off-balance-sheet**, tracking them only in a sub-ledger, on the view that the funds aren’t the company’s assets at all. Which presentation is appropriate depends on the legal arrangements and accounting judgment (and auditors). We don’t use it here — but the gross-up model makes every movement of customer money visible in the [[double-entry]], which is ideal for learning and for reconciliation.`,
   },
 ];
 

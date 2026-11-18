@@ -11,24 +11,24 @@ const mod: SectionModule = {
     primer: `
 **Debit (Dr) means left. Credit (Cr) means right.** That's all. They don't mean "good" or "bad", "add" or "subtract", "money in" or "money out" — those depend on the account.
 
-Every account has a **normal side**: the side that **increases** it. The other side decreases it.
+Every account has a **[[normal side]]**: the side that **increases** it. The other side decreases it.
 
 | Type | Increases with | Decreases with |
 |---|---|---|
 | Asset | **Dr** | Cr |
 | Expense | **Dr** | Cr |
-| Dividends / draws | **Dr** | Cr |
+| [[Dividends / draws]] | **Dr** | Cr |
 | Liability | **Cr** | Dr |
-| Equity | **Cr** | Dr |
-| Revenue | **Cr** | Dr |
+| [[Equity]] | **Cr** | Dr |
+| [[Revenue]] | **Cr** | Dr |
 
-Mnemonic: **DEALER** — Dividends, Expenses, Assets are debit-normal; Liabilities, Equity, Revenue are credit-normal.
+Mnemonic: **DEALER** — Dividends, [[Expenses]], [[Assets]] are debit-normal; [[Liabilities]], Equity, Revenue are credit-normal.
 
 Why this layout? \`A = L + E\`: assets are on the left, so they grow on the left (debit); liabilities and equity are on the right, so they grow on the right (credit). Revenue grows equity → credit. Expenses and dividends shrink equity → debit.
 
 <!-- figure:cheat-sheet -->
 
-**Double entry's rule is:** in every transaction, total debits = total credits. That keeps the equation balanced automatically.
+**[[Double entry]]'s rule is:** in every transaction, total [[debits]] = total [[credits]]. That keeps the equation balanced automatically.
 
 **To decide Dr or Cr:** (1) What type is the account? (2) Did it go up or down? (3) Up → normal side; down → the other side.
 `.trim(),
@@ -45,7 +45,7 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
       },
     ],
     lens: `
-**Ledger-engineer's lens.** Most ledgers store each posting as either (\`side\`, positive \`amount\`) or a single **signed** amount (commonly Dr = +, Cr = −). With signed amounts, an account's raw balance is \`SUM(amount)\`; for credit-normal accounts (liabilities, equity, revenue) you **flip the sign for display**. So a customer's deposit account at a bank naturally sums to a *negative* number — that's not a bug, it's a credit balance. Decide the sign convention once, document it, and derive "normal side" from the account type rather than storing it per posting.
+**Ledger-engineer's lens.** Most [[ledgers]] store each [[posting]] as either (\`side\`, positive \`amount\`) or a single **signed** amount (commonly Dr = +, Cr = −). With signed amounts, an account's raw balance is \`SUM(amount)\`; for credit-normal accounts (liabilities, equity, revenue) you **flip the sign for display**. So a customer's deposit account at a bank naturally sums to a *negative* number — that's not a bug, it's a credit balance. Decide the sign convention once, document it, and derive "normal side" from the account type rather than storing it per posting.
 `.trim(),
     problemIds: [
       '02-predict-worked',

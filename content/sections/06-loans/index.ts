@@ -91,7 +91,7 @@ A loan is one claim seen from two sides:
 | The money | **Checking Account** — asset | **Customer Deposits – Checking** — liability |
 | The price of borrowing | **Interest Expense** | **Interest Income** |
 
-**Principal vs. interest.** *Principal* is the amount borrowed; repaying it just shrinks the debt (no gain or loss for anyone). *Interest* is the cost of borrowing: an **expense** for the borrower and **revenue** for the lender. A single repayment usually contains both, so it's booked as **one compound entry** with three lines:
+**[[Principal]] vs. [[interest]].** *Principal* is the amount borrowed; repaying it just shrinks the debt (no gain or loss for anyone). *Interest* is the cost of borrowing: an **expense** for the borrower and **revenue** for the lender. A single repayment usually contains both, so it's booked as **one [[compound entry]]** with three lines:
 
 \`\`\`tentry
 You make a repayment on the loan ($1,000 principal + $50 interest)
@@ -107,25 +107,25 @@ Interest Income (revenue): Cr 50
 
 Check both: Σ Dr = Σ Cr, and every account mirrors its counterpart on the other side.
 
-*Simplification:* in this section the bank records interest when it's paid. Real banks (accrual basis) record interest **daily** as it's earned — you'll do that in §8.
+*Simplification:* in this section the bank records interest when it's paid. Real banks ([[accrual basis]]) record interest **daily** as it's earned — you'll do that in §8.
 `.trim(),
     callouts: [
       {
         title: 'The loan created a deposit',
         body: `
-When First Example Bank lends you $1,000, it doesn't take $1,000 out of anyone else's account, and it doesn't touch its reserves. It records two new things at once:
+When First Example Bank lends you $1,000, it doesn't take $1,000 out of anyone else's account, and it doesn't touch its [[reserves]]. It records two new things at once:
 
 - an **asset**: Loans Receivable +1,000 (you owe it), and
 - a **liability**: Customer Deposits – Checking +1,000 (it owes you).
 
-The bank's balance sheet **grows on both sides**. The $1,000 in your checking account is a **brand-new deposit** — new money that didn't exist before the loan. (When you repay, the reverse happens and the deposit disappears.)
+The bank's [[balance sheet]] **grows on both sides**. The $1,000 in your checking account is a **brand-new deposit** — new money that didn't exist before the loan. (When you repay, the reverse happens and the deposit disappears.)
 
-Reserves (or vault cash) only come into it when you **spend** the money at another bank or withdraw it as cash: then the bank must settle by sending reserves at the Fed, or hand over bills from the vault. That — along with capital rules, liquidity needs and whether the loan is profitable — is what limits how much a bank lends, not a fixed slice of existing deposits.
+Reserves (or vault cash) only come into it when you **spend** the money at another bank or withdraw it as cash: then the bank must settle by sending reserves at the Fed, or hand over bills from the vault. That — along with capital rules, [[liquidity]] needs and whether the loan is profitable — is what limits how much a bank lends, not a fixed slice of existing deposits.
 `.trim(),
       },
     ],
     lens: `
-**Ledger-engineer's lens.** A loan payment is **one event → one transaction** with several postings (principal, interest, cash). Don't book principal and interest as separate transactions, and don't net them into one "loan balance" account — keep **principal** (balance sheet) and **interest** (income statement) in separate accounts so reports are right. A lending system usually keeps a **loan sub-ledger** (per-loan principal, accrued interest, fees) whose totals must reconcile to the GL's Loans Receivable every day.
+**Ledger-engineer's lens.** A loan payment is **one event → one transaction** with several [[postings]] (principal, interest, cash). Don't book principal and interest as separate transactions, and don't net them into one "loan balance" account — keep **principal** (balance sheet) and **interest** ([[income statement]]) in separate accounts so reports are right. A lending system usually keeps a **loan [[sub-ledger]]** (per-loan principal, accrued interest, fees) whose totals must reconcile to the GL's Loans Receivable every day.
 `.trim(),
     problemIds: [
       '06-you-borrow',

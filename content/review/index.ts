@@ -13,21 +13,21 @@ const primer = `
 Problems from every section, deliberately mixed: the café, the bank and the fintech, in no particular order. Mixing makes you do the hard part every time — **figure out what kind of problem this is** before solving it.
 
 For every booking problem, run the same routine:
-1. **Whose books?** Bean There, First Example Bank, or Zap? Counterparty accounts are in the picker to catch you.
+1. **Whose books?** Bean There, First Example Bank, or Zap? [[Counterparty]] accounts are in the picker to catch you.
 2. **Which account am I sure about?** Up or down?
-3. **Normal balance → Dr or Cr.** (DEALER.)
+3. **[[Normal balance]] → Dr or Cr.** (DEALER.)
 4. **Balance the row** — what account makes sense on the other side?
-5. **One event, one row.** Compound entries are fine.
+5. **One event, one row.** [[Compound entries]] are fine.
 `;
 
 const lens = `
 **Ledger-engineer's lens: the whole model in five lines**
 
-- An **entry** is an atomic set of postings with ΣDr = ΣCr; a **balance** is a sum of postings; money is **integer minor units**.
+- An **entry** is an atomic set of [[postings]] with ΣDr = ΣCr; a **balance** is a sum of postings; money is **[[integer minor units]]**.
 - **Normal balance** is just a sign convention per account type.
-- **Accruals** and **clearing accounts** are state for time gaps and in-flight money.
-- **Contra accounts** keep gross values; reports derive nets.
-- **Never edit — reverse and rebook.** The ledger is append-only, and every invariant (TB, FBO, sub-ledger = control) can be checked continuously.
+- **[[Accruals]]** and **[[clearing accounts]]** are state for time gaps and in-flight money.
+- **[[Contra accounts]]** keep gross values; reports derive nets.
+- **Never edit — reverse and rebook.** The [[ledger]] is append-only, and every [[invariant]] (TB, FBO, [[sub-ledger]] = control) can be checked continuously.
 `;
 
 const mod: SectionModule = {

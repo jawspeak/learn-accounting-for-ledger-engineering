@@ -446,3 +446,10 @@
   gap: 0.25rem 1rem;
   font-size: 0.85rem;
 }
+
+/* Narrow phones: the balance sheet scrolls inside its own box rather than widening the page. */
+.bs-scroll {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}

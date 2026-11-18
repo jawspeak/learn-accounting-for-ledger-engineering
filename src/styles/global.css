@@ -249,6 +249,10 @@ textarea {
 .md table {
   border-collapse: collapse;
   margin: var(--space-3) 0;
+  /* Wide tables scroll sideways inside themselves on small screens instead of widening the page. */
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .md th,
 .md td {
@@ -350,7 +354,8 @@ textarea {
 }
 @media (max-width: 1100px) {
   .section-grid {
-    grid-template-columns: 1fr;
+    /* minmax(0, …) so a wide table can't stretch the column (and the page) past the screen. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .problem-group h2 {
@@ -800,7 +805,10 @@ body:has(.layout.no-side) .menu-btn {
 }
 .jump-list a {
   display: inline-flex;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 0 0.35rem;
   align-items: baseline;
   padding: 0.2rem 0.6rem;
   border: 1px solid var(--border);

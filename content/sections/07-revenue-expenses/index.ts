@@ -22,21 +22,21 @@ Assets = Liabilities + Paid-in Capital + Retained Earnings + Revenue − Expense
 - **Expenses** (Dr-normal): value *used up* to earn revenue — rent, wages, beans consumed. They decrease equity, so they increase on the debit side.
 - **Dividends / Owner Draws** (Dr-normal): profit handed to the owner. Not an expense — it isn't a cost of running the café.
 
-The **income statement** for a period is just *Revenue − Expenses = Net Income*, read off those accounts. At period end, **closing entries** move each revenue and expense balance (and dividends) into **Retained Earnings**, so the next month starts at zero.
+The **[[income statement]]** for a period is just *Revenue − Expenses = Net Income*, read off those accounts. At period end, **[[closing entries]]** move each revenue and expense balance (and dividends) into **[[Retained Earnings]]**, so the next month starts at zero.
 
 Two Bean There conventions to know:
-- Bean There is a small corporation: Maya's investment goes to **Paid-in Capital**, and money she takes out goes to **Dividends (Owner Draws)**. (In a sole proprietorship they're Owner's Capital and Owner's Draws, and there's no separate Retained Earnings: profit and draws close straight into Owner's Capital.)
-- Beans and cups are bought into **Inventory**. At month-end Maya counts what's left, and what was used becomes **Cost of Goods Sold**. So a sale only touches cash/receivables and Sales Revenue.
+- Bean There is a small corporation: Maya's investment goes to **[[Paid-in Capital]]**, and money she takes out goes to **Dividends (Owner Draws)**. (In a sole proprietorship they're Owner's Capital and Owner's Draws, and there's no separate Retained Earnings: profit and draws close straight into Owner's Capital.)
+- Beans and cups are bought into **[[Inventory]]**. At month-end Maya counts what's left, and what was used becomes **[[Cost of Goods Sold]]**. So a sale only touches cash/receivables and Sales Revenue.
 
-Keep using the move: **start from the account you're sure about**, decide up or down, let its normal balance pick Dr or Cr, then balance the row.
+Keep using the move: **start from the account you're sure about**, decide up or down, let its [[normal balance]] pick Dr or Cr, then balance the row.
 `;
 
 const lens = `
 **Ledger-engineer's lens: revenue, expenses and closing**
 
 - Revenue and expense accounts are just equity sub-accounts with a reporting window. The income statement is a *query*: \`SUM(postings) WHERE account.type IN (revenue, expense) AND date IN period\`.
-- **Closing** is a period-end batch job that posts new entries zeroing those accounts into Retained Earnings. It never deletes or edits postings — history stays immutable.
-- Many modern ledgers skip physical closing entries and *derive* Retained Earnings from all prior-period P&L postings. Either way, the invariant holds: after closing, every temporary account's balance for the new period starts at zero.
+- **Closing** is a period-end batch job that posts new entries zeroing those accounts into Retained Earnings. It never deletes or edits [[postings]] — history stays immutable.
+- Many modern [[ledgers]] skip physical closing entries and *derive* Retained Earnings from all prior-period P&L postings. Either way, the [[invariant]] holds: after closing, every temporary account's balance for the new period starts at zero.
 - Card sales are your first **in-flight money**: the sale is done, but the cash hasn't arrived. \`Card Receivables\` is the state of that money between "captured" (sale complete) and "settled".
 `;
 

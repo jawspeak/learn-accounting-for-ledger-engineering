@@ -41,8 +41,8 @@ This site teaches accounting **by doing**. Every section has a one-screen primer
 Most problems ask you to **book** an event — record it as a transaction:
 
 - **Rows are transactions.** One business event = one row.
-- **Columns are accounts.** Each account is a "T": a **Dr** (debit, left) side and a **Cr** (credit, right) side.
-- To add an account: **pick its type first** (Asset, Liability, Equity, Revenue, Expense, …), *then* its name. The name list isn't filtered by type — that's on purpose, so you have to actually decide.
+- **Columns are accounts.** Each account is a "T": a **Dr** ([[debit]], left) side and a **Cr** ([[credit]], right) side.
+- To add an account: **pick its type first** ([[Asset]], [[Liability]], [[Equity]], [[Revenue]], [[Expense]], …), *then* its name. The name list isn't filtered by type — that's on purpose, so you have to actually decide.
 - Type an amount on the Dr or Cr side of the account.
 - Every row shows **Σ Dr = Σ Cr**. A row that doesn't balance can't be right.
 
@@ -50,7 +50,7 @@ Most problems ask you to **book** an event — record it as a transaction:
 
 1. Find the account you're **sure** changes.
 2. Did it go **up or down**?
-3. Use its **normal side** (from the cheat sheet) to get Dr or Cr.
+3. Use its **[[normal side]]** (from the cheat sheet) to get Dr or Cr.
 4. The other side must balance — **which account makes sense there?**
 
 ### Stuck?
@@ -62,7 +62,7 @@ Use **hints** first. Then **Check**: feedback starts as a count ("2 issues, 1 th
 The **cheat sheet** (one click from anywhere) shows \`A = L + E\` and which side increases each account type. The mnemonic is **DEALER**: **D**ividends, **E**xpenses, **A**ssets increase on the **debit** side; **L**iabilities, **E**quity, **R**evenue increase on the **credit** side.
 `.trim(),
     lens: `
-**Ledger-engineer's lens.** The builder is just a view over two tables: a **transaction** (one row) owns a set of **postings** (\`account_id\`, \`side\`, \`amount\`). An account's balance is never stored as truth — it's the sum of its postings. The "Σ Dr = Σ Cr" badge on every row is the invariant your database should enforce on every commit.
+**Ledger-engineer's lens.** The builder is just a view over two tables: a **transaction** (one row) owns a set of **[[postings]]** (\`account_id\`, \`side\`, \`amount\`). An account's balance is never stored as truth — it's the sum of its postings. The "Σ Dr = Σ Cr" badge on every row is the [[invariant]] your database should enforce on every commit.
 `.trim(),
     problemIds: ['00-tour-savings-to-checking', '00-tour-cash-to-savings', '00-tour-savings-to-cash', '00-dealer'],
   },

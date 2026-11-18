@@ -22,7 +22,7 @@ const mod: SectionModule = {
     title: 'T-Accounts & Double Entry',
     summary: 'Book personal banking transactions with T-accounts and watch the balance sheet move.',
     primer: `
-A **T-account** is one account drawn as a big "T": debits on the left, credits on the right. Its **balance** is the difference between the two sides, shown on whichever side is bigger (normally its normal side).
+A **[[T-account]]** is one account drawn as a big "T": debits on the left, credits on the right. Its **balance** is the difference between the two sides, shown on whichever side is bigger (normally its [[normal side]]).
 
 \`\`\`taccount
 Checking Account (asset)
@@ -31,13 +31,13 @@ ATM withdrawal: Cr 60
 Balance
 \`\`\`
 
-**Double entry** means every transaction touches **at least two accounts**, and the debits equal the credits. That's what keeps \`A = L + E\` true after every single transaction.
+**[[Double entry]]** means every transaction touches **at least two accounts**, and the debits equal the credits. That's what keeps \`A = L + E\` true after every single transaction.
 
 **The move:**
 
 1. Pick the account you're **sure** about (usually the one where money visibly moved: cash, checking).
 2. Up or down? → normal side → **Dr or Cr**.
-3. The other side must balance. **What else changed?** Something you got, something you owe, or a change in net worth (income / expense).
+3. The other side must balance. **What else changed?** Something you got, something you owe, or a change in [[net worth]] (income / expense).
 
 **Three shapes you'll see in this section:**
 
@@ -47,10 +47,10 @@ Balance
 
 For a person, income and expense accounts are just a breakdown of changes to **Net Worth** — they're how you answer "where did my money go this month?".
 
-The **balance sheets** before and after the transaction must both satisfy \`A = L + E\`. In the after balance sheet, Net Worth keeps its opening balance until period-end; income and expenses appear as their own lines on the equity side.
+The **[[balance sheets]]** before and after the transaction must both satisfy \`A = L + E\`. In the after balance sheet, Net Worth keeps its opening balance until period-end; income and expenses appear as their own lines on the equity side.
 `.trim(),
     lens: `
-**Ledger-engineer's lens.** A transaction is a set of **postings**; \`SUM(debits) = SUM(credits)\` per transaction is an invariant to enforce **in the database at commit** (a deferred constraint or a check inside the posting function), not in the UI. A balance is \`SUM(postings)\` for the account — cache it if you must, but the postings are the source of truth. Store amounts as **integer minor units** (cents) — never floats: \`0.1 + 0.2 !== 0.3\`.
+**Ledger-engineer's lens.** A transaction is a set of **[[postings]]**; \`SUM(debits) = SUM(credits)\` per transaction is an [[invariant]] to enforce **in the database at commit** (a deferred constraint or a check inside the posting function), not in the UI. A balance is \`SUM(postings)\` for the account — cache it if you must, but the postings are the source of truth. Store amounts as **[[integer minor units]]** (cents) — never floats: \`0.1 + 0.2 !== 0.3\`.
 `.trim(),
     problemIds: [
       '03-atm-withdrawal',

@@ -1,0 +1,180 @@
+/* ---------- Defined terms (`[[term]]` in authored markdown) ----------
+   A real button styled as text with a dotted underline: tap/click/Enter opens the definition. Never hover-only. */
+.gloss-term,
+.gloss-sample {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  border-radius: 2px;
+}
+.gloss-term:hover {
+  background: var(--accent-soft);
+}
+.gloss-term:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.gloss-term[aria-expanded='true'] {
+  background: var(--accent-soft);
+}
+/* Big enough to tap on touch screens without changing the line's layout. */
+@media (pointer: coarse) {
+  .gloss-term {
+    padding: 0.1em 0;
+    margin: -0.1em 0;
+  }
+}
+
+/* ---------- Definition popover (desktop) / bottom sheet (phone) ---------- */
+.gloss-pop {
+  position: fixed;
+  z-index: 60;
+  width: min(22rem, calc(100vw - 16px));
+  max-height: min(60vh, 26rem);
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.gloss-pop:focus {
+  outline: none;
+}
+.gloss-pop .md {
+  max-width: none;
+}
+.gloss-pop .md p:last-child {
+  margin-bottom: var(--space-2);
+}
+.gloss-pop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.gloss-pop-term {
+  font-size: 1.05rem;
+  margin: 0 0 var(--space-1);
+}
+.gloss-pop-close {
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0.1rem 0.5rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.gloss-pop-close:hover,
+.gloss-pop-close:focus-visible {
+  border-color: var(--border);
+  color: var(--fg);
+}
+.gloss-pop-more {
+  font-size: 0.85rem;
+}
+.gloss-pop.is-sheet {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: auto;
+  max-height: 70vh;
+  border-radius: 14px 14px 0 0;
+  padding: var(--space-4) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  animation: gloss-up 0.18s ease-out;
+}
+.gloss-pop.is-sheet .gloss-pop-close {
+  min-width: 44px;
+  min-height: 44px;
+}
+.gloss-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: color-mix(in srgb, var(--fg) 25%, transparent);
+}
+@keyframes gloss-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gloss-pop.is-sheet {
+    animation: none;
+  }
+}
+
+/* ---------- Definitions page ---------- */
+.defs-filter input {
+  width: min(28rem, 100%);
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+}
+.defs-list {
+  margin: var(--space-3) 0 0;
+  max-width: 44rem;
+}
+.defs-item {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: calc(var(--header-h) + var(--space-3));
+  border-radius: 6px;
+  transition: background-color 0.4s;
+}
+.defs-item.is-target {
+  background: var(--accent-soft);
+}
+.defs-letter {
+  margin: var(--space-3) 0 var(--space-2);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.defs-item dt {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.defs-term {
+  color: inherit;
+  text-decoration: none;
+}
+.defs-term:hover {
+  text-decoration: underline;
+}
+.defs-aka {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.defs-item dd {
+  margin: var(--space-1) 0 0;
+}
+.defs-where {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

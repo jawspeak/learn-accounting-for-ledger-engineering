@@ -39,19 +39,19 @@ const zapCoaTable = `
 `;
 
 const primer = `
-Engineers usually meet a Chart of Accounts in one of two ways: **designing** one for a new product, or **receiving** one from the accounting team as a spreadsheet. Both are skills.
+Engineers usually meet a [[Chart of Accounts]] in one of two ways: **designing** one for a new product, or **receiving** one from the accounting team as a spreadsheet. Both are skills.
 
 **Designing a CoA from business activities**
 1. List the **events** the business has: money in, money out, money between customers, fees, costs, errors.
 2. For each event ask the five questions: what do we **own**? what do we **owe**? what is **owners’** money? what do we **earn**? what do we **use up**?
 3. Name accounts by **economic meaning**, not by system or vendor (*Clearing – Pending ACH Cash-outs*, not *Stripe pending*).
 4. Separate what must be separated: restricted vs. operating cash, money in flight, unidentified money.
-5. Leave out what the business doesn’t do — a P2P app has no inventory.
+5. Leave out what the business doesn’t do — a P2P app has no [[inventory]].
 
 **Reading an accountant’s CoA table**
 - The **number** encodes the type: 1xxx assets, 2xxx liabilities, 3xxx equity, 4xxx revenue, 5xxx–6xxx expenses. Lower numbers within a group are usually more liquid / more operational.
-- **Type** and **normal balance** columns tell you everything you need to pick Dr or Cr. Trust them over the name ("Unearned Revenue" is a liability).
-- Notes like *“sub-ledger of 2000”* mean many detailed accounts roll up into one **control account** on the financial statements.
+- **Type** and **[[normal balance]]** columns tell you everything you need to pick Dr or Cr. Trust them over the name ("[[Unearned Revenue]]" is a liability).
+- Notes like *“[[sub-ledger]] of 2000”* mean many detailed accounts roll up into one **[[control account]]** on the financial statements.
 
 Here is Zap’s chart, as its controller would send it:
 ${zapCoaTable}
@@ -60,17 +60,17 @@ ${zapCoaTable}
 const lens = `
 **Ledger-engineer's lens: the CoA is a schema**
 
-- An account is a row: \`(id, number, name, type, normal_side, parent_id, currency, restricted)\`. Postings reference account ids, never names.
+- An account is a row: \`(id, number, name, type, normal_side, parent_id, currency, restricted)\`. [[Postings]] reference account ids, never names.
 - **Type is effectively immutable** once postings exist — retyping an account silently changes every historical report. Treat it like a schema migration.
 - Adding accounts is cheap; splitting one later (e.g. one *Cash* into *Operating* and *FBO*) means reclassifying history. Design the obvious splits up front.
 - Keep high-cardinality detail (one wallet per user) in a **sub-ledger** keyed by customer, rolling up to a GL **control account**. Reconcile Σ sub-ledger = control account continuously.
-- Encode invariants next to the schema: *clearing accounts settle to zero*, *Suspense ages out*, *Cash – FBO (+ in-flight receipts) = customer balances + pending cash-outs + suspense + unswept fees*.
+- Encode [[invariants]] next to the schema: *[[clearing accounts]] settle to zero*, *Suspense ages out*, *Cash – FBO (+ in-flight receipts) = customer balances + pending cash-outs + suspense + unswept fees*.
 `;
 
 const callouts = [
   {
     title: 'Why the number ranges matter',
-    body: `Account numbers let reports group accounts by range (all 1xxx = assets) and let accountants add new accounts in the right place (e.g. 1040 between 1030 and 1100). If your ledger stores accounts by id only, store the number too — finance will ask for reports ordered and grouped by it.`,
+    body: `Account numbers let reports group accounts by range (all 1xxx = assets) and let accountants add new accounts in the right place (e.g. 1040 between 1030 and 1100). If your [[ledger]] stores accounts by id only, store the number too — finance will ask for reports ordered and grouped by it.`,
   },
 ];
 

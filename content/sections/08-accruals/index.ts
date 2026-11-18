@@ -10,29 +10,29 @@ const bs = (o: Record<string, number>): BalanceSheet => ({
 });
 
 const primer = `
-**Cash basis** records revenue when cash arrives and expenses when cash leaves. **Accrual basis** records them when they are *earned* or *incurred* — **regardless of when** the cash moves. Bean There and First Example Bank both use accrual.
+**[[Cash basis]]** records revenue when cash arrives and expenses when cash leaves. **[[Accrual basis]]** records them when they are *earned* or *incurred* — **regardless of when** the cash moves. Bean There and First Example Bank both use [[accrual]].
 
 When cash and the economic event happen at different times, a balance-sheet account holds the difference until they line up:
 
-| | Cash comes **later** (accrual) | Cash comes **first** (deferral) |
+| | Cash comes **later** (accrual) | Cash comes **first** ([[deferral]]) |
 |---|---|---|
-| **Revenue** | **Accrued revenue** → asset, e.g. *Interest Receivable*, *Accounts Receivable* | **Unearned revenue** → liability, e.g. *Unearned Revenue – Gift Cards* |
-| **Expense** | **Accrued expense** → liability, e.g. *Wages Payable*, *Accrued Interest Payable* | **Prepaid expense** → asset, e.g. *Prepaid Rent* |
+| **Revenue** | **Accrued revenue** → asset, e.g. *Interest Receivable*, *[[Accounts Receivable]]* | **[[Unearned revenue]]** → liability, e.g. *Unearned Revenue – Gift Cards* |
+| **Expense** | **Accrued expense** → liability, e.g. *Wages Payable*, *Accrued Interest Payable* | **[[Prepaid expense]]** → asset, e.g. *Prepaid Rent* |
 
 Every one of these is a two-step pattern:
 1. **Recognize** the revenue/expense in the right period, against the holding account.
 2. **Settle** the holding account when the cash (or the service) finally moves — no revenue or expense in this step.
 
-Our running example: Bean There keeps **$3,650** in savings at First Example Bank at **10% simple interest**. That’s $3,650 × 10% ÷ 365 = **exactly $1 per day**. Each day both parties *accrue* $1; on the last day of the month the bank *posts* the month’s $30 into the account.
+Our running example: Bean There keeps **$3,650** in savings at First Example Bank at **10% simple [[interest]]**. That’s $3,650 × 10% ÷ 365 = **exactly $1 per day**. Each day both parties *accrue* $1; on the last day of the month the bank *posts* the month’s $30 into the account.
 `;
 
 const lens = `
 **Ledger-engineer's lens: accruals are scheduled jobs**
 
-- A daily accrual is a **cron job** that posts one small entry per account per day. Make it **idempotent**: key each posting by \`(account, accrual_date)\` — e.g. \`accrual:savings-bean-there:2026-11-28\` — so a retry or a re-run never double-accrues.
-- Month-end **capitalization** (moving accrued interest into the deposit balance) is a second job that posts exactly the sum of that month’s accruals. A good invariant: *after posting, Interest Receivable / Accrued Interest Payable for that account is zero.*
+- A daily accrual is a **cron job** that posts one small entry per account per day. Make it **idempotent**: key each [[posting]] by \`(account, accrual_date)\` — e.g. \`accrual:savings-bean-there:2026-11-28\` — so a retry or a re-run never double-accrues.
+- Month-end **capitalization** (moving accrued interest into the deposit balance) is a second job that posts exactly the sum of that month’s accruals. A good [[invariant]]: *after posting, Interest Receivable / Accrued Interest Payable for that account is zero.*
 - The two sides should **reconcile**: Bean There’s Interest Receivable for this account must equal the bank’s Accrued Interest Payable for it, every day.
-- Accrue in integer minor units. With non-round rates you need a rounding policy (and a remainder carried to the posting day) — which is why this course uses exactly $1/day.
+- Accrue in [[integer minor units]]. With non-round rates you need a rounding policy (and a remainder carried to the posting day) — which is why this course uses exactly $1/day.
 `;
 
 const callouts = [

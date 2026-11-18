@@ -10,20 +10,20 @@ const bs = (o: Record<string, number>): BalanceSheet => ({
 });
 
 const primer = `
-A **contra account** is paired with a parent account and **reduces** it. Its normal balance is the **opposite** of its parent’s:
+A **[[contra account]]** is paired with a parent account and **reduces** it. Its [[normal balance]] is the **opposite** of its parent’s:
 
 | Contra account | Parent | Contra normal side | Shown as |
 |---|---|---|---|
-| Accumulated Depreciation – Equipment | Equipment (Dr) | **Cr** | Equipment − Accumulated Depreciation = *net book value* |
-| Allowance for Doubtful Accounts | Accounts Receivable (Dr) | **Cr** | AR − Allowance = *net realizable value* |
-| Sales Returns & Allowances | Sales Revenue (Cr) | **Dr** | Sales − Returns = *net sales* |
+| [[Accumulated Depreciation]] – Equipment | Equipment (Dr) | **Cr** | Equipment − Accumulated Depreciation = *[[net book value]]* |
+| [[Allowance for Doubtful Accounts]] | [[Accounts Receivable]] (Dr) | **Cr** | AR − Allowance = *net realizable value* |
+| [[Sales Returns & Allowances]] | Sales Revenue (Cr) | **Dr** | Sales − Returns = *net sales* |
 
 Why not just credit Equipment or debit Sales directly? Because the **gross** number is information you want to keep:
-- Equipment stays at its **original cost** ($12,000) while depreciation piles up beside it.
+- Equipment stays at its **original cost** ($12,000) while [[depreciation]] piles up beside it.
 - Accounts Receivable keeps matching what customers actually owe, invoice by invoice, while the allowance holds an *estimate* of what won’t be collected — before you know which customer will default.
 - Sales stays at what was sold; returns are visible on their own line, so a spike in refunds doesn’t hide inside a lower sales number.
 
-The balance sheet shows the parent, the contra beneath it, and the **net**. In the builder, a contra column sits right after its parent. In the picker, choose the **contra** type (e.g. *contra-asset*), not the parent’s type.
+The [[balance sheet]] shows the parent, the contra beneath it, and the **net**. In the builder, a contra column sits right after its parent. In the picker, choose the **contra** type (e.g. *contra-asset*), not the parent’s type.
 
 **Depreciation:** Bean There’s $12,000 espresso machine is expected to last 5 years with no resale value, so it’s depreciated **straight-line** at $12,000 ÷ 60 months = **$200 per month**.
 `;
@@ -31,9 +31,9 @@ The balance sheet shows the parent, the contra beneath it, and the **net**. In t
 const lens = `
 **Ledger-engineer's lens: contra accounts vs. negative balances**
 
-- You *could* model depreciation as negative postings on Equipment. Contra accounts are better: each account keeps a single, meaningful sign convention, and you never lose the gross figure.
+- You *could* model depreciation as negative [[postings]] on Equipment. Contra accounts are better: each account keeps a single, meaningful sign convention, and you never lose the gross figure.
 - A contra account is just another account with \`type: contra-asset\` and \`contraOf: equipment\`. Reports compute **net = parent − contra**; nothing is stored pre-netted.
-- Rule of thumb for ledgers: **store gross, derive net.** Netting at write time is lossy and irreversible; netting at read time is a query.
+- Rule of thumb for [[ledgers]]: **store gross, derive net.** Netting at write time is lossy and irreversible; netting at read time is a query.
 - The allowance is an *estimate* that gets revised. Revisions are new postings (adjust the allowance up or down), never edits of last month’s estimate.
 `;
 

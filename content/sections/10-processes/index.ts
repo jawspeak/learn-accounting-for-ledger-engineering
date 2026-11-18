@@ -89,11 +89,11 @@ Real bookkeeping is a **cycle** that repeats every period:
 
 1. **Events happen** — sales, purchases, payments.
 2. **Journalize** — one balanced entry per event.
-3. **Post** to the ledger — each account accumulates its postings.
-4. **Trial balance** — list every account’s balance in a Dr or Cr column; the two totals must match.
-5. **Adjust** — month-end accruals, deferrals, depreciation, inventory count.
-6. **Statements** — income statement and balance sheet from the adjusted balances.
-7. **Close** — revenue, expenses and dividends into Retained Earnings.
+3. **Post** to the [[ledger]] — each account accumulates its [[postings]].
+4. **[[Trial balance]]** — list every account’s balance in a Dr or Cr column; the two totals must match.
+5. **Adjust** — month-end [[accruals]], [[deferrals]], [[depreciation]], [[inventory]] count.
+6. **Statements** — [[income statement]] and [[balance sheet]] from the adjusted balances.
+7. **Close** — revenue, expenses and dividends into [[Retained Earnings]].
 
 A **trial balance** (TB) is the cheap sanity check in step 4. Since every entry has Dr = Cr, the sum of all debit balances must equal the sum of all credit balances. If it doesn’t, an entry was mis-posted.
 
@@ -103,23 +103,23 @@ Two classic tricks for an unbalanced TB:
 - Difference **divisible by 9** → suspect a transposed amount (540 vs 450 → off by 90).
 - Difference that is **twice** some amount → suspect that amount was posted on the wrong side.
 
-This section walks Bean There through all of December — the same 13 events across several problems, so the rows **accumulate** (to keep December short, we ignore interest on the savings account this month):
+This section walks Bean There through all of December — the same 13 events across several problems, so the rows **accumulate** (to keep December short, we ignore [[interest]] on the savings account this month):
 ${decemberTable}
 `;
 
 const lens = `
-**Ledger-engineer's lens: the trial balance is an invariant**
+**Ledger-engineer's lens: the trial balance is an [[invariant]]**
 
-- In a double-entry database that **rejects any transaction where ΣDr ≠ ΣCr**, the trial balance balances *by construction*. Run it anyway, as a continuous invariant check: if it ever fails, you have data corruption or a bug that bypassed validation — page someone.
-- What it can’t catch is *semantic* error — the right amount in the wrong account. That’s what **reconciliations** are for: compare a GL account to an independent source (bank statement, processor report, sub-ledger totals).
-- Never fix a posted entry by editing it. Post a **reversal** (the mirror image) and then the **correct** entry. The audit trail shows what was wrong, when, and who fixed it. (In the find-the-error problem below you edit *draft* rows — before posting, that’s fine.)
+- In a [[double-entry]] database that **rejects any transaction where ΣDr ≠ ΣCr**, the trial balance balances *by construction*. Run it anyway, as a continuous invariant check: if it ever fails, you have data corruption or a bug that bypassed validation — page someone.
+- What it can’t catch is *semantic* error — the right amount in the wrong account. That’s what **reconciliations** are for: compare a GL account to an independent source (bank statement, processor report, [[sub-ledger]] totals).
+- Never fix a posted entry by editing it. Post a **[[reversal]]** (the mirror image) and then the **correct** entry. The audit trail shows what was wrong, when, and who fixed it. (In the find-the-error problem below you edit *draft* rows — before posting, that’s fine.)
 - The month-end adjustments are scheduled jobs that run *after* the period’s operational events, often with a different effective date than created-at date. Store both.
 `;
 
 const callouts = [
   {
     title: 'Trial balance vs. balance sheet',
-    body: `The TB lists **every** account — including revenue, expense and dividend accounts — in two columns, Dr and Cr. The balance sheet groups the permanent accounts into A = L + E and rolls revenue/expenses into equity (after closing, into Retained Earnings). Contra accounts appear on the TB on their own normal side (e.g. Accumulated Depreciation in the Cr column).`,
+    body: `The TB lists **every** account — including revenue, expense and dividend accounts — in two columns, Dr and Cr. The balance sheet groups the permanent accounts into A = L + E and rolls revenue/expenses into equity (after closing, into Retained Earnings). [[Contra accounts]] appear on the TB on their own [[normal side]] (e.g. [[Accumulated Depreciation]] in the Cr column).`,
   },
 ];
 

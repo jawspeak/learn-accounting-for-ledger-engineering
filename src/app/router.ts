@@ -10,6 +10,7 @@ export type Route =
   | { name: 'problem'; id: string; attempt?: string }
   | { name: 'sandbox'; data?: string }
   | { name: 'sheet'; data?: string; entity: number }
+  | { name: 'definitions'; id?: string }
   | { name: 'cheatsheet' }
   | { name: 'animations' }
   | { name: 'not-found' };
@@ -27,6 +28,7 @@ export function parseHash(hash: string): Route {
     const e = Number(params.get('e') ?? 0);
     return { name: 'sheet', data: params.get('d') ?? undefined, entity: Number.isInteger(e) && e > 0 ? e : 0 };
   }
+  if (parts[0] === 'definitions') return { name: 'definitions', id: parts[1] };
   if (parts[0] === 'cheatsheet') return { name: 'cheatsheet' };
   if (parts[0] === 'animations') return { name: 'animations' };
   return { name: 'not-found' };
@@ -41,6 +43,7 @@ export const href = {
     const q = [data && `d=${data}`, entity > 0 && `e=${entity}`].filter(Boolean).join('&');
     return `#/sheet${q ? `?${q}` : ''}`;
   },
+  definitions: (id?: string) => `#/definitions${id ? `/${id}` : ''}`,
   cheatsheet: () => '#/cheatsheet',
   animations: () => '#/animations',
 };

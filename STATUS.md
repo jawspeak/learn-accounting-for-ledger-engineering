@@ -74,6 +74,10 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - Keyboard: arrows / Enter / Shift+Enter move between cells (Left/Right once the caret is at the edge). New "Payroll" example (provider + Employer Foo).
 - Pending semantics (my assumption): checked = sent but not settled; posted balance excludes it, pending balance includes it.
 
+## Authoring extras in content markdown (2026-11-18)
+- `[[Retained Earnings]]` / `[[RE|retained-earnings]]` — tap-to-open definition (terms in `content/glossary.ts`; all listed at `#/definitions`). Mark first mentions in primers, callouts and lenses; never in problem prompts or choices (a test enforces this).
+- ```` ```journal ```` journal-entry sheet · ```` ```tentry ```` event + T-accounts · ```` ```taccount ```` T-account ledger with opening/postings/balance · `<!-- figure:cheat-sheet -->` cheat-sheet diagram. Content tests check that every block parses and balances.
+
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 

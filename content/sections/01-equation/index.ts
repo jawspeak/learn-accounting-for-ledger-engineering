@@ -17,15 +17,15 @@ Every set of books — yours, a bank's, a coffee shop's — obeys one equation:
 Assets = Liabilities + Equity
 \`\`\`
 
-- **Asset** — something you *own* or are *owed* that has value: cash, a checking account, a car, a loan you made to a friend.
-- **Liability** — something you *owe* someone else: a credit-card balance, a car loan.
-- **Equity** — what's left for the owner: \`Assets − Liabilities\`. For a person we call it **Net Worth**; for a company, owners' or shareholders' equity. It can be negative.
+- **[[Asset]]** — something you *own* or are *owed* that has value: cash, a checking account, a car, a loan you made to a friend.
+- **[[Liability]]** — something you *owe* someone else: a credit-card balance, a car loan.
+- **[[Equity]]** — what's left for the owner: \`Assets − Liabilities\`. For a person we call it **[[Net Worth]]**; for a company, owners' or shareholders' equity. It can be negative.
 
 Equity changes for two reasons: owners put money in or take it out, or the entity earns and spends. So we track two more types that roll up into equity:
 
-- **Revenue** (income) — increases equity: salary, interest earned, sales.
+- **[[Revenue]]** (income) — increases equity: salary, [[interest]] earned, sales.
 - **Expense** — decreases equity: rent, groceries, interest paid.
-- (**Dividends / draws** — money paid out to owners — also decrease equity. Persons rarely need them.)
+- (**[[Dividends / draws]]** — money paid out to owners — also decrease equity. Persons rarely need them.)
 
 The **expanded equation**:
 
@@ -33,14 +33,14 @@ The **expanded equation**:
 A = L + Paid-in Capital + Revenue − Expenses − Dividends
 \`\`\`
 
-*(This is for an entity's first period. Later periods add the Retained Earnings carried over: \`A = L + PIC + RE + Rev − Exp − Div\`.)*
+*(This is for an entity's first period. Later periods add the [[Retained Earnings]] carried over: \`A = L + PIC + RE + Rev − Exp − Div\`.)*
 
-**Why are expenses debit-normal?** Equity sits on the right of the equation and grows with **credits**. Expenses *shrink* equity, so an increase in an expense is recorded on the opposite side — a **debit**. Same for dividends. (You'll meet debits and credits properly in §2.)
+**Why are [[expenses]] debit-normal?** Equity sits on the right of the equation and grows with **[[credits]]**. Expenses *shrink* equity, so an increase in an expense is recorded on the opposite side — a **debit**. Same for dividends. (You'll meet [[debits]] and credits properly in §2.)
 
 **Type depends on whose books you're in.** Your checking balance is *your* asset, but the same $1,000 is the bank's **liability** — it owes it to you.
 `.trim(),
     lens: `
-**Ledger-engineer's lens.** An account is a row in an \`accounts\` table: \`id\`, \`name\`, \`type\` (an enum of the five types, plus contra types later), and a **normal side** derived from the type. Get the type wrong and every report built on top — balance sheet, income statement, the A = L + E check — is wrong, even if every transaction balances. Each entity (you, the bank) gets its **own** chart of accounts; never share account rows across entities.
+**Ledger-engineer's lens.** An account is a row in an \`accounts\` table: \`id\`, \`name\`, \`type\` (an enum of the five types, plus contra types later), and a **[[normal side]]** derived from the type. Get the type wrong and every report built on top — [[balance sheet]], [[income statement]], the A = L + E check — is wrong, even if every transaction balances. Each entity (you, the bank) gets its **own** [[chart of accounts]]; never share account rows across entities.
 `.trim(),
     problemIds: [
       '01-classify-your-accounts',

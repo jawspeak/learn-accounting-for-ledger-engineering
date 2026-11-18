@@ -260,6 +260,8 @@ function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; 
     `${formatMoney(e.assets)} = ${formatMoney(e.liabilities)} + ${formatMoney(e.equity)}`;
 
   return (
+    // Scrolls inside its own box on a narrow phone instead of widening the whole page.
+    <div className="bs-scroll">
     <table className="bs">
       <caption>Balance sheet</caption>
       <thead>
@@ -314,6 +316,7 @@ function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; 
         </tr>
       </tfoot>
     </table>
+    </div>
   );
 }
 

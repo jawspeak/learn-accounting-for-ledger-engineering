@@ -8,6 +8,8 @@ import { ProblemPage } from './pages/ProblemPage';
 import { SandboxPage } from './sandbox/SandboxPage';
 import { SheetPage } from './sheet/SheetPage';
 import { CheatSheetPage } from './pages/CheatSheetPage';
+import { DefinitionsPage } from './pages/DefinitionsPage';
+import { GlossaryPopover } from './GlossaryPopover';
 import { CheatSheetDrawer } from './CheatSheetDrawer';
 import { problems } from '@content';
 import { useTheme } from './theme';
@@ -122,6 +124,18 @@ export function App() {
                 Cheat sheet (page)
               </a>
             </li>
+            <li>
+              <a
+                href={href.definitions()}
+                aria-current={route.name === 'definitions' ? 'page' : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-num" aria-hidden="true">
+                  Aa
+                </span>{' '}
+                Definitions
+              </a>
+            </li>
           </ol>
         </nav>
         <main className={mainClass(route)} id="main" tabIndex={-1}>
@@ -133,6 +147,7 @@ export function App() {
           {route.name === 'sandbox' && <SandboxPage data={route.data} />}
           {route.name === 'sheet' && <SheetPage data={route.data} entity={route.entity} />}
           {route.name === 'cheatsheet' && <CheatSheetPage />}
+          {route.name === 'definitions' && <DefinitionsPage id={route.id} />}
           {route.name === 'animations' && <AnimationGallery />}
           {route.name === 'not-found' && (
             <p>
@@ -142,6 +157,7 @@ export function App() {
         </main>
       </div>
       {drawer && <CheatSheetDrawer onClose={closeDrawer} />}
+      <GlossaryPopover />
     </>
   );
 }
