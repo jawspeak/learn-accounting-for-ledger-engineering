@@ -216,8 +216,115 @@ function fboTopUp(): SandboxState {
   };
 }
 
+// ---------- 4. Payroll — a payroll provider's ledger (spreadsheet view) ----------
+function payroll(): SandboxState {
+  const accounts: Account[] = [
+    { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Bank account', metadata: '{ "type": "cash" }' },
+    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Income', metadata: '{ "type": "revenue" }' },
+    {
+      id: 'employer-foo-receivable',
+      name: 'Employer Foo Receivable',
+      type: 'asset',
+      subtitle: 'Employer receivables',
+      metadata: '{ "type": "employer_receivables", "employer_id": "foo" }',
+    },
+    {
+      id: 'foo-employee-1-payable',
+      name: 'Foo Employee 1 Payable',
+      type: 'liability',
+      subtitle: 'Employee payables',
+      metadata: '{ "type": "employee_payables", "employer_id": "foo", "employee_id": "EE1" }',
+    },
+    {
+      id: 'foo-employee-2-payable',
+      name: 'Foo Employee 2 Payable',
+      type: 'liability',
+      subtitle: 'Employee payables',
+      metadata: '{ "type": "employee_payables", "employer_id": "foo", "employee_id": "EE2" }',
+    },
+  ];
+  const fooAccounts: Account[] = [
+    { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Operating bank account' },
+    { id: 'payroll-payable', name: 'Payroll Payable', type: 'liability', subtitle: 'Owed to the payroll provider' },
+    { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
+    { id: 'wages-expense', name: 'Wages Expense', type: 'expense' },
+    { id: 'payroll-fees', name: 'Payroll Fees', type: 'expense', subtitle: 'Provider fee' },
+  ];
+  return {
+    v: 1,
+    title: 'Payroll',
+    scenario:
+      'A payroll provider runs **$2,000** of payroll for **Employer Foo** (Employee 1: $1,200, Employee 2: $800) and charges a **$20** fee.\n\n' +
+      '1. Running payroll: Foo now owes us $2,020; we owe each employee their pay; we earned the fee.\n' +
+      '2. We pull $2,020 from Foo’s bank account.\n' +
+      '3–4. We pay each employee. These payouts are still **pending** (sent, not yet settled) — compare the posted and pending balances.\n\n' +
+      'Switch to **Employer Foo**’s books to see the same events from the employer’s side: an expense and a payable, then the cash leaves.',
+    entities: [
+      {
+        id: 'payroll-provider',
+        name: 'Payroll provider',
+        accounts,
+        rows: [
+          {
+            id: 'r1',
+            label: 'Employer Foo runs payroll',
+            postings: [
+              post(accounts, 'employer-foo-receivable', 'dr', 2020),
+              post(accounts, 'fee-revenue', 'cr', 20),
+              post(accounts, 'foo-employee-1-payable', 'cr', 1200),
+              post(accounts, 'foo-employee-2-payable', 'cr', 800),
+            ],
+          },
+          {
+            id: 'r2',
+            label: 'Debit Employer Foo',
+            postings: [post(accounts, 'cash', 'dr', 2020), post(accounts, 'employer-foo-receivable', 'cr', 2020)],
+          },
+          {
+            id: 'r3',
+            label: 'Credit Foo Employee 1',
+            pending: true,
+            postings: [post(accounts, 'foo-employee-1-payable', 'dr', 1200), post(accounts, 'cash', 'cr', 1200)],
+          },
+          {
+            id: 'r4',
+            label: 'Credit Foo Employee 2',
+            pending: true,
+            postings: [post(accounts, 'foo-employee-2-payable', 'dr', 800), post(accounts, 'cash', 'cr', 800)],
+          },
+        ],
+        showBalanceSheets: false,
+      },
+      {
+        id: 'employer-foo',
+        name: 'Employer Foo',
+        accounts: fooAccounts,
+        opening: { lines: [{ accountId: 'cash', amount: $(10000) }, { accountId: 'paid-in-capital', amount: $(10000) }] },
+        rows: [
+          {
+            id: 'r1',
+            label: 'Run payroll with the provider',
+            postings: [
+              post(fooAccounts, 'wages-expense', 'dr', 2000),
+              post(fooAccounts, 'payroll-fees', 'dr', 20),
+              post(fooAccounts, 'payroll-payable', 'cr', 2020),
+            ],
+          },
+          {
+            id: 'r2',
+            label: 'Provider debits our bank account',
+            postings: [post(fooAccounts, 'payroll-payable', 'dr', 2020), post(fooAccounts, 'cash', 'cr', 2020)],
+          },
+        ],
+        showBalanceSheets: false,
+      },
+    ],
+  };
+}
+
 export const EXAMPLES: { id: string; label: string; build: () => SandboxState }[] = [
   { id: 'cash-deposit', label: 'Cash deposit — you and the bank', build: cashDeposit },
   { id: 'loan', label: 'Loan — both sides', build: loan },
   { id: 'fbo-top-up', label: 'FBO top-up — Zap and the bank', build: fboTopUp },
+  { id: 'payroll', label: 'Payroll — a payroll provider’s ledger', build: payroll },
 ];

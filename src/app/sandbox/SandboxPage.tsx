@@ -149,6 +149,9 @@ export function SandboxPage({ data }: { data?: string }) {
             New / Clear
           </button>
         )}
+        <a className="btn" href={href.sheet(engine.encodeState(state))} title="Same scenario as a wide grid (desktop)">
+          Spreadsheet view
+        </a>
         <label className="sbx-inline">
           Example scenarios:
           <select value="" onChange={(e) => loadExample(e.target.value)}>

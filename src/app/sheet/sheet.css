@@ -1,0 +1,557 @@
+/* Spreadsheet view (#/sheet). Desktop-first: one wide grid that scrolls in both directions inside its frame,
+   with the header rows and the left "event" block frozen. Colours come from the design tokens. */
+.sh {
+  --sh-line: color-mix(in srgb, var(--border) 85%, transparent);
+  --sh-grid: color-mix(in srgb, var(--border) 55%, transparent);
+  --sh-head-bg: color-mix(in srgb, var(--fg) 3%, var(--surface));
+  --sh-left-bg: var(--surface);
+  --sh-asset: #2f8a4c;
+  --sh-liability: #c0453a;
+  --sh-equity: #6a4fc4;
+  --sh-revenue: #1f7f8c;
+  --sh-expense: #b0701a;
+  --sh-dividend: #6b6b75;
+  /* Frozen column widths (also used for the sticky offsets). */
+  --sh-w1: 2.6rem;
+  --sh-w2: 15rem;
+  --sh-w3: 4.6rem;
+  --sh-w4: 4.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+}
+:root[data-theme='dark'] .sh {
+  --sh-asset: #6fcf8e;
+  --sh-liability: #ff8a80;
+  --sh-equity: #b6a3ff;
+  --sh-revenue: #6fd3df;
+  --sh-expense: #f2c35c;
+  --sh-dividend: #b0b0ba;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .sh {
+    --sh-asset: #6fcf8e;
+    --sh-liability: #ff8a80;
+    --sh-equity: #b6a3ff;
+    --sh-revenue: #6fd3df;
+    --sh-expense: #f2c35c;
+    --sh-dividend: #b0b0ba;
+  }
+}
+
+.sh .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- top bar ---------- */
+.sh-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+.sh-title {
+  font: inherit;
+  font-family: var(--font-serif, inherit);
+  font-size: 1.6rem;
+  font-weight: 650;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.1rem 0.4rem;
+  min-width: 14rem;
+}
+.sh-title:hover,
+.sh-title:focus {
+  border-color: var(--border);
+}
+.sh-books {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sh-books select,
+.sh-entity-name,
+.sh-inline select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+}
+.sh-confirm {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.sh-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sh-checks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+}
+.sh .is-ok {
+  color: var(--ok);
+}
+.sh .is-bad {
+  color: var(--err);
+  font-weight: 600;
+}
+.sh-notice {
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-size: 0.9rem;
+}
+.sh-warn {
+  background: var(--warn-soft);
+}
+.sh-narrow-note {
+  display: none;
+}
+@media (max-width: 900px) {
+  .sh-narrow-note {
+    display: block;
+  }
+}
+.sh-scenario summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.sh-scenario textarea {
+  display: block;
+  width: 100%;
+  max-width: 60rem;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+/* ---------- the grid frame ---------- */
+.sh-scroll {
+  position: relative;
+  overflow: auto;
+  /* Fill the viewport below the app header; the grid scrolls inside, so headers stay visible. */
+  max-height: calc(100vh - var(--header-h, 3.5rem) - 9.5rem);
+  min-height: 20rem;
+  border: 1px solid var(--sh-line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.sh-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+.sh-grid th,
+.sh-grid td {
+  border-right: 1px solid var(--sh-grid);
+  border-bottom: 1px solid var(--sh-grid);
+  padding: 0;
+  height: 1.9rem;
+  vertical-align: middle;
+}
+.sh-w-amt {
+  width: 6.25rem;
+  min-width: 6.25rem;
+}
+.sh-w-add {
+  width: 12rem;
+}
+
+/* Header rows stay put while the body scrolls. */
+.sh-grid thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.sh-grid thead th,
+.sh-grid thead td {
+  background: var(--sh-head-bg);
+}
+
+/* Frozen left block. */
+.sh-left {
+  position: sticky;
+  z-index: 2;
+  background: var(--sh-left-bg);
+}
+.sh-grid thead .sh-left {
+  z-index: 4;
+  background: var(--sh-head-bg);
+}
+.sh-l1,
+th.sh-left[colspan='4'] {
+  left: 0;
+}
+.sh-l1 {
+  width: var(--sh-w1);
+  min-width: var(--sh-w1);
+}
+.sh-l2 {
+  left: var(--sh-w1);
+  width: var(--sh-w2);
+  min-width: var(--sh-w2);
+}
+.sh-l3 {
+  left: calc(var(--sh-w1) + var(--sh-w2));
+  width: var(--sh-w3);
+  min-width: var(--sh-w3);
+}
+.sh-l4 {
+  left: calc(var(--sh-w1) + var(--sh-w2) + var(--sh-w3));
+  width: var(--sh-w4);
+  min-width: var(--sh-w4);
+  /* the edge of the frozen block */
+  box-shadow: 3px 0 4px -3px color-mix(in srgb, var(--fg) 30%, transparent);
+}
+th.sh-left[colspan='4'] {
+  box-shadow: 3px 0 4px -3px color-mix(in srgb, var(--fg) 30%, transparent);
+}
+.sh-head-label {
+  text-align: right;
+  padding: 0 0.6rem !important;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sh-corner {
+  text-align: left !important;
+  padding: 0.3rem 0.6rem !important;
+}
+.sh-corner-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sh-link {
+  margin-left: 0.5rem;
+  font: inherit;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ---------- account header ---------- */
+.sh-head {
+  padding: 0.2rem 0.35rem !important;
+  text-align: center;
+  font-weight: 400;
+}
+.sh-names .sh-head {
+  border-top: 3px solid currentColor;
+}
+.sh-names .sh-head.sh-tone-asset {
+  color: var(--sh-asset);
+}
+.sh-names .sh-head.sh-tone-liability {
+  color: var(--sh-liability);
+}
+.sh-names .sh-head.sh-tone-equity {
+  color: var(--sh-equity);
+}
+.sh-names .sh-head.sh-tone-revenue {
+  color: var(--sh-revenue);
+}
+.sh-names .sh-head.sh-tone-expense {
+  color: var(--sh-expense);
+}
+.sh-names .sh-head.sh-tone-dividend {
+  color: var(--sh-dividend);
+}
+.sh-name-row {
+  display: flex;
+}
+.sh-grid input,
+.sh-grid select,
+.sh-grid textarea,
+.sh-grid button {
+  font: inherit;
+  color: var(--fg);
+}
+.sh-name {
+  width: 100%;
+  font-weight: 700 !important;
+  text-align: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+}
+.sh-col-tools {
+  display: flex;
+  justify-content: center;
+  gap: 0.15rem;
+  opacity: 0.35;
+}
+.sh-head:hover .sh-col-tools,
+.sh-head:focus-within .sh-col-tools {
+  opacity: 1;
+}
+.sh-col-tools button {
+  font-size: 0.7rem !important;
+  line-height: 1.2;
+  padding: 0 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sh-col-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.sh-subtitle {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 0.85rem !important;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+}
+.sh-type-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+.sh-type {
+  width: 100%;
+  font-weight: 650 !important;
+  font-size: 0.82rem !important;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid currentColor;
+  text-align: center;
+  cursor: pointer;
+}
+.sh-type.sh-tone-asset {
+  color: var(--sh-asset) !important;
+  background: color-mix(in srgb, var(--sh-asset) 16%, var(--surface));
+}
+.sh-type.sh-tone-liability {
+  color: var(--sh-liability) !important;
+  background: color-mix(in srgb, var(--sh-liability) 16%, var(--surface));
+}
+.sh-type.sh-tone-equity {
+  color: var(--sh-equity) !important;
+  background: color-mix(in srgb, var(--sh-equity) 16%, var(--surface));
+}
+.sh-type.sh-tone-revenue {
+  color: var(--sh-revenue) !important;
+  background: color-mix(in srgb, var(--sh-revenue) 16%, var(--surface));
+}
+.sh-type.sh-tone-expense {
+  color: var(--sh-expense) !important;
+  background: color-mix(in srgb, var(--sh-expense) 16%, var(--surface));
+}
+.sh-type.sh-tone-dividend {
+  color: var(--sh-dividend) !important;
+  background: color-mix(in srgb, var(--sh-dividend) 16%, var(--surface));
+}
+.sh-contra {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.sh-contra select {
+  font-size: 0.75rem !important;
+  max-width: 8rem;
+}
+.sh-meta {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: var(--font-mono, ui-monospace, monospace) !important;
+  font-size: 0.75rem !important;
+  line-height: 1.35;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--sh-grid);
+  border-radius: 4px;
+  padding: 0.2rem 0.3rem;
+}
+.sh-meta.is-bad {
+  border-color: var(--err);
+  outline: 1px solid var(--err);
+}
+.sh-meta-err {
+  display: block;
+  color: var(--err);
+  font-size: 0.72rem;
+  text-align: left;
+}
+.sh-normal {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.sh-normal-dr {
+  color: var(--sh-asset);
+}
+.sh-normal-cr {
+  color: var(--sh-liability);
+}
+.sh-normal-type {
+  font-weight: 400;
+  color: var(--muted);
+}
+.sh-sides th {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--muted);
+  text-align: center;
+  border-bottom: 2px solid var(--fg) !important;
+}
+.sh-sides th.sh-left {
+  text-align: left;
+  padding: 0 0.4rem;
+  color: var(--fg);
+}
+.sh-balance td {
+  font-weight: 700;
+}
+.sh-bal {
+  padding: 0 0.45rem !important;
+  text-align: right;
+}
+.sh-balance-pending td {
+  font-weight: 600;
+  font-style: italic;
+  color: var(--muted);
+}
+.sh-balance td,
+.sh-balance th {
+  border-bottom: 2px solid var(--sh-line) !important;
+}
+.sh-abnormal {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--warn);
+}
+
+/* The "T": a heavy rule between Dr and Cr; a gap rule before each account; a double rule at A ‖ = ‖ L + E. */
+.sh-grid .sh-dr {
+  border-right: 2px solid color-mix(in srgb, var(--fg) 55%, transparent);
+}
+.sh-grid .sh-t-start {
+  border-left: 3px solid var(--sh-line);
+}
+.sh-grid .sh-eq-start {
+  border-left: 5px double var(--fg);
+}
+
+/* ---------- add-account column ---------- */
+.sh-add-col {
+  background: transparent !important;
+  border-right: 0 !important;
+}
+.sh-add {
+  vertical-align: top !important;
+  padding: 0.5rem !important;
+  background: var(--sh-head-bg) !important;
+}
+.sh-add form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+.sh-add input,
+.sh-add select {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.35rem;
+}
+
+/* ---------- body cells ---------- */
+.sh-rownum {
+  text-align: center;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--sh-head-bg) !important;
+}
+.sh-event,
+.sh-amt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 1.85rem;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0.45rem;
+}
+.sh-amt {
+  text-align: right;
+}
+.sh-event:focus,
+.sh-amt:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--surface);
+}
+.sh-center {
+  text-align: center;
+}
+.sh-check {
+  text-align: center;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+tbody tr.is-pending td,
+tbody tr.is-pending th {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--warn) 8%, transparent),
+    color-mix(in srgb, var(--warn) 8%, transparent)
+  );
+}
+tbody tr.is-pending .sh-amt {
+  font-style: italic;
+}
+tbody tr:hover td:not(.sh-add-col) {
+  background-color: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+.sh-opening td {
+  color: var(--muted);
+}
+.sh-empty {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  color: var(--muted);
+}

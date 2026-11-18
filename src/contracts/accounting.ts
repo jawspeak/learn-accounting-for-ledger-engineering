@@ -37,6 +37,13 @@ export interface Account {
   equityGroup?: EquityGroup;
   /** Short description shown on hover in the sandbox / CoA views. Never shown in the picker during problems. */
   description?: string;
+  /** Sandbox spreadsheet: a short second line under the name, e.g. "Bank account" or "Employee payables". */
+  subtitle?: string;
+  /**
+   * Sandbox spreadsheet: free-form account attributes as JSON text, e.g. `{"type":"employee_payables",
+   * "employee_id":"EE1"}` — how a ledger would key this account. Stored as text so a half-typed value survives.
+   */
+  metadata?: string;
 }
 
 export interface EntityCoA {
@@ -61,6 +68,8 @@ export interface TransactionRow {
   id: string;
   label?: string;
   postings: Posting[];
+  /** Sandbox spreadsheet: not yet posted (in flight). Counted in the pending balance, not the posted balance. */
+  pending?: boolean;
 }
 
 /** Balance per account, as a positive amount on the account's normal side (negative = abnormal balance). */

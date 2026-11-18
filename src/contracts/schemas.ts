@@ -29,6 +29,8 @@ export const accountSchema = z
     contraOf: id.optional(),
     equityGroup: z.enum(['paid-in', 'retained']).optional(),
     description: z.string().optional(),
+    subtitle: z.string().optional(),
+    metadata: z.string().optional(),
   })
   .refine((a) => !a.type.startsWith('contra-') || !!a.contraOf, 'contra accounts need contraOf');
 
@@ -50,6 +52,7 @@ export const rowSchema = z.object({
   id: z.string().min(1),
   label: z.string().optional(),
   postings: z.array(postingSchema),
+  pending: z.boolean().optional(),
 });
 export const balanceSheetSchema = z.object({
   lines: z.array(z.object({ accountId: id, amount: money })),

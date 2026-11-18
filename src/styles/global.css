@@ -755,6 +755,27 @@ textarea {
 .content.wide {
   max-width: none;
 }
+/* Spreadsheet view: no sidebar, full width, tight padding. The ☰ button still opens the section list. */
+.layout.no-side {
+  grid-template-columns: minmax(0, 1fr);
+}
+.layout.no-side .sidebar:not(.open) {
+  display: none;
+}
+.layout.no-side .sidebar.open {
+  position: static;
+  height: auto;
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
+}
+body:has(.layout.no-side) .menu-btn {
+  display: inline-flex;
+}
+.content.sheet-full {
+  max-width: none;
+  padding: var(--space-3) var(--space-4);
+}
+
 /* Booking problems with balance sheets: room for Before | T-accounts | After side by side. Prose stays 44rem (.md). */
 .content.wide-problem {
   max-width: 86rem;

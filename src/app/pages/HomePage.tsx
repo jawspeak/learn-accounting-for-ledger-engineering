@@ -21,6 +21,9 @@ export function HomePage() {
         <a className="btn" href={href.sandbox()}>
           Open the sandbox
         </a>
+        <a className="btn" href={href.sheet()}>
+          Spreadsheet view
+        </a>
       </div>
 
       <section aria-labelledby="how">

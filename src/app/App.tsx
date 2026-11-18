@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage';
 import { SectionPage } from './pages/SectionPage';
 import { ProblemPage } from './pages/ProblemPage';
 import { SandboxPage } from './sandbox/SandboxPage';
+import { SheetPage } from './sheet/SheetPage';
 import { CheatSheetPage } from './pages/CheatSheetPage';
 import { CheatSheetDrawer } from './CheatSheetDrawer';
 import { problems } from '@content';
@@ -14,6 +15,7 @@ import { useTheme } from './theme';
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
   if (route.name === 'sandbox') return 'content wide';
+  if (route.name === 'sheet') return 'content sheet-full';
   if (route.name === 'problem') {
     const p = problems[route.id];
     if (p?.kind === 'booking') return 'content wide-problem';
@@ -80,7 +82,8 @@ export function App() {
           {theme === 'dark' ? '☾ Dark' : '☀ Light'}
         </button>
       </header>
-      <div className="layout">
+      {/* The spreadsheet view takes the whole width; the section list stays reachable via ☰ Sections. */}
+      <div className={route.name === 'sheet' ? 'layout no-side' : 'layout'}>
         <nav id="site-nav" className={`sidebar ${navOpen ? 'open' : ''}`} aria-label="Sections">
           <ol>
             <li>
@@ -128,6 +131,7 @@ export function App() {
             <ProblemPage key={route.id} id={route.id} attempt={route.attempt} />
           )}
           {route.name === 'sandbox' && <SandboxPage data={route.data} />}
+          {route.name === 'sheet' && <SheetPage data={route.data} entity={route.entity} />}
           {route.name === 'cheatsheet' && <CheatSheetPage />}
           {route.name === 'animations' && <AnimationGallery />}
           {route.name === 'not-found' && (

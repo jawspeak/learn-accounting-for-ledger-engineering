@@ -68,6 +68,12 @@ Also added in Phase 0: `src/contracts/items.ts` (non-booking answer shapes) and 
 - After-BS marks changed lines with ▲/▼ and the amount. Multi-event prompts (numbered list matching solution rows) start with one labelled row per event. Section pages open with a "Jump to a problem" list. Sandbox no longer reports an empty row as unbalanced.
 - Not done: Enter/arrow-key movement between amount cells; an account column with no amounts still isn't saved in the URL.
 
+## Spreadsheet view — 2026-11-18 (`#/sheet`)
+- Full-width, desktop-first grid of one entity's books (owner's sketch): events down a frozen left block (#, event, Pending, Dr = Cr ✓/✗); per account a header with name, label, coloured type, JSON attributes, normal side; Dr | Cr columns; posted balance (and pending balance when any row is pending) at the top; optional opening-balance row.
+- Same URL state as the Sandbox (`d=`, plus `e=` for which books); "Spreadsheet view" / "Open in Sandbox" links both ways. Contract additions (optional): `Account.subtitle`, `Account.metadata` (JSON text), `TransactionRow.pending`.
+- Keyboard: arrows / Enter / Shift+Enter move between cells (Left/Right once the caret is at the edge). New "Payroll" example (provider + Employer Foo).
+- Pending semantics (my assumption): checked = sent but not settled; posted balance excludes it, pending balance includes it.
+
 ## SBX — ✅ merged
 - `SandboxPage` + `EntityCard`: URL state (debounced, invalid-link notice, back/forward), title + scenario (sanitized markdown: raw HTML escaped, only safe link schemes), multiple entities with own builder, templates from content entities, opening balances, BS/journal/manual-order toggles, duplicate/remove, "Add the other party's perspective", per-entity ✓ summary; 3 balanced example scenarios.
 
