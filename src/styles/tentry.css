@@ -1,0 +1,136 @@
+/* ---------- T-account entry figures (```tentry in authored markdown; see src/app/tentry.ts) ----------
+   One row per business event: the event on the left, a small T per account on the right. The INCREASING half
+   of every T is shaded and its Dr/Cr label carries ▲ — the same convention as the cheat sheet. */
+.tentry {
+  container-type: inline-size;
+  margin: var(--space-4) 0;
+  display: grid;
+  gap: var(--space-3);
+  max-width: 52rem;
+}
+.tentry-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 11rem) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+/* Too narrow for event | Ts side by side (e.g. next to the lens sidebar, or on a phone): event on top. */
+@container (max-width: 44rem) {
+  .tentry-row {
+    grid-template-columns: 1fr;
+  }
+  .tentry-event {
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+}
+.tentry-event {
+  display: grid;
+  gap: 0.25rem;
+  font-family: var(--font-sans);
+}
+.tentry-title {
+  font-weight: 650;
+  line-height: 1.3;
+}
+.tentry-sum {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.tentry-sum.is-ok {
+  color: var(--ok);
+}
+.tentry-sum.is-bad {
+  color: var(--err);
+  font-weight: 700;
+}
+/* Ts sit side by side and wrap only when there's truly no room (3 fit in the 44rem prose column). */
+.tentry-ts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.75rem, 1fr));
+  gap: var(--space-3);
+}
+.tacct {
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.tacct-name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+.tacct-type {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+.tacct-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 2px solid var(--fg);
+}
+.tacct-grid .tacct-dr {
+  border-right: 2px solid var(--fg);
+}
+.tacct-side {
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--muted);
+  padding: 0.1rem 0;
+}
+.tacct-cell {
+  min-height: 1.7rem;
+  padding: 0.15rem 0.35rem 0.3rem;
+  font-variant-numeric: tabular-nums;
+}
+.tacct-cell.tacct-dr {
+  text-align: right;
+}
+.tacct-cell.tacct-cr {
+  text-align: left;
+}
+/* The increasing side: shaded + ▲ on its label (header and amount cell together form the shaded half). */
+.tacct.inc-dr .tacct-dr,
+.tacct.inc-cr .tacct-cr {
+  background: var(--accent-soft);
+}
+.tacct-inc-mark {
+  color: var(--accent);
+}
+.tacct-amt {
+  font-weight: 650;
+  white-space: nowrap;
+}
+@container (max-width: 28rem) {
+  .tentry-event {
+    grid-auto-flow: row;
+    gap: 0.25rem;
+  }
+}
+.tacct-effect {
+  font-size: 0.72rem;
+}
+.tentry .is-up,
+.tacct-amt.is-up .tacct-effect {
+  color: var(--ok);
+}
+.tentry .is-down,
+.tacct-amt.is-down .tacct-effect {
+  color: var(--err);
+}
+.tentry-legend {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.tentry-error {
+  color: var(--err);
+  white-space: pre-wrap;
+}

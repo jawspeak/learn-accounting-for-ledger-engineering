@@ -93,9 +93,16 @@ A loan is one claim seen from two sides:
 
 **Principal vs. interest.** *Principal* is the amount borrowed; repaying it just shrinks the debt (no gain or loss for anyone). *Interest* is the cost of borrowing: an **expense** for the borrower and **revenue** for the lender. A single repayment usually contains both, so it's booked as **one compound entry** with three lines:
 
-\`\`\`
-You:   Dr Loan Payable 1,000 · Dr Interest Expense 50 / Cr Checking 1,050
-Bank:  Dr Customer Deposits 1,050 / Cr Loans Receivable 1,000 · Cr Interest Income 50
+\`\`\`tentry
+You make a repayment on the loan ($1,000 principal + $50 interest)
+Loan Payable (liability): Dr 1,000
+Interest Expense (expense): Dr 50
+Checking Account (asset): Cr 1,050
+
+The bank receives your payment
+Customer Deposits – Checking (liability): Dr 1,050
+Loans Receivable (asset): Cr 1,000
+Interest Income (revenue): Cr 50
 \`\`\`
 
 Check both: Σ Dr = Σ Cr, and every account mirrors its counterpart on the other side.
