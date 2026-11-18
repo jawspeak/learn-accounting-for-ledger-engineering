@@ -28,7 +28,7 @@ Why this layout? \`A = L + E\`: assets are on the left, so they grow on the left
 
 <!-- figure:cheat-sheet -->
 
-**The rule that makes it all work:** in every transaction, total debits = total credits. That keeps the equation balanced automatically.
+**Double entry's rule is:** in every transaction, total debits = total credits. That keeps the equation balanced automatically.
 
 **To decide Dr or Cr:** (1) What type is the account? (2) Did it go up or down? (3) Up → normal side; down → the other side.
 `.trim(),
