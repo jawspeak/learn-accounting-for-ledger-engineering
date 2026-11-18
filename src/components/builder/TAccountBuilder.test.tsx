@@ -372,8 +372,13 @@ describe('TAccountBuilder — balance sheets, overlays, journal', () => {
     render(<Harness initialRows={rows} journalView />);
     fireEvent.click(screen.getByRole('button', { name: 'Journal view' }));
     const journal = screen.getByRole('region', { name: 'Journal entries' });
-    const lines = within(journal).getAllByRole('row').slice(1).map((r) => r.textContent);
-    expect(lines).toEqual(['Dr Checking Account$100', 'Cr Cash$100']);
+    // Same journal sheet as everywhere else: debits first, then credits (indented), then the totals line.
+    const lines = [...journal.querySelectorAll('tr.je-line')].map((r) => [r.className, r.textContent]);
+    expect(lines).toEqual([
+      ['je-line is-dr', 'Checking Account$100'],
+      ['je-line is-cr', 'Cash$100'],
+    ]);
+    expect(journal.querySelector('tr.je-total')!.textContent).toContain('Debits = credits');
     expect(journal.querySelector('input')).toBeNull();
   });
 });

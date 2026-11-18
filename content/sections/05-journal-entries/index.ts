@@ -23,7 +23,7 @@ const mod: SectionModule = {
     primer: `
 T-accounts are great for seeing balances. A **journal entry** is the same transaction written as lines — the form accountants write and ledgers store:
 
-\`\`\`
+\`\`\`journal
 2026-11-02  Deposit cash
   Dr  Checking Account     100
       Cr  Cash                  100
@@ -73,7 +73,7 @@ Toggle the **journal view** in the builder to see your T-account entry as journa
       walkthrough: [
         "**Start from the account you know:** Checking went **down** $50 → asset decrease → **Cr Checking Account 50**.",
         'The other side: the gas is used up → **Transportation Expense** goes **up** → expense increase → **Dr Transportation Expense 50**.',
-        'Written as a journal entry, debits first:\n\n```\nDr  Transportation Expense   50\n    Cr  Checking Account          50\n```',
+        'Written as a journal entry, debits first:\n\n```journal\nDr  Transportation Expense   50\n    Cr  Checking Account          50\n```',
         'In the builder, toggle **journal view**: the same row shows as these two lines. Nothing about the data changed — only the presentation.',
       ],
       hints: ['Which account are you sure about?', 'What did you get for $50 — something you still own?'],
@@ -123,7 +123,7 @@ Toggle the **journal view** in the builder to see your T-account entry as journa
         'Where did the other $500 go, and what happens to that account?',
       ],
       explanation:
-        '```\nDr  Checking Account   1,500\nDr  Savings Account      500\n    Cr  Salary Income       2,000\n```\nOne event (one paycheck) → **one compound entry** with three lines. Booking it as two separate entries would balance too, but would split one event in two.',
+        '```journal\nDr  Checking Account   1,500\nDr  Savings Account      500\n    Cr  Salary Income       2,000\n```\nOne event (one paycheck) → **one compound entry** with three lines. Booking it as two separate entries would balance too, but would split one event in two.',
       diagnosticExplanations: {
         WRONG_SIDE: 'Savings is an asset going up → debit.',
         SPLIT_ENTRY:
@@ -202,7 +202,7 @@ Here are three of your T-accounts with two transactions posted (numbers in brack
         'Transaction (2) touches Credit Card Payable and Checking. Which way is the card balance moving?',
       ],
       explanation:
-        '```\n(1) Dr  Groceries Expense      120\n        Cr  Credit Card Payable     120   ← groceries bought on the card\n(2) Dr  Credit Card Payable    120\n        Cr  Checking Account        120   ← card bill paid from checking\n```\nThe expense is recorded once, when the groceries were bought. Paying the card only settles the debt.',
+        '```journal\n(1) Groceries bought on the card\nDr  Groceries Expense      120\n    Cr  Credit Card Payable     120\n\n(2) Card bill paid from checking\nDr  Credit Card Payable    120\n    Cr  Checking Account        120\n```\nThe expense is recorded once, when the groceries were bought. Paying the card only settles the debt.',
       diagnosticExplanations: {
         WRONG_ROW: 'Keep each transaction in its own row: row 1 = the purchase, row 2 = the card payment.',
         WRONG_SIDE: "Copy each amount to the same side it's on in the T-account: left = debit, right = credit.",
@@ -252,7 +252,7 @@ Here are three of your T-accounts with two transactions posted (numbers in brack
       prompt: `
 Your journal shows these two entries:
 
-\`\`\`
+\`\`\`journal
 11-05  Birthday money from Grandma
   Dr  Checking Account      300
       Cr  Gifts Received         300
@@ -333,7 +333,7 @@ Your journal shows these two entries:
         'This is a compound entry: one debit, two credits. Do the credits add up to the debit?',
       ],
       explanation:
-        '```\nDr  Car                    20,000\n    Cr  Checking Account        4,000\n    Cr  Car Loan Payable       16,000\n```\nYou own a new asset (Car ↑ → debit), gave up $4,000 of another asset (Checking ↓ → credit), and took on $16,000 of debt (liability ↑ → credit). Assets 8,000 → 24,000; liabilities 0 → 16,000; **net worth unchanged at 8,000**. Buying a car isn\'t an expense the day you buy it — you still own it. (Wear and tear — depreciation — is covered for businesses in §9.)',
+        '```journal\nDr  Car                    20,000\n    Cr  Checking Account        4,000\n    Cr  Car Loan Payable       16,000\n```\nYou own a new asset (Car ↑ → debit), gave up $4,000 of another asset (Checking ↓ → credit), and took on $16,000 of debt (liability ↑ → credit). Assets 8,000 → 24,000; liabilities 0 → 16,000; **net worth unchanged at 8,000**. Buying a car isn\'t an expense the day you buy it — you still own it. (Wear and tear — depreciation — is covered for businesses in §9.)',
       diagnosticExplanations: {
         WRONG_SIDE: 'Car (asset) ↑ → debit. Checking (asset) ↓ → credit. Car Loan Payable (liability) ↑ → credit.',
         SPLIT_ENTRY:
@@ -396,7 +396,7 @@ Your journal shows these two entries:
         "Is the $100 gone for good? You expect it back. What kind of account represents money someone owes you?",
       ],
       explanation:
-        '```\nDr  Loan to a Friend   100\n    Cr  Cash                100\n```\nCash ↓ → credit. Your friend now **owes you** $100 — a claim to future money is an **asset** (a receivable) → debit. Net worth is unchanged; you swapped cash for an IOU.',
+        '```journal\nDr  Loan to a Friend   100\n    Cr  Cash                100\n```\nCash ↓ → credit. Your friend now **owes you** $100 — a claim to future money is an **asset** (a receivable) → debit. Net worth is unchanged; you swapped cash for an IOU.',
       diagnosticExplanations: {
         WRONG_SIDE: 'Loan to a Friend is an asset going up → debit. Cash going down → credit.',
         EXTRA_ACCOUNT:
@@ -451,7 +451,7 @@ Your journal shows these two entries:
         'Which asset goes away now that the debt is settled?',
       ],
       explanation:
-        "```\nDr  Checking Account    100\n    Cr  Loan to a Friend      100\n```\nChecking ↑ → debit. The IOU is settled → Loan to a Friend ↓ → credit. It's an asset swap — **not** income. You were already owed the $100; now you hold it in checking instead.",
+        "```journal\nDr  Checking Account    100\n    Cr  Loan to a Friend      100\n```\nChecking ↑ → debit. The IOU is settled → Loan to a Friend ↓ → credit. It's an asset swap — **not** income. You were already owed the $100; now you hold it in checking instead.",
       diagnosticExplanations: {
         WRONG_SIDE: 'Checking (asset) ↑ → debit. Loan to a Friend (asset) ↓ → credit.',
         EXTRA_ACCOUNT:
@@ -522,16 +522,21 @@ Your journal shows these two entries:
       prompt: `
 An engineer books your split paycheck ($1,500 to checking, $500 to savings) as **two** transactions:
 
-\`\`\`
-T1  Dr Checking 1,500  /  Cr Salary Income 1,500
-T2  Dr Savings    500  /  Cr Salary Income   500
+\`\`\`journal
+T1
+Dr  Checking            1,500
+    Cr  Salary Income        1,500
+
+T2
+Dr  Savings               500
+    Cr  Salary Income          500
 \`\`\`
 
 Both balance, and the final balances are correct. What's the best critique?
 `.trim(),
       hints: ['How many real-world events happened?', 'What would someone see if they looked at the books between T1 and T2, or if T2 failed?'],
       explanation:
-        'One business event should be **one atomic transaction**. Splitting it means there is a moment (or, if T2 fails or is retried, a permanent state) where the books show only part of the paycheck. A single compound entry — Dr Checking 1,500, Dr Savings 500 / Cr Salary Income 2,000 — commits all or nothing.',
+        'One business event should be **one atomic transaction**. Splitting it means there is a moment (or, if T2 fails or is retried, a permanent state) where the books show only part of the paycheck. A single compound entry commits all or nothing:\n\n```journal\nPayday (one compound entry)\nDr  Checking            1,500\nDr  Savings               500\n    Cr  Salary Income        2,000\n```',
       options: [
         { text: 'It splits one event into two transactions; if one fails or is retried, the books show a partial or doubled paycheck. Use one compound entry.', correct: true, explanation: 'Atomicity: one event, one transaction, all postings commit together.' },
         { text: "It's wrong because every transaction must have exactly two lines.", correct: false, explanation: 'Compound entries with three or more lines are normal and correct.' },
@@ -550,7 +555,7 @@ Both balance, and the final balances are correct. What's the best critique?
       prompt: "Review from §4. A customer withdraws **$200 in cash** from their **checking account** at the teller window. Book it in **First Example Bank's** books.",
       hints: ["Whose books? The bank's. Bills left the teller drawer — which account?", 'Does the bank owe the customer more or less now?'],
       explanation:
-        '```\nDr  Customer Deposits – Checking   200\n    Cr  Cash – Vault                    200\n```\nThe bank owes the customer less (liability ↓ → debit) and has fewer bills (asset ↓ → credit). Both sides of the bank\'s balance sheet shrink by 200.',
+        '```journal\nDr  Customer Deposits – Checking   200\n    Cr  Cash – Vault                    200\n```\nThe bank owes the customer less (liability ↓ → debit) and has fewer bills (asset ↓ → credit). Both sides of the bank\'s balance sheet shrink by 200.',
       diagnosticExplanations: {
         WRONG_SIDE: 'Customer Deposits is a liability: a decrease is a **debit**. Cash – Vault is an asset: a decrease is a **credit**.',
         EXTRA_ACCOUNT: "The bills came out of the teller drawer (**Cash – Vault**), not the bank's Fed account.",
@@ -617,7 +622,7 @@ Both balance, and the final balances are correct. What's the best critique?
         "Your Interest Income is the bank's… what? It costs the bank money.",
       ],
       explanation:
-        "```\nDr  Interest Expense                50\n    Cr  Customer Deposits – Savings       50\n```\nYour **Interest Income** is the bank's **Interest Expense**; your **Savings Account** asset is the bank's **Customer Deposits – Savings** liability. No cash leaves the bank — it simply owes you more.",
+        "```journal\nDr  Interest Expense                50\n    Cr  Customer Deposits – Savings       50\n```\nYour **Interest Income** is the bank's **Interest Expense**; your **Savings Account** asset is the bank's **Customer Deposits – Savings** liability. No cash leaves the bank — it simply owes you more.",
       diagnosticExplanations: {
         WRONG_SIDE: 'Interest Expense ↑ → debit. Customer Deposits – Savings (liability) ↑ → credit.',
         EXTRA_ACCOUNT:

@@ -1,0 +1,84 @@
+/* ---------- Journal entry sheet (src/app/journal.ts) ----------
+   One look for every journal entry in the app: simple, accountant-style. Account | Debit | Credit, debits first,
+   credit accounts indented, a light rule between lines, a totals line per entry with the Dr = Cr check. */
+.je {
+  margin: var(--space-3) 0 var(--space-4);
+  max-width: 40rem;
+  overflow-x: auto;
+}
+.je-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.je-table caption {
+  text-align: left;
+  color: var(--muted);
+  padding-bottom: var(--space-2);
+  font-size: 0.88rem;
+}
+.je-table th,
+.je-table td {
+  padding: 0.3rem 0.75rem;
+  text-align: left;
+}
+.je-table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--fg);
+}
+.je-table .je-num {
+  text-align: right;
+  width: 7.5rem;
+  white-space: nowrap;
+}
+.je-head th {
+  padding-top: 0.6rem;
+  font-weight: 650;
+  border-top: 1px solid var(--border);
+}
+.je-entry:first-of-type .je-head th {
+  border-top: 0;
+}
+.je-line td {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+/* Credit accounts are indented, as on a hand-written journal. */
+.je-line.is-cr .je-acct {
+  padding-left: 2.25rem;
+}
+.je-total td {
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-top: 1px solid var(--fg);
+  padding-bottom: 0.45rem;
+}
+.je-total .je-num {
+  font-weight: 650;
+  color: var(--fg);
+  /* the accountant's double underline under a total */
+  text-decoration: underline double;
+  text-underline-offset: 3px;
+}
+.je .is-ok {
+  color: var(--ok);
+}
+.je .is-bad {
+  color: var(--err);
+  font-weight: 700;
+}
+.je-empty {
+  color: var(--muted);
+  font-style: italic;
+}
+.je-error {
+  color: var(--err);
+  white-space: pre-wrap;
+}

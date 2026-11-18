@@ -78,7 +78,8 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
         '**Rent Expense increases.** Expense (shrinks equity) → normal side Dr → increase = **Dr**.',
       ],
       hints: ['Type → up or down → normal side.', 'DEALER: Dividends, Expenses, Assets are debit-normal.'],
-      explanation: 'Increases go on the normal side: Cash **Dr**, Credit Card Payable **Cr**, Salary Income **Cr**, Rent Expense **Dr**.',
+      explanation:
+        'Increases go on the normal side: Cash **Dr**, Credit Card Payable **Cr**, Salary Income **Cr**, Rent Expense **Dr**. The cheat sheet shows the normal side of every account type at a glance:\n\n<!-- figure:cheat-sheet -->',
       items: [
         { accountName: 'Cash', accountType: 'asset', change: 'increase', answer: 'dr', explanation: 'Assets increase with a debit.' },
         { accountName: 'Credit Card Payable', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'Liabilities increase with a credit.' },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseTEntry, tEntryHtml } from './tentry';
+import { orderLines, parseTEntry, tEntryHtml } from './tentry';
 
 const src = `You repay the loan
 Loan Payable (liability): Dr 1,000
@@ -29,6 +29,16 @@ describe('tentry', () => {
     expect(html.match(/tacct-amt is-down/g)).toHaveLength(2);
     expect(html.match(/tacct-amt is-up/g)).toHaveLength(1);
     expect(html).toContain('Dr $1,050 = Cr $1,050');
+  });
+
+  it('lists T-accounts Assets → Liabilities → Equity (revenue, expenses inside equity), whatever the authored order', () => {
+    const html = tEntryHtml(src); // authored: Loan Payable, Interest Expense, Checking Account
+    const names = [...html.matchAll(/class="tacct-name">([^<]+)</g)].map((m) => m[1]);
+    expect(names).toEqual(['Checking Account', 'Loan Payable', 'Interest Expense']);
+    expect(orderLines(parseTEntry('E\nRevenue (revenue): Cr 5\nCash (asset): Dr 5')[0]!.lines).map((l) => l.account)).toEqual([
+      'Cash',
+      'Revenue',
+    ]);
   });
 
   it('flags an unbalanced event and escapes text', () => {

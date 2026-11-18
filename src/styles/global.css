@@ -935,3 +935,8 @@ body:has(.layout.no-side) .menu-btn {
 .q-key .btn {
   margin-top: var(--space-2);
 }
+
+/* The cheat-sheet figure inside a Key concept box sits on the green panel. */
+.q-key .primer-figure {
+  margin: var(--space-3) 0;
+}

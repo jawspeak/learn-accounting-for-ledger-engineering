@@ -21,6 +21,19 @@
 import type { AccountType, Side } from '@contracts';
 import { engine } from '@engine';
 
+/**
+ * T-accounts are always listed in the course's canonical order — Assets, then Liabilities, then Equity
+ * (paid-in, retained, revenue, expenses, dividends) — the same order the builder's columns use. Ties keep the
+ * authored order.
+ */
+export function orderLines(lines: TLine[]): TLine[] {
+  const ordered = engine.orderColumns(
+    lines.map((l, i) => ({ accountId: String(i), type: l.type })),
+    lines.map((_, i) => String(i)),
+  );
+  return ordered.map((c) => lines[Number(c.accountId)]!);
+}
+
 export interface TLine {
   account: string;
   type: AccountType;
@@ -153,7 +166,7 @@ export function tEntryHtml(src: string): string {
         `<div class="tentry-row">` +
         `<div class="tentry-event"><span class="tentry-title">${esc(e.title)}</span>` +
         `<span class="tentry-sum ${ok ? 'is-ok' : 'is-bad'}"><span aria-hidden="true">${ok ? '✓' : '✗'}</span> Dr ${usd(t.dr)} ${ok ? '=' : '≠'} Cr ${usd(t.cr)}</span></div>` +
-        `<div class="tentry-ts">${e.lines.map(tAccountHtml).join('')}</div>` +
+        `<div class="tentry-ts">${orderLines(e.lines).map(tAccountHtml).join('')}</div>` +
         `</div>`
       );
     })

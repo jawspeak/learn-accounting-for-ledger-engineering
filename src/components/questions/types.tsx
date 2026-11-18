@@ -1,5 +1,6 @@
 import type { AccountType, AttemptState } from '@contracts';
 import { Markdown } from '../../app/Markdown';
+import { RichMarkdown } from '../../app/RichMarkdown';
 
 /** Controlled-component props shared by all non-booking question inputs. */
 export interface QuestionInputProps<P> {
@@ -77,7 +78,7 @@ export function KeyConcept({ text, next }: { text: string; next?: { href: string
       <h3 className="q-key-head">
         <span aria-hidden="true">✓</span> Key concept
       </h3>
-      <Markdown text={text} />
+      <RichMarkdown text={text} />
       {next && (
         <a className="btn" href={next.href}>
           Next: {next.title} <span aria-hidden="true">→</span>

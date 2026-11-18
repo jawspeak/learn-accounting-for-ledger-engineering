@@ -247,7 +247,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "The other $50 isn't paying off debt; it's the price of borrowing. Did it make you richer or poorer?",
       ],
       explanation:
-        '```\nDr  Loan Payable        1,000\nDr  Interest Expense       50\n    Cr  Checking Account      1,050\n```\nChecking (Asset) ↓ 1,050 → credit. The debt is gone → Loan Payable (Liability) ↓ 1,000 → debit. The $50 is the cost of borrowing → Interest Expense ↑ → debit. Assets fall 1,050 = liabilities fall 1,000 + equity falls 50. Repaying principal doesn\'t change your net worth; only the interest does.',
+        '```journal\nDr  Loan Payable        1,000\nDr  Interest Expense       50\n    Cr  Checking Account      1,050\n```\nChecking (Asset) ↓ 1,050 → credit. The debt is gone → Loan Payable (Liability) ↓ 1,000 → debit. The $50 is the cost of borrowing → Interest Expense ↑ → debit. Assets fall 1,050 = liabilities fall 1,000 + equity falls 50. Repaying principal doesn\'t change your net worth; only the interest does.',
       diagnosticExplanations: {
         WRONG_SIDE:
           'Paying down a liability is a **debit** (Loan Payable is credit-normal). Interest Expense going up is a debit. Checking going down is a credit.',
@@ -307,7 +307,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "The $50 isn't returning principal — it's what the bank earned for lending. What type of account?",
       ],
       explanation:
-        "```\nDr  Customer Deposits – Checking   1,050\n    Cr  Loans Receivable                1,000\n    Cr  Interest Income                    50\n```\nThe bank owes you 1,050 less (liability ↓ → debit). It is no longer owed the 1,000 principal (asset ↓ → credit). It earned 50 (revenue ↑ → credit). Liabilities fall 1,050 = assets fall 1,000 + equity rises 50. Mirror image of your entry: your Interest Expense is its Interest Income. And notice the repayment **destroyed** $1,050 of deposits.",
+        "```journal\nDr  Customer Deposits – Checking   1,050\n    Cr  Loans Receivable                1,000\n    Cr  Interest Income                    50\n```\nThe bank owes you 1,050 less (liability ↓ → debit). It is no longer owed the 1,000 principal (asset ↓ → credit). It earned 50 (revenue ↑ → credit). Liabilities fall 1,050 = assets fall 1,000 + equity rises 50. Mirror image of your entry: your Interest Expense is its Interest Income. And notice the repayment **destroyed** $1,050 of deposits.",
       diagnosticExplanations: {
         WRONG_SIDE:
           'Customer Deposits (liability) ↓ → debit. Loans Receivable (asset) ↓ → credit. Interest Income (revenue) ↑ → credit.',
@@ -360,7 +360,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "For the balance sheet: the car itself is unaffected. Interest Expense appears as its own line on the equity side; Net Worth itself doesn't change until period-end.",
       ],
       explanation:
-        '```\nDr  Car Loan Payable     350\nDr  Interest Expense      50\n    Cr  Checking Account      400\n```\nAfter: Checking 1,600; Car 18,000 (unchanged — paying the loan doesn\'t change the car); Car Loan Payable 14,650; equity = Net Worth 5,000 − Interest Expense 50 = 4,950. Check: 19,600 = 14,650 + 4,950 ✓.',
+        '```journal\nDr  Car Loan Payable     350\nDr  Interest Expense      50\n    Cr  Checking Account      400\n```\nAfter: Checking 1,600; Car 18,000 (unchanged — paying the loan doesn\'t change the car); Car Loan Payable 14,650; equity = Net Worth 5,000 − Interest Expense 50 = 4,950. Check: 19,600 = 14,650 + 4,950 ✓.',
       diagnosticExplanations: {
         WRONG_SIDE: 'Car Loan Payable (liability) ↓ → debit. Interest Expense ↑ → debit. Checking ↓ → credit.',
         WRONG_AMOUNT: 'Only the **350** of principal reduces the loan. The **50** of interest is an expense. Checking falls by the full **400**.',
@@ -440,7 +440,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "The borrower's Interest Expense is the bank's…?",
       ],
       explanation:
-        "```\nDr  Customer Deposits – Checking   200\n    Cr  Loans Receivable                180\n    Cr  Interest Income                  20\n```\nEach account flips: borrower's Checking (asset, Cr) ↔ bank's Customer Deposits (liability, **Dr**); Loan Payable (liability, Dr) ↔ Loans Receivable (asset, **Cr**); Interest Expense (Dr) ↔ Interest Income (**Cr**).",
+        "```journal\nDr  Customer Deposits – Checking   200\n    Cr  Loans Receivable                180\n    Cr  Interest Income                  20\n```\nEach account flips: borrower's Checking (asset, Cr) ↔ bank's Customer Deposits (liability, **Dr**); Loan Payable (liability, Dr) ↔ Loans Receivable (asset, **Cr**); Interest Expense (Dr) ↔ Interest Income (**Cr**).",
       diagnosticExplanations: {
         WRONG_SIDE: "Every account flips sides between borrower and lender. Don't copy the reference's sides.",
         COUNTERPARTY_ACCOUNT: "Loan Payable, Interest Expense and Checking Account are the borrower's accounts (the reference). The bank uses Loans Receivable, Interest Income and Customer Deposits – Checking.",
@@ -546,7 +546,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         'Review from §5. You pay your **$1,200 rent**: **$1,000 by transfer from checking** and **$200 in cash**. Book it in **your** books as **one** journal entry.',
       hints: ['One event, one entry — how many lines?', 'Which accounts did the money come out of, and what did it pay for?', 'Two credits, one debit.'],
       explanation:
-        '```\nDr  Rent Expense        1,200\n    Cr  Checking Account      1,000\n    Cr  Cash                    200\n```\nOne rent payment, paid from two sources: a compound entry with one debit and two credits.',
+        '```journal\nDr  Rent Expense        1,200\n    Cr  Checking Account      1,000\n    Cr  Cash                    200\n```\nOne rent payment, paid from two sources: a compound entry with one debit and two credits.',
       diagnosticExplanations: {
         SPLIT_ENTRY: 'It\'s one rent payment, so book one transaction with three lines rather than two separate entries.',
         WRONG_AMOUNT: 'Rent Expense is the full 1,200; Checking falls 1,000 and Cash falls 200.',
