@@ -397,6 +397,8 @@ const mod: SectionModule = {
       explanation:
         'Row by row:\n1. **Correct** as drafted: Dr Rent Expense 1,500 / Cr Cash 1,500.\n2. **Transposition**: Accounts Payable was credited 540 instead of 450 (Cr side 90 too big). Fix: Dr Inventory 450 / Cr Accounts Payable 450.\n3. **Wrong account** (balanced, so the TB couldn’t catch it): an owner draw is **Dividends**, not Wages Expense. Fix: Dr Dividends 500 / Cr Cash 500.\n4. **Wrong side**: Unearned Revenue was debited instead of credited (Dr side 400 too big). Fix: Dr Cash 200 / Cr Unearned Revenue – Gift Cards 200.\n\nNet TB effect of the drafts: +400 Dr (row 4) − 90 Dr (row 2) = debits exceed credits by **310**. Row 3 would have slipped through a balanced TB — it overstates expenses and understates net income by $500.',
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'cash', amount: usd(1800) }, { accountId: 'paid-in-capital', amount: usd(1800) }] },
       journalView: true,
       prefill: {
         locked: false,

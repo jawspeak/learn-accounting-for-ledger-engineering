@@ -447,6 +447,8 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         WRONG_AMOUNT: 'Principal 180 → Loans Receivable; interest 20 → Interest Income; deposit falls by 200.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'reserves-fed', amount: usd(200) }, { accountId: 'loans-receivable', amount: usd(180) }, { accountId: 'deposits-checking', amount: usd(200) }, { accountId: 'paid-in-capital', amount: usd(180) }] },
       trapAccounts: [loanPayableTrapForBank, yourCheckingTrap],
       solution: [
         {
@@ -553,6 +555,8 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         WRONG_SIDE: 'Rent Expense ↑ → debit. Checking and Cash (assets) ↓ → credit.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'checking', amount: usd(1000) }, { accountId: 'cash', amount: usd(200) }, { accountId: 'net-worth', amount: usd(1200) }] },
       journalView: true,
       trapAccounts: [
         {
@@ -603,6 +607,8 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         EXTRA_ACCOUNT: 'No cash or reserves move: the fee is taken from a balance the bank already holds — it simply owes the customer less.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'reserves-fed', amount: usd(35) }, { accountId: 'deposits-checking', amount: usd(35) }] },
       trapAccounts: [
         {
           id: 'bank-fees-expense',

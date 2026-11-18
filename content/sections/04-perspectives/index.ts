@@ -337,6 +337,8 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         COUNTERPARTY_ACCOUNT: "Customer Deposits accounts live in the bank's books. In yours, use **Checking Account** and **Savings Account**.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'savings', amount: usd(250) }, { accountId: 'net-worth', amount: usd(250) }] },
       trapAccounts: [
         {
           id: 'deposits-checking',
@@ -406,6 +408,8 @@ When you deposit $100, where does "your" money go? Not into a box with your name
           "No cash or reserves moved — both parties bank at First Example Bank. And the bank isn't paying rent: its Occupancy Expense is for its own branches.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'reserves-fed', amount: usd(1200) }, { accountId: 'deposits-checking', amount: usd(1200) }] },
       trapAccounts: [
         {
           id: 'rent-expense',
@@ -475,6 +479,8 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         COUNTERPARTY_ACCOUNT: "Fee Income and Customer Deposits are the bank's accounts. In your books: **Bank Fees Expense** and **Checking Account**.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'checking', amount: usd(10) }, { accountId: 'net-worth', amount: usd(10) }] },
       trapAccounts: [
         {
           id: 'fee-income',
@@ -545,6 +551,8 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         MISSING_ACCOUNT: "Money left the bank for another bank. Interbank payments settle in the banks' **reserve accounts at the Fed**.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'reserves-fed', amount: usd(90) }, { accountId: 'deposits-checking', amount: usd(90) }] },
       trapAccounts: [
         {
           id: 'utilities-expense',

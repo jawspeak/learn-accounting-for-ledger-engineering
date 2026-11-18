@@ -96,6 +96,8 @@ The **cheat sheet** (one click from anywhere) shows \`A = L + E\` and which side
         WRONG_TYPE: 'Both accounts are things you own — money the bank holds for you. That makes them **Assets** in your books.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'savings', amount: usd(50) }, { accountId: 'net-worth', amount: usd(50) }] },
       accountChoiceIds: ['cash', 'checking', 'savings'],
       trapAccounts: [customerDepositsTrap, transferExpenseTrap],
       solution: [
@@ -130,6 +132,8 @@ The **cheat sheet** (one click from anywhere) shows \`A = L + E\` and which side
         MISSING_ACCOUNT: 'Something has to balance the $20 debit to Savings. Where did those $20 come from?',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'cash', amount: usd(20) }, { accountId: 'net-worth', amount: usd(20) }] },
       accountChoiceIds: ['cash', 'checking', 'savings'],
       trapAccounts: [customerDepositsTrap, transferExpenseTrap],
       prefill: {
@@ -168,6 +172,8 @@ The **cheat sheet** (one click from anywhere) shows \`A = L + E\` and which side
         WRONG_AMOUNT: 'Both sides move by exactly the $40 you withdrew.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'savings', amount: usd(40) }, { accountId: 'net-worth', amount: usd(40) }] },
       accountChoiceIds: ['cash', 'checking', 'savings'],
       trapAccounts: [customerDepositsTrap, transferExpenseTrap],
       solution: [

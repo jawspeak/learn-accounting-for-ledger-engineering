@@ -84,6 +84,8 @@ Toggle the **journal view** in the builder to see your T-account entry as journa
         EXTRA_ACCOUNT: "A **debit** card takes money straight from checking — there's no card balance to pay later, so Credit Card Payable doesn't belong here.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'checking', amount: usd(50) }, { accountId: 'net-worth', amount: usd(50) }] },
       journalView: true,
       trapAccounts: [
         creditCardExpenseTrap,
@@ -209,6 +211,8 @@ Here are three of your T-accounts with two transactions posted (numbers in brack
         SPLIT_ENTRY: 'There are exactly two events here; each should be one row.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'checking', amount: usd(120) }, { accountId: 'net-worth', amount: usd(120) }] },
       journalView: true,
       trapAccounts: [
         creditCardExpenseTrap,
@@ -404,6 +408,8 @@ Your journal shows these two entries:
         MISSING_ACCOUNT: 'Your friend owes you $100; record that claim as an asset: **Loan to a Friend**.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'cash', amount: usd(100) }, { accountId: 'net-worth', amount: usd(100) }] },
       journalView: true,
       trapAccounts: [
         {
@@ -459,6 +465,8 @@ Your journal shows these two entries:
         MISSING_ACCOUNT: 'The IOU you recorded when you lent the money must be cleared: credit **Loan to a Friend**.',
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'loan-to-friend', amount: usd(100) }, { accountId: 'net-worth', amount: usd(100) }] },
       journalView: true,
       trapAccounts: [
         {
@@ -561,6 +569,8 @@ Both balance, and the final balances are correct. What's the best critique?
         EXTRA_ACCOUNT: "The bills came out of the teller drawer (**Cash – Vault**), not the bank's Fed account.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'vault-cash', amount: usd(200) }, { accountId: 'deposits-checking', amount: usd(200) }] },
       journalView: true,
       trapAccounts: [
         {

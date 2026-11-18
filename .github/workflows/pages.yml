@@ -1,6 +1,9 @@
-# Deploy to GitHub Pages. Manual trigger only until the owner enables automatic deploys.
+# Deploy to GitHub Pages on every push to main (and on demand from the Actions tab).
+# One-time setup: repo Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

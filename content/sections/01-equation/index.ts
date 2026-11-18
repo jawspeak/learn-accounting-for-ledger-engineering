@@ -287,6 +287,8 @@ Using \`A = L + PIC + Rev − Exp − Div\`, what are total **assets**?
         EXTRA_ACCOUNT: "Only two accounts change: Cash and Checking. Withdrawing your own money doesn't earn or cost you anything, so no income or expense account belongs here.",
       },
       showBalanceSheets: false,
+      // Starting balances so the entry doesn't take an account below zero.
+      opening: { lines: [{ accountId: 'checking', amount: usd(100) }, { accountId: 'net-worth', amount: usd(100) }] },
       trapAccounts: [
         {
           id: 'customer-deposits-checking',
