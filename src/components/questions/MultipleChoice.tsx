@@ -85,15 +85,9 @@ export function MultipleChoice({
                 {isSel && (
                   <Verdict
                     ok={o.correct}
-                    lead={
-                      problem.multi
-                        ? o.correct
-                          ? 'Yes — this one is true.'
-                          : 'No — this one isn’t true.'
-                        : o.correct
-                          ? 'Right.'
-                          : 'Not quite.'
-                    }
+                    // Neutral on purpose: a question may ask for statements that *can't* be true, so
+                    // "this one is true" would read as a double negative. The explanation says why.
+                    lead={o.correct ? 'Correct.' : problem.multi ? 'Not this one.' : 'Not quite.'}
                     why={
                       o.explanation + (!o.correct && !problem.multi ? ' Try another option.' : '')
                     }
@@ -114,9 +108,9 @@ export function MultipleChoice({
         <p className="note mc-progress" role="status">
           {foundRight === rightCount && pickedWrong === 0
             ? rightCount === 1
-              ? 'That’s the true statement.'
-              : `All ${rightCount} true statements found.`
-            : `${foundRight} of ${rightCount} true ${rightCount === 1 ? 'statement' : 'statements'} found${pickedWrong ? ` · untick the ${pickedWrong === 1 ? 'one' : pickedWrong} marked ✗` : ''}.`}
+              ? 'That’s the one.'
+              : `All ${rightCount} correct choices found.`
+            : `${foundRight} of ${rightCount} correct ${rightCount === 1 ? 'choice' : 'choices'} found${pickedWrong ? ` · untick the ${pickedWrong === 1 ? 'one' : pickedWrong} marked ✗` : ''}.`}
         </p>
       )}
     </fieldset>

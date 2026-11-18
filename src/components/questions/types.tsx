@@ -60,7 +60,7 @@ export function Mark({ i, correct, wrong }: { i: number; correct?: number[]; wro
  */
 export function Verdict({ ok, lead, why: raw }: { ok: boolean; lead?: string; why: string }) {
   // Authored explanations often open with their own "Yes —" / "No." / "Exactly." — the label already says it.
-  const why = raw.replace(/^\s*(yes|no|right|correct|exactly|true|false|nope)\b[\s.,!:;—–-]*/i, '');
+  const why = stripAnswerWord(raw);
   return (
     <div className={`q-verdict ${ok ? 'is-ok' : 'is-bad'}`} role="status" aria-live="polite">
       <span className="q-verdict-head">
@@ -69,6 +69,16 @@ export function Verdict({ ok, lead, why: raw }: { ok: boolean; lead?: string; wh
       <Markdown text={why} inline />
     </div>
   );
+}
+
+/**
+ * Drop a leading stand-alone answer word ("Yes —", "No.", "Exactly —") from an authored explanation, since the
+ * verdict label already says it — but only when punctuation follows, so "No money left the bank" or
+ * "Right side, wrong account" keep their meaning. The rest is capitalised.
+ */
+export function stripAnswerWord(text: string): string {
+  const out = text.replace(/^\s*(yes|no|right|correct|exactly|true|false|nope)\s*[.,!:;—–-]+\s*/i, '');
+  return out === text ? text : out.charAt(0).toUpperCase() + out.slice(1);
 }
 
 /** The problem's key concept, shown once the whole question is answered correctly. */

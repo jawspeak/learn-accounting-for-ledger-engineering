@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AttemptState } from '@contracts';
 import { QuestionInput, QuestionView, marksFor, type NonBookingProblem } from './QuestionView';
+import { stripAnswerWord } from './types';
 import {
   classifyFx,
   coaFx,
@@ -164,7 +165,7 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
     expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull();
 
     fireEvent.click(screen.getAllByRole('radio')[0]!);
-    expect(screen.getByText(/Right\./)).toBeTruthy();
+    expect(screen.getByText(/Correct\./)).toBeTruthy();
     expect(screen.getByText('Why not this one?')).toBeTruthy(); // the earlier wrong pick, kept
     const key = screen.getByRole('complementary', { name: 'Key concept' });
     expect(key.textContent).toContain('Because.');
@@ -174,13 +175,13 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
   it('multi select: each ticked option judged on its own, progress shown, done only with exactly the right set', () => {
     render(<QuestionView problem={mcMultiFx} />);
     fireEvent.click(screen.getAllByRole('checkbox')[1]!);
-    expect(screen.getByText(/No — this one isn’t true/)).toBeTruthy();
-    expect(screen.getByText(/0 of 1 true statement found · untick the one marked ✗/)).toBeTruthy();
+    expect(screen.getByText(/Not this one\./)).toBeTruthy();
+    expect(screen.getByText(/0 of 1 correct choice found · untick the one marked ✗/)).toBeTruthy();
     fireEvent.click(screen.getAllByRole('checkbox')[0]!);
-    expect(screen.getByText(/Yes — this one is true/)).toBeTruthy();
+    expect(screen.getByText(/Correct\./)).toBeTruthy();
     expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull(); // a wrong one is still ticked
     fireEvent.click(screen.getAllByRole('checkbox')[1]!);
-    expect(screen.getByText('That’s the true statement.')).toBeTruthy();
+    expect(screen.getByText('That’s the one.')).toBeTruthy();
     expect(screen.getByRole('complementary', { name: 'Key concept' })).toBeTruthy();
   });
 
@@ -194,6 +195,19 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
     fireEvent.click(screen.getAllByLabelText('Credit')[1]!);
     expect(screen.getAllByText(/Right —/)).toHaveLength(2);
     expect(screen.getByRole('complementary', { name: 'Key concept' })).toBeTruthy();
+  });
+});
+
+describe('stripAnswerWord', () => {
+  it('drops a stand-alone answer word, never one that is part of the sentence', () => {
+    expect(stripAnswerWord('Yes — the balance sheet grew on both sides.')).toBe('The balance sheet grew on both sides.');
+    expect(stripAnswerWord('No. The Fed holds one reserve balance.')).toBe('The Fed holds one reserve balance.');
+    expect(stripAnswerWord('Exactly — this is how lending creates money.')).toBe('This is how lending creates money.');
+    // These used to lose their first word and invert their meaning:
+    expect(stripAnswerWord('No money left the bank.')).toBe('No money left the bank.');
+    expect(stripAnswerWord("No other depositor's balance changed.")).toBe("No other depositor's balance changed.");
+    expect(stripAnswerWord('Right side, wrong account.')).toBe('Right side, wrong account.');
+    expect(stripAnswerWord("Can't be true: the left side grew.")).toBe("Can't be true: the left side grew.");
   });
 });
 

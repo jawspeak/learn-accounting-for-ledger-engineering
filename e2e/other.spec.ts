@@ -40,7 +40,7 @@ test('multiple choice: graded on each pick, explains why, key concept when right
   await page.goto('/#/p/00-dealer');
   await expect(check(page)).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Liabilities' }).check();
-  await expect(page.locator('.q-verdict.is-bad')).toContainText('No — this one isn’t true.');
+  await expect(page.locator('.q-verdict.is-bad')).toContainText('Not this one.');
   await page.getByRole('checkbox', { name: 'Liabilities' }).uncheck();
   await expect(page.locator('.q-verdict')).toHaveCount(0);
   for (const n of ['Assets', 'Expenses', 'Dividends / owner draws']) await page.getByRole('checkbox', { name: n }).check();
