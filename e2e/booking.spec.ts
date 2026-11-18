@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 test('keyboard-only booking: row balances, Check says correct', async ({ page }) => {
   const w = watchErrors(page);
   await enterCorrectCashToChecking(page);
-  await expect(page.locator('tr[data-row] .tab-rowcheck.is-ok')).toContainText('Balanced');
+  await expect(page.locator('.tab-balance-bar.is-ok')).toContainText('Debits = credits in every row');
   await page.getByRole('button', { name: 'Check answer' }).click();
   await expect(page.locator('.fb-headline')).toContainText('Correct!');
   await page.getByRole('button', { name: 'Why does this work?' }).click();

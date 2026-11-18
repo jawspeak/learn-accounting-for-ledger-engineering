@@ -274,25 +274,35 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     ...(offered.some((t) => t.type === current) ? [] : [{ type: current, label: typeLabel(current) }]),
   ];
 
-  const rowCheck = (r: TransactionRow) => {
-    if (r.postings.length === 0)
-      return (
-        <span className="tab-rowcheck is-empty">
-          <span aria-hidden="true">–</span>
-          <span className="sr-only">Empty row</span>
-        </span>
-      );
-    const t = engine.rowTotals(r);
-    return t.balanced ? (
-      <span className="tab-rowcheck is-ok">
-        <span aria-hidden="true">✓</span> Balanced
-      </span>
-    ) : (
-      <span className="tab-rowcheck is-bad">
-        <span aria-hidden="true">✗</span> Unbalanced: Dr {formatDollars(t.dr)} ≠ Cr {formatDollars(t.cr)}
-      </span>
-    );
-  };
+  // Dr = Cr per row, summarised in ONE bar above the grid (instead of a column on every row): quiet when every
+  // row balances, loud — naming the row — when one doesn't. Empty rows don't count yet.
+  const unbalanced = rows
+    .map((r, ri) => ({ r, ri, t: engine.rowTotals(r) }))
+    .filter(({ r, t }) => r.postings.length > 0 && !t.balanced);
+  const anyPosted = rows.some((r) => r.postings.length > 0);
+  const balanceBar = (
+    <p
+      className={`tab-balance-bar ${!anyPosted ? 'is-empty' : unbalanced.length ? 'is-bad' : 'is-ok'}`}
+      role="status"
+      aria-live="polite"
+    >
+      {!anyPosted ? (
+        <>Each row’s debits must equal its credits.</>
+      ) : unbalanced.length === 0 ? (
+        <>
+          <span aria-hidden="true">✓</span> Debits = credits in every row
+        </>
+      ) : (
+        <>
+          <span aria-hidden="true">✗</span>{' '}
+          {unbalanced
+            .map(({ ri, t }) => `Row ${ri + 1} doesn’t balance: Dr ${formatDollars(t.dr)} ≠ Cr ${formatDollars(t.cr)}`)
+            .join(' · ')}
+        </>
+      )}
+    </p>
+  );
+  const unbalancedIds = new Set(unbalanced.map(({ r }) => r.id));
 
   const grid = (
     <table className="tab-grid">
@@ -311,9 +321,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           ) : (
             bandCells
           )}
-          <th scope="col" rowSpan={HEAD_ROWS} className="tab-check-col">
-            Dr = Cr?
-          </th>
         </tr>
         <tr>{subBandCells}</tr>
         <tr>
@@ -428,7 +435,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
               <span className="tab-rowlabel">Opening</span>
             </th>
             {eachCol((c) => sideCells(c.accountId, openingOf.get(c.accountId), 'open'), eqCell)}
-            <td className="tab-check-col" />
           </tr>
         )}
         {rows.map((r, ri) => {
@@ -442,6 +448,13 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             >
               <th scope="row" className="tab-rowhead">
                 <span className="tab-rownum">{ri + 1}</span>
+                {unbalancedIds.has(r.id) && (
+                  <span className="tab-row-bad" title="This row doesn’t balance">
+                    <span aria-hidden="true">✗</span>
+                    <span className="sr-only"> (doesn’t balance)</span>
+                  </span>
+                )}
+                {isCorrectRow(correctParts, r.id) && <OkMark />}
                 {locked ? (
                   <>
                     {r.label && <span className="tab-rowlabel">{r.label}</span>}
@@ -519,10 +532,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                   );
                 });
               }, eqCell)}
-              <td className="tab-check-col">
-                {rowCheck(r)}
-                {isCorrectRow(correctParts, r.id) && <OkMark />}
-              </td>
             </tr>
           );
         })}
@@ -534,7 +543,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
               Balance
             </th>
             {eachCol((c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal', true), eqCell)}
-            <td className="tab-check-col" />
           </tr>
         </tfoot>
       )}
@@ -592,6 +600,8 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             />
           </div>
         )}
+        <div className="tab-grid-area">
+        {balanceBar}
         <div
           className="tab-scroll"
           ref={gridRef}
@@ -600,6 +610,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           tabIndex={0}
         >
           {showJournal ? <JournalView rows={rows} nameOf={nameOf} /> : grid}
+        </div>
         </div>
         {showBalanceSheets && (
           <div className="tab-bs-after">

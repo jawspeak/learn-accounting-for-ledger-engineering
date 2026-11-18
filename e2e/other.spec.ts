@@ -29,7 +29,7 @@ test('faded example: the given half is locked; the missing side goes in the same
   await picker.getByRole('button', { name: 'Enter amounts' }).click();
   await expect(page.getByRole('textbox', { name: 'Row 1 Cash Dr' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Row 1 Cash Cr' }).fill('20');
-  await expect(locked.locator('.tab-rowcheck.is-ok')).toContainText('Balanced');
+  await expect(page.locator('.tab-balance-bar.is-ok')).toContainText('Debits = credits in every row');
   await check(page).click();
   await expect(headline(page)).toContainText('Correct!');
   w.assertClean();
