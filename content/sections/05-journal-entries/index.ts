@@ -569,10 +569,10 @@ Both balance, and the final balances are correct. What's the best critique?
       prompt: "Review from §4. A customer withdraws **$200 in cash** from their **checking account** at the teller window. Book it in **First Example Bank's** books.",
       hints: ["Whose books? The bank's. Bills left the teller drawer — which account?", 'Does the bank owe the customer more or less now?'],
       explanation:
-        '```journal\nDr  Customer Deposits – Checking   200\n    Cr  Cash – Vault                    200\n```\nThe bank owes the customer less (liability ↓ → debit) and has fewer bills (asset ↓ → credit). Both sides of the bank\'s balance sheet shrink by 200.',
+        '```journal\nDr  Customer Deposits: Checking   200\n    Cr  Cash: Vault                    200\n```\nThe bank owes the customer less (liability ↓ → debit) and has fewer bills (asset ↓ → credit). Both sides of the bank\'s balance sheet shrink by 200.',
       diagnosticExplanations: {
-        WRONG_SIDE: 'Customer Deposits is a liability: a decrease is a **debit**. Cash – Vault is an asset: a decrease is a **credit**.',
-        EXTRA_ACCOUNT: "The bills came out of the teller drawer (**Cash – Vault**), not the bank's Fed account.",
+        WRONG_SIDE: 'Customer Deposits is a liability: a decrease is a **debit**. Cash: Vault is an asset: a decrease is a **credit**.',
+        EXTRA_ACCOUNT: "The bills came out of the teller drawer (**Cash: Vault**), not the bank's Fed account.",
       },
       showBalanceSheets: false,
       // Starting balances so the entry doesn't take an account below zero.
@@ -585,7 +585,7 @@ Both balance, and the final balances are correct. What's the best critique?
           type: 'asset',
           trap: {
             kind: 'counterparty',
-            explanation: "That's the **customer's** account in their own books. The bank records what it owes them: **Customer Deposits – Checking**.",
+            explanation: "That's the **customer's** account in their own books. The bank records what it owes them: **Customer Deposits: Checking**.",
           },
         },
         {
@@ -638,9 +638,9 @@ Both balance, and the final balances are correct. What's the best critique?
         "Your Interest Income is the bank's… what? It costs the bank money.",
       ],
       explanation:
-        "```journal\nDr  Interest Expense                50\n    Cr  Customer Deposits – Savings       50\n```\nYour **Interest Income** is the bank's **Interest Expense**; your **Savings Account** asset is the bank's **Customer Deposits – Savings** liability. No cash leaves the bank — it simply owes you more.",
+        "```journal\nDr  Interest Expense                50\n    Cr  Customer Deposits: Savings       50\n```\nYour **Interest Income** is the bank's **Interest Expense**; your **Savings Account** asset is the bank's **Customer Deposits: Savings** liability. No cash leaves the bank — it simply owes you more.",
       diagnosticExplanations: {
-        WRONG_SIDE: 'Interest Expense ↑ → debit. Customer Deposits – Savings (liability) ↑ → credit.',
+        WRONG_SIDE: 'Interest Expense ↑ → debit. Customer Deposits: Savings (liability) ↑ → credit.',
         EXTRA_ACCOUNT:
           "Interest Income is the bank's revenue from loans and securities. Here the bank is *paying* interest — its expense. (And Accrued Interest Payable isn't needed because we assume the bank books interest the day it pays it.)",
       },
@@ -653,7 +653,7 @@ Both balance, and the final balances are correct. What's the best critique?
           type: 'asset',
           trap: {
             kind: 'counterparty',
-            explanation: "That's **your** asset. In the bank's books, your savings balance is the liability **Customer Deposits – Savings**.",
+            explanation: "That's **your** asset. In the bank's books, your savings balance is the liability **Customer Deposits: Savings**.",
           },
         },
         {

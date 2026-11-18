@@ -139,7 +139,7 @@ const decemberTraps = [
     type: 'revenue' as const,
     trap: {
       kind: 'near-synonym' as const,
-      explanation: 'Redeemed gift cards become ordinary **Sales Revenue**; the liability **Unearned Revenue – Gift Cards** goes down.',
+      explanation: 'Redeemed gift cards become ordinary **Sales Revenue**; the liability **Unearned Revenue: Gift Cards** goes down.',
     },
   },
 ];
@@ -231,7 +231,7 @@ const mod: SectionModule = {
         'Row 6: no cash moves. What obligation shrinks, and what is earned?',
       ],
       explanation:
-        '4. **Dr Card Receivables 2,000 / Cr Sales Revenue 2,000.**\n5. **Dr Cash 1,940, Dr Card Processing Fees 60 / Cr Card Receivables 2,000.**\n6. **Dr Unearned Revenue – Gift Cards 100 / Cr Sales Revenue 100.**\n\nAfter row 6, December sales are 3,000 + 2,000 + 100 = **5,100**, and Card Receivables is back to zero.',
+        '4. **Dr Card Receivables 2,000 / Cr Sales Revenue 2,000.**\n5. **Dr Cash 1,940, Dr Card Processing Fees 60 / Cr Card Receivables 2,000.**\n6. **Dr Unearned Revenue: Gift Cards 100 / Cr Sales Revenue 100.**\n\nAfter row 6, December sales are 3,000 + 2,000 + 100 = **5,100**, and Card Receivables is back to zero.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(dec1),
@@ -324,7 +324,7 @@ const mod: SectionModule = {
           id: 'depreciation-payable-10',
           name: 'Depreciation Payable',
           type: 'liability',
-          trap: { kind: 'other', explanation: 'Nobody is owed depreciation. Credit the contra-asset **Accumulated Depreciation – Equipment**.' },
+          trap: { kind: 'other', explanation: 'Nobody is owed depreciation. Credit the contra-asset **Accumulated Depreciation: Equipment**.' },
         },
       ],
       diagnosticExplanations: {
@@ -351,7 +351,7 @@ const mod: SectionModule = {
         'Card Receivables ends at zero — leave it out. Both columns should total 35,100.',
       ],
       explanation:
-        '| Account | Dr | Cr |\n|---|---:|---:|\n| Cash | 10,640 | |\n| Savings Account | 3,650 | |\n| Accounts Receivable | 200 | |\n| Allowance for Doubtful Accounts | | 30 |\n| Inventory | 1,000 | |\n| Prepaid Rent | 1,500 | |\n| Equipment | 12,000 | |\n| Accumulated Depreciation | | 2,600 |\n| Accounts Payable | | 1,650 |\n| Wages Payable | | 700 |\n| Unearned Revenue – Gift Cards | | 200 |\n| Paid-in Capital | | 20,000 |\n| Retained Earnings | | 4,820 |\n| Sales Revenue | | 5,100 |\n| Cost of Goods Sold | 1,600 | |\n| Wages Expense | 2,500 | |\n| Rent Expense | 1,500 | |\n| Utilities Expense | 250 | |\n| Depreciation Expense | 200 | |\n| Card Processing Fees | 60 | |\n| **Total** | **35,100** | **35,100** |\n\nRetained Earnings is still the Dec 1 figure — December’s profit (5,100 − 6,110 = **−1,010**, a loss) only reaches it at closing.',
+        '| Account | Dr | Cr |\n|---|---:|---:|\n| Cash | 10,640 | |\n| Savings Account | 3,650 | |\n| Accounts Receivable | 200 | |\n| Allowance for Doubtful Accounts | | 30 |\n| Inventory | 1,000 | |\n| Prepaid Rent | 1,500 | |\n| Equipment | 12,000 | |\n| Accumulated Depreciation | | 2,600 |\n| Accounts Payable | | 1,650 |\n| Wages Payable | | 700 |\n| Unearned Revenue: Gift Cards | | 200 |\n| Paid-in Capital | | 20,000 |\n| Retained Earnings | | 4,820 |\n| Sales Revenue | | 5,100 |\n| Cost of Goods Sold | 1,600 | |\n| Wages Expense | 2,500 | |\n| Rent Expense | 1,500 | |\n| Utilities Expense | 250 | |\n| Depreciation Expense | 200 | |\n| Card Processing Fees | 60 | |\n| **Total** | **35,100** | **35,100** |\n\nRetained Earnings is still the Dec 1 figure — December’s profit (5,100 − 6,110 = **−1,010**, a loss) only reaches it at closing.',
       opening: bs(dec1),
       rows: [r1, r2, r3, r4, r5, r6, r7, r8, r9, a1, a2, a3, a4],
       answer: {
@@ -395,7 +395,7 @@ const mod: SectionModule = {
         'Now look at the balanced rows. Does every account make sense for its event? (Is an owner draw a wage?)',
       ],
       explanation:
-        'Row by row:\n1. **Correct** as drafted: Dr Rent Expense 1,500 / Cr Cash 1,500.\n2. **Transposition**: Accounts Payable was credited 540 instead of 450 (Cr side 90 too big). Fix: Dr Inventory 450 / Cr Accounts Payable 450.\n3. **Wrong account** (balanced, so the TB couldn’t catch it): an owner draw is **Dividends**, not Wages Expense. Fix: Dr Dividends 500 / Cr Cash 500.\n4. **Wrong side**: Unearned Revenue was debited instead of credited (Dr side 400 too big). Fix: Dr Cash 200 / Cr Unearned Revenue – Gift Cards 200.\n\nNet TB effect of the drafts: +400 Dr (row 4) − 90 Dr (row 2) = debits exceed credits by **310**. Row 3 would have slipped through a balanced TB — it overstates expenses and understates net income by $500.',
+        'Row by row:\n1. **Correct** as drafted: Dr Rent Expense 1,500 / Cr Cash 1,500.\n2. **Transposition**: Accounts Payable was credited 540 instead of 450 (Cr side 90 too big). Fix: Dr Inventory 450 / Cr Accounts Payable 450.\n3. **Wrong account** (balanced, so the TB couldn’t catch it): an owner draw is **Dividends**, not Wages Expense. Fix: Dr Dividends 500 / Cr Cash 500.\n4. **Wrong side**: Unearned Revenue was debited instead of credited (Dr side 400 too big). Fix: Dr Cash 200 / Cr Unearned Revenue: Gift Cards 200.\n\nNet TB effect of the drafts: +400 Dr (row 4) − 90 Dr (row 2) = debits exceed credits by **310**. Row 3 would have slipped through a balanced TB — it overstates expenses and understates net income by $500.',
       showBalanceSheets: false,
       // Starting balances so the entry doesn't take an account below zero.
       opening: { lines: [{ accountId: 'cash', amount: usd(1800) }, { accountId: 'paid-in-capital', amount: usd(1800) }] },
@@ -425,7 +425,7 @@ const mod: SectionModule = {
           type: 'revenue',
           trap: {
             kind: 'near-synonym',
-            explanation: 'Selling a gift card creates a liability — **Unearned Revenue – Gift Cards** — not revenue.',
+            explanation: 'Selling a gift card creates a liability — **Unearned Revenue: Gift Cards** — not revenue.',
           },
         },
       ],
@@ -493,7 +493,7 @@ const mod: SectionModule = {
         'Card money in flight is a receivable from the processor. A gift card is an obligation to deliver coffee.',
       ],
       explanation:
-        '**Dr Card Receivables 25 / Cr Unearned Revenue – Gift Cards 25.** Both halves combine earlier ideas: the cash is in transit (card receivable, §7) and nothing has been earned yet (unearned revenue, §8). Revenue comes when the card is redeemed.',
+        '**Dr Card Receivables 25 / Cr Unearned Revenue: Gift Cards 25.** Both halves combine earlier ideas: the cash is in transit (card receivable, §7) and nothing has been earned yet (unearned revenue, §8). Revenue comes when the card is redeemed.',
       showBalanceSheets: true,
       opening: bs({ cash: 1000, 'paid-in-capital': 1000 }),
       trapAccounts: [
@@ -507,7 +507,7 @@ const mod: SectionModule = {
           id: 'prepaid-gift-card',
           name: 'Prepaid Gift Card',
           type: 'asset',
-          trap: { kind: 'counterparty', explanation: 'That’s the **customer’s** asset. For Bean There, the gift card is an obligation: Unearned Revenue – Gift Cards.' },
+          trap: { kind: 'counterparty', explanation: 'That’s the **customer’s** asset. For Bean There, the gift card is an obligation: Unearned Revenue: Gift Cards.' },
         },
       ],
       diagnosticExplanations: {
@@ -543,7 +543,7 @@ const mod: SectionModule = {
         },
         {
           id: 'owner-loan-10',
-          name: 'Loan Payable – Owner',
+          name: 'Loan Payable: Owner',
           type: 'liability',
           trap: { kind: 'near-synonym', explanation: 'Maya isn’t lending the grinder; she’s investing it. No repayment is due → equity.' },
         },

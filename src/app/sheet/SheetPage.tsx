@@ -43,6 +43,7 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
   const [urlLength, setUrlLength] = useState(0);
   const [status, setStatus] = useState('');
   const [newBooks, setNewBooks] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
 
   const current = state.entities[clampEntity(ei, state)];
 
@@ -158,7 +159,7 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
           />
           {newBooks ? (
             <span className="sh-confirm">
-              Add another set of books (the other party)?
+              Add another party’s books?
               <button
                 type="button"
                 className="btn"
@@ -225,13 +226,35 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
         >
           Sort A = L + E
         </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => replaceBoard(emptyState(), 'Started a new, empty sheet.')}
-        >
-          New sheet
-        </button>
+        {/* Starts a blank sheet in place of this one. Links already copied keep their own copy of the old
+            sheet, but this tab's URL is replaced — so confirm first, like the sandbox's New / Clear. */}
+        {confirmNew ? (
+          <span className="sh-confirm" role="group" aria-label="Confirm new sheet">
+            Start over with a blank sheet? This one is cleared (copy its link first to keep it).
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setConfirmNew(false);
+                replaceBoard(emptyState(), 'Started a new, empty sheet.');
+              }}
+            >
+              Yes, start over
+            </button>
+            <button type="button" className="btn" onClick={() => setConfirmNew(false)}>
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setConfirmNew(true)}
+            title="Clear everything and start a blank sheet"
+          >
+            New sheet
+          </button>
+        )}
         <span className="sh-checks">
           <span className={unbalanced.length ? 'is-bad' : 'is-ok'}>
             <span aria-hidden="true">{unbalanced.length ? '✗' : '✓'}</span>{' '}

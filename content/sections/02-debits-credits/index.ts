@@ -167,8 +167,8 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
       explanation:
         'Customer Deposits (liability) ↑ → **Cr**, ↓ → **Dr**. Loans Receivable (asset) ↑ → **Dr**. Reserves at the Fed (asset) ↓ → **Cr**. Fee Income (revenue) ↑ → **Cr**. Interest Expense ↑ → **Dr**.',
       items: [
-        { accountName: 'Customer Deposits – Checking', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'A customer deposits money → the bank owes more → liability up → credit.' },
-        { accountName: 'Customer Deposits – Checking', accountType: 'liability', change: 'decrease', answer: 'dr', explanation: 'A customer withdraws → the bank owes less → liability down → debit.' },
+        { accountName: 'Customer Deposits: Checking', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'A customer deposits money → the bank owes more → liability up → credit.' },
+        { accountName: 'Customer Deposits: Checking', accountType: 'liability', change: 'decrease', answer: 'dr', explanation: 'A customer withdraws → the bank owes less → liability down → debit.' },
         { accountName: 'Loans Receivable', accountType: 'asset', change: 'increase', answer: 'dr', explanation: 'The bank makes a loan → it is owed more → asset up → debit.' },
         { accountName: 'Reserves at the Federal Reserve', accountType: 'asset', change: 'decrease', answer: 'cr', explanation: "Money leaves the bank's Fed account → asset down → credit." },
         { accountName: 'Fee Income', accountType: 'revenue', change: 'increase', answer: 'cr', explanation: 'Revenue up → credit.' },
@@ -242,7 +242,7 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
       difficulty: 3,
       multi: false,
       prompt:
-        "First Example Bank's ledger stores postings as signed amounts: **debit = positive, credit = negative**. For one customer's account in **Customer Deposits – Checking**, `SUM(amount)` returns **−1,000.00**. What should the bank's app show the customer?",
+        "First Example Bank's ledger stores postings as signed amounts: **debit = positive, credit = negative**. For one customer's account in **Customer Deposits: Checking**, `SUM(amount)` returns **−1,000.00**. What should the bank's app show the customer?",
       hints: ["What type is Customer Deposits in the bank's books, and what is its normal side?", 'Under this convention, a normal credit balance sums to a negative number.'],
       explanation:
         "Customer Deposits is a **liability** — credit-normal. Under a Dr = +, Cr = − convention, a healthy credit balance sums **negative**. Flip the sign for display: the bank owes the customer **$1,000**, a perfectly normal balance.",
@@ -262,12 +262,12 @@ Same event, two sets of books, opposite sides. That's why "credit = money coming
       difficulty: 1,
       prompt: 'Review from §1. Classify each account (whose books it is in is shown in brackets).',
       hints: ['Own → asset, owe → liability, owner\'s leftover → equity.', "For the bank, a customer's deposit is something it owes."],
-      explanation: 'Car and Loans Receivable are owned/owed-to → **Assets**. Customer Deposits – Savings and Credit Card Payable are owed → **Liabilities**. Retained Earnings → **Equity**. Fee Income → **Revenue**. Transportation Expense → **Expense**.',
+      explanation: 'Car and Loans Receivable are owned/owed-to → **Assets**. Customer Deposits: Savings and Credit Card Payable are owed → **Liabilities**. Retained Earnings → **Equity**. Fee Income → **Revenue**. Transportation Expense → **Expense**.',
       buckets: ['asset', 'liability', 'equity', 'revenue', 'expense'],
       items: [
         { label: 'Car [you]', entityId: 'you', answer: 'asset', explanation: 'You own it.' },
         { label: 'Loans Receivable [bank]', entityId: 'bank', answer: 'asset', explanation: 'Borrowers owe the bank.' },
-        { label: 'Customer Deposits – Savings [bank]', entityId: 'bank', answer: 'liability', explanation: 'The bank owes savers.' },
+        { label: 'Customer Deposits: Savings [bank]', entityId: 'bank', answer: 'liability', explanation: 'The bank owes savers.' },
         { label: 'Credit Card Payable [you]', entityId: 'you', answer: 'liability', explanation: 'You owe the card issuer.' },
         { label: 'Retained Earnings [bank]', entityId: 'bank', answer: 'equity', explanation: "Accumulated profits — owners' equity." },
         { label: 'Fee Income [bank]', entityId: 'bank', answer: 'revenue', explanation: 'Fees charged to customers.' },

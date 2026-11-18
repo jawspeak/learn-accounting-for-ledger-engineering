@@ -84,11 +84,11 @@ const mod: SectionModule = {
       walkthrough: [
         '**Start from the account you know.** A month of the machine’s useful life has been consumed — that’s **Depreciation Expense**. Expenses increase on the **debit** side: Dr Depreciation Expense 200.',
         'The machine is worth less on the books, so assets must go down by $200. But we want **Equipment** to keep showing the original cost of $12,000.',
-        'So the credit goes to the **contra-asset** **Accumulated Depreciation – Equipment**. Contra-assets are credit-normal, so an increase is a credit: Cr Accumulated Depreciation 200.',
+        'So the credit goes to the **contra-asset** **Accumulated Depreciation: Equipment**. Contra-assets are credit-normal, so an increase is a credit: Cr Accumulated Depreciation 200.',
         'Check: net book value goes from 12,000 − 1,000 = 11,000 to 12,000 − 1,200 = **10,800**. Assets −200 = Equity −200 (via the expense). ✓',
       ],
       explanation:
-        '**Dr Depreciation Expense 200 / Cr Accumulated Depreciation – Equipment 200.** The expense spreads the machine’s cost over the months it helps earn revenue. The credit goes to the contra account so the balance sheet shows:\n\n| | |\n|---|---|\n| Equipment (cost) | 12,000 |\n| Less: Accumulated Depreciation | (1,200) |\n| **Net book value** | **10,800** |\n\nNo cash moves — depreciation is an allocation of a cost paid long ago.',
+        '**Dr Depreciation Expense 200 / Cr Accumulated Depreciation: Equipment 200.** The expense spreads the machine’s cost over the months it helps earn revenue. The credit goes to the contra account so the balance sheet shows:\n\n| | |\n|---|---|\n| Equipment (cost) | 12,000 |\n| Less: Accumulated Depreciation | (1,200) |\n| **Net book value** | **10,800** |\n\nNo cash moves — depreciation is an allocation of a cost paid long ago.',
       showBalanceSheets: true,
       opening: bs({ cash: 4000, equipment: 12000, 'accum-depreciation': 1000, 'paid-in-capital': 14000, 'retained-earnings': 1000 }),
       trapAccounts: [
@@ -113,8 +113,8 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Crediting **Equipment** directly would lose the original cost. Use the contra account **Accumulated Depreciation – Equipment**. And no cash moves.',
-        MISSING_ACCOUNT: 'The credit side belongs in **Accumulated Depreciation – Equipment**, which reduces Equipment on the balance sheet.',
+          'Crediting **Equipment** directly would lose the original cost. Use the contra account **Accumulated Depreciation: Equipment**. And no cash moves.',
+        MISSING_ACCOUNT: 'The credit side belongs in **Accumulated Depreciation: Equipment**, which reduces Equipment on the balance sheet.',
         WRONG_TYPE: 'Accumulated Depreciation is a **contra-asset** (credit-normal), not a liability or an expense.',
         WRONG_SIDE: 'A contra-asset increases with a **credit** — the opposite of its parent asset.',
       },
@@ -135,7 +135,7 @@ const mod: SectionModule = {
         'Which expense records using up equipment, and which contra account takes the credit?',
       ],
       explanation:
-        '**Row 2: Dr Depreciation Expense 200 / Cr Accumulated Depreciation – Equipment 200** ($12,000 ÷ 60 months).\n\nNotice what row 1 did: buying the machine was an **asset swap** (cash → equipment) with no expense. The cost reaches the income statement gradually, $200 a month, through depreciation.',
+        '**Row 2: Dr Depreciation Expense 200 / Cr Accumulated Depreciation: Equipment 200** ($12,000 ÷ 60 months).\n\nNotice what row 1 did: buying the machine was an **asset swap** (cash → equipment) with no expense. The cost reaches the income statement gradually, $200 a month, through depreciation.',
       showBalanceSheets: true,
       opening: bs({ cash: 20000, 'paid-in-capital': 20000 }),
       prefill: {
@@ -158,13 +158,13 @@ const mod: SectionModule = {
           type: 'liability',
           trap: {
             kind: 'other',
-            explanation: 'Nobody is owed anything. The credit reduces the asset via **Accumulated Depreciation – Equipment**.',
+            explanation: 'Nobody is owed anything. The credit reduces the asset via **Accumulated Depreciation: Equipment**.',
           },
         },
       ],
       diagnosticExplanations: {
         WRONG_AMOUNT: '$12,000 over 5 years = $2,400 a year = **$200 a month**.',
-        EXTRA_ACCOUNT: 'Don’t credit Equipment directly; it stays at cost. Credit **Accumulated Depreciation – Equipment**.',
+        EXTRA_ACCOUNT: 'Don’t credit Equipment directly; it stays at cost. Credit **Accumulated Depreciation: Equipment**.',
       },
       solution: [
         row('t1', 'Buy espresso machine', dr('equipment', 12000), cr('cash', 12000)),
@@ -258,7 +258,7 @@ const mod: SectionModule = {
         },
         {
           id: 'bankrupt-client-payable',
-          name: 'Accounts Payable – Bankrupt Client',
+          name: 'Accounts Payable: Bankrupt Client',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -384,7 +384,7 @@ const mod: SectionModule = {
       difficulty: 2,
       multi: true,
       prompt:
-        'Bean There’s balance sheet shows:\n\n| | |\n|---|---|\n| Equipment | 12,000 |\n| Less: Accumulated Depreciation – Equipment | (3,000) |\n| **Net** | **9,000** |\n\nSelect **all** true statements.',
+        'Bean There’s balance sheet shows:\n\n| | |\n|---|---|\n| Equipment | 12,000 |\n| Less: Accumulated Depreciation: Equipment | (3,000) |\n| **Net** | **9,000** |\n\nSelect **all** true statements.',
       hints: ['What’s the normal side of a contra-asset?', 'When Bean There recorded the $3,000 of depreciation, did any cash move?'],
       explanation:
         'Accumulated Depreciation is a **contra-asset**: credit-normal, shown as a reduction of Equipment, giving a net book value of $9,000. It’s not a liability (nobody is owed) and not a cash reserve (depreciation moves no cash). At $200/month, $3,000 means 15 months of depreciation have been recorded.',
@@ -418,7 +418,7 @@ const mod: SectionModule = {
       trapAccounts: [
         {
           id: 'accum-rent',
-          name: 'Accumulated Amortization – Rent',
+          name: 'Accumulated Amortization: Rent',
           type: 'contra-asset',
           contraOf: 'prepaid-rent',
           trap: {
@@ -452,7 +452,7 @@ const mod: SectionModule = {
         'Maya withdraws **$300** in small bills from Bean There’s business checking account to stock the till. Book this in **First Example Bank’s** books (Bean There’s accounts are in **Business Deposits**).',
       hints: ['What leaves the bank physically?', 'After the withdrawal, does the bank owe Bean There more or less?'],
       explanation:
-        '**Dr Business Deposits 300 / Cr Cash – Vault 300.** The bank’s liability to Bean There shrinks (debit a liability) and its vault cash shrinks (credit an asset). Both sides of the bank’s balance sheet go down by $300. No expense — the bank is just returning money it owed.',
+        '**Dr Business Deposits 300 / Cr Cash: Vault 300.** The bank’s liability to Bean There shrinks (debit a liability) and its vault cash shrinks (credit an asset). Both sides of the bank’s balance sheet go down by $300. No expense — the bank is just returning money it owed.',
       showBalanceSheets: true,
       opening: bs({
         'vault-cash': 5000,

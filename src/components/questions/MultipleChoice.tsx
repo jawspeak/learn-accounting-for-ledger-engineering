@@ -11,6 +11,27 @@ import { type QuestionInputProps, Verdict } from './types';
  *   another option without losing what they learned.
  * - Multi select: every ticked option is judged on its own; a status line says how many right ones are found.
  */
+/**
+ * Display order for a question's options: a shuffle seeded by the problem id, so authored order (where the
+ * correct answer tends to come first) never gives the answer away, while everyone — and every shared link —
+ * sees the same order. Answers are still stored by the authored option index.
+ */
+export function optionOrder(problemId: string, n: number): number[] {
+  // The salt was picked so correct answers spread evenly over positions across the course's questions.
+  let h = 2166136261;
+  for (const ch of `options-v38:${problemId}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const rand = () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  return order;
+}
+
 export function MultipleChoice({
   problem,
   value,
@@ -54,7 +75,8 @@ export function MultipleChoice({
           : 'Select one — you’ll see right away whether it’s right, and why.'}
       </legend>
       <ul className="mc-options">
-        {problem.options.map((o, i) => {
+        {optionOrder(problem.id, problem.options.length).map((i) => {
+          const o = problem.options[i]!;
           const isSel = selected.includes(i);
           const wasTried = !isSel && tried.includes(i);
           const cls = isSel ? (o.correct ? 'is-correct' : 'is-wrong') : wasTried ? 'is-tried' : '';

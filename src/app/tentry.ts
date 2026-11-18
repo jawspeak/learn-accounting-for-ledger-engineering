@@ -9,7 +9,7 @@
  * Checking Account (asset): Cr 1,050
  *
  * The bank receives your payment
- * Customer Deposits – Checking (liability): Dr 1,050
+ * Customer Deposits: Checking (liability): Dr 1,050
  * Loans Receivable (asset): Cr 1,000
  * Interest Income (revenue): Cr 50
  * ```

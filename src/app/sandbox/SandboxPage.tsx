@@ -241,7 +241,8 @@ export function SandboxPage({ data }: { data?: string }) {
             }))
           }
         >
-          {state.entities.length ? '+ Add the other party’s perspective' : '+ Add an entity'}
+          {/* "another", not "the other": a board can hold any number of parties' books. */}
+          {state.entities.length ? '+ Add another party’s perspective' : '+ Add an entity'}
         </button>
       </div>
     </article>

@@ -3,7 +3,7 @@ import type { EntityCoA } from '@contracts';
 /**
  * Zap — a P2P payments fintech, accrual basis. Owned by C2.
  * Customer funds are held in an FBO account at First Example Bank and shown on Zap's balance sheet
- * (gross-up model): Cash – FBO (restricted asset) and an equal liability to customers.
+ * (gross-up model): Cash: FBO (restricted asset) and an equal liability to customers.
  * Customer wallets are shown as one liability account per customer so P2P transfers are visible;
  * in production these would be sub-ledger accounts rolling up to one GL control account
  * "Customer Balances Payable".
@@ -17,19 +17,19 @@ const zap: EntityCoA = {
     // Assets
     {
       id: 'cash-operating',
-      name: 'Cash – Operating',
+      name: 'Cash: Operating',
       type: 'asset',
       description: "Zap's own money, in its operating account at First Example Bank.",
     },
     {
       id: 'cash-fbo',
-      name: 'Cash – FBO (Restricted)',
+      name: 'Cash: FBO (Restricted)',
       type: 'asset',
       description: "Customers' money held in the FBO account at First Example Bank. Zap controls it but may not spend it.",
     },
     {
       id: 'cash-in-transit',
-      name: 'Cash in Transit – Incoming ACH',
+      name: 'Cash in Transit: Incoming ACH',
       type: 'asset',
       description: 'Incoming ACH transfers that have been initiated but have not yet landed in the FBO account.',
     },
@@ -44,15 +44,15 @@ const zap: EntityCoA = {
     // Liabilities
     {
       id: 'cbp-alice',
-      name: 'Customer Balances Payable – Alice',
+      name: 'Customer Balances Payable: Alice',
       type: 'liability',
       description: "What Zap owes Alice: her wallet balance. (Sub-ledger account under the Customer Balances Payable control account.)",
     },
-    { id: 'cbp-bob', name: 'Customer Balances Payable – Bob', type: 'liability', description: "What Zap owes Bob: his wallet balance." },
-    { id: 'cbp-carol', name: 'Customer Balances Payable – Carol', type: 'liability', description: "What Zap owes Carol: her wallet balance." },
+    { id: 'cbp-bob', name: 'Customer Balances Payable: Bob', type: 'liability', description: "What Zap owes Bob: his wallet balance." },
+    { id: 'cbp-carol', name: 'Customer Balances Payable: Carol', type: 'liability', description: "What Zap owes Carol: her wallet balance." },
     {
       id: 'ach-cashout-clearing',
-      name: 'Clearing – Pending ACH Cash-outs',
+      name: 'Clearing: Pending ACH Cash-outs',
       type: 'liability',
       description: 'Cash-outs a customer has requested and Zap has deducted from their wallet, but the ACH has not settled out of the FBO account yet.',
     },

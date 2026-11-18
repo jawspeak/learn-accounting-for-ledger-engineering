@@ -28,7 +28,7 @@ const yourCheckingTrap: TrapAccount = {
   trap: {
     kind: 'counterparty',
     explanation:
-      "**Checking Account** (an asset) is how *you* record your balance in *your* books. We're in the **bank's** books: the bank *owes* you that money, so it's a liability — **Customer Deposits – Checking**.",
+      "**Checking Account** (an asset) is how *you* record your balance in *your* books. We're in the **bank's** books: the bank *owes* you that money, so it's a liability — **Customer Deposits: Checking**.",
   },
 };
 
@@ -54,12 +54,12 @@ Every event between two parties is recorded **twice — once in each party's boo
 
 | Event | **Your** books | **Bank's** books |
 |---|---|---|
-| You deposit $100 cash | Dr Checking (A↑) / Cr Cash (A↓) | Dr Cash – Vault (A↑) / Cr Customer Deposits – Checking (L↑) |
-| Checking → savings $500 | Dr Savings (A↑) / Cr Checking (A↓) | Dr Deposits – Checking (L↓) / Cr Deposits – Savings (L↑) |
+| You deposit $100 cash | Dr Checking (A↑) / Cr Cash (A↓) | Dr Cash: Vault (A↑) / Cr Customer Deposits: Checking (L↑) |
+| Checking → savings $500 | Dr Savings (A↑) / Cr Checking (A↓) | Dr Deposits: Checking (L↓) / Cr Deposits: Savings (L↑) |
 
 Notice:
 
-- **Your asset is the bank's liability.** Your $1,000 "Checking Account" is, to the bank, $1,000 it **owes** you: *Customer Deposits – Checking*.
+- **Your asset is the bank's liability.** Your $1,000 "Checking Account" is, to the bank, $1,000 it **owes** you: *Customer Deposits: Checking*.
 - **An asset swap for you can be a liability swap for the bank.** Moving money between your own accounts changes *which* debt the bank owes you, not how much.
 - **Accounts never cross the boundary.** "Customer Deposits" never appears in your books; "Checking Account" never appears in the bank's. Using the other party's account is the most common perspective error.
 
@@ -72,7 +72,7 @@ Notice:
 When you deposit $100, where does "your" money go? Not into a box with your name on it.
 
 - **A bank's "cash" is mostly its [[reserve balance]] at the Federal Reserve** — the bank's own account at the Fed, used to settle payments with other banks — plus **vault cash** (bills in the vault, teller drawers and ATMs). (Some smaller banks hold much of it as balances at a larger *correspondent* bank instead — same idea, one more hop.)
-- **Your deposit is the bank's liability**, not a pot of money. The bank owes you $100. The $100 of bills you handed over became the bank's asset (Cash – Vault), and it's **[[fungible]]**: the bank may ship surplus bills to the Fed (vault cash ↓, reserves ↑), use reserves to settle other customers' payments, buy securities, or fund loans.
+- **Your deposit is the bank's liability**, not a pot of money. The bank owes you $100. The $100 of bills you handed over became the bank's asset (Cash: Vault), and it's **[[fungible]]**: the bank may ship surplus bills to the Fed (vault cash ↓, reserves ↑), use reserves to settle other customers' payments, buy securities, or fund loans.
 - **There is no 1:1 mapping** from your deposit to a slice of the Fed balance — and there won't be. Deposits sit on the right side of the bank's [[balance sheet]]; reserves, securities and loans sit on the left. Only the totals tie out (A = L + E).
 - **Banks hold only a fraction of deposits as reserves.** For accuracy: the US statutory reserve requirement has been **0% since March 2020**. Banks hold reserves for [[liquidity]], payment [[settlement]] and other regulatory reasons (such as liquidity rules), not because of a fixed ratio.
 - What protects you is the bank's **equity** (a loss-absorbing cushion), regulation, and deposit insurance (FDIC, up to the insured limit — currently $250,000 per depositor, per bank, per ownership category) — not segregation of your particular dollars.
@@ -80,7 +80,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
       },
     ],
     lens: `
-**Ledger-engineer's lens.** Each entity has its **own [[ledger]]**; one real-world event produces **one transaction per ledger**, never a shared one. In a bank's core ledger, every customer's balance is a **[[sub-ledger]] account** that rolls up into a **GL [[control account]]** (\`Customer Deposits – Checking\`) — and both are **liabilities** (credit-normal). If your fintech or bank data model shows customer balances as assets, you've modeled the customer's perspective by mistake. A good test: the sum of all customer sub-ledger balances must equal the GL control account, every day.
+**Ledger-engineer's lens.** Each entity has its **own [[ledger]]**; one real-world event produces **one transaction per ledger**, never a shared one. In a bank's core ledger, every customer's balance is a **[[sub-ledger]] account** that rolls up into a **GL [[control account]]** (\`Customer Deposits: Checking\`) — and both are **liabilities** (credit-normal). If your fintech or bank data model shows customer balances as assets, you've modeled the customer's perspective by mistake. A good test: the sum of all customer sub-ledger balances must equal the GL control account, every day.
 `.trim(),
     problemIds: [
       '04-bank-atm-withdrawal',
@@ -109,10 +109,10 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         "You withdraw **$60 in cash from your checking account** at one of First Example Bank's ATMs. You booked this in §3 in your own books. Now book it in **the bank's** books.",
       walkthrough: [
         "**Whose books?** First Example Bank's. Forget your Cash and Checking accounts — they don't exist here.",
-        "**Start from the account you're sure about:** $60 of bills physically left the ATM. The ATM's cash is the bank's asset **Cash – Vault**, and it went **down**.",
-        'Asset ↓ → **Cr Cash – Vault 60**.',
+        "**Start from the account you're sure about:** $60 of bills physically left the ATM. The ATM's cash is the bank's asset **Cash: Vault**, and it went **down**.",
+        'Asset ↓ → **Cr Cash: Vault 60**.',
         'The row needs a $60 debit. What else changed? The bank now **owes you $60 less** — your deposit balance dropped.',
-        'What the bank owes depositors is a **liability**: Customer Deposits – Checking. Liability ↓ → **Dr Customer Deposits – Checking 60**.',
+        'What the bank owes depositors is a **liability**: Customer Deposits: Checking. Liability ↓ → **Dr Customer Deposits: Checking 60**.',
         'Compare with your books (Dr Cash / Cr Checking): your asset swap is the bank\'s **shrinking balance sheet** — assets and liabilities both fall by 60. The bank\'s equity is untouched.',
       ],
       hints: [
@@ -120,12 +120,12 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         'After the withdrawal, does the bank owe you more or less? What type of account records what the bank owes?',
       ],
       explanation:
-        "Cash – Vault (Asset) ↓ → **Cr Cash – Vault 60**. The bank owes you $60 less → Customer Deposits – Checking (Liability) ↓ → **Dr Customer Deposits – Checking 60**. Assets and liabilities both fall by 60; equity unchanged. In your books the same event was an asset swap (Dr Cash / Cr Checking).",
+        "Cash: Vault (Asset) ↓ → **Cr Cash: Vault 60**. The bank owes you $60 less → Customer Deposits: Checking (Liability) ↓ → **Dr Customer Deposits: Checking 60**. Assets and liabilities both fall by 60; equity unchanged. In your books the same event was an asset swap (Dr Cash / Cr Checking).",
       diagnosticExplanations: {
         WRONG_SIDE:
-          'Customer Deposits is a **liability** (credit-normal). The bank owes you *less*, so it is **debited**. Cash – Vault is an asset that went down → credited.',
+          'Customer Deposits is a **liability** (credit-normal). The bank owes you *less*, so it is **debited**. Cash: Vault is an asset that went down → credited.',
         EXTRA_ACCOUNT:
-          'Only two accounts change. Bills left the ATM, so the asset that falls is **Cash – Vault**, not Reserves at the Federal Reserve. Reserves only move when money moves between banks (or when the bank orders/ships cash with the Fed).',
+          'Only two accounts change. Bills left the ATM, so the asset that falls is **Cash: Vault**, not Reserves at the Federal Reserve. Reserves only move when money moves between banks (or when the bank orders/ships cash with the Fed).',
       },
       showBalanceSheets: true,
       opening: bankOpening,
@@ -137,7 +137,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
           type: 'asset',
           trap: {
             kind: 'counterparty',
-            explanation: "**Cash** (your wallet) is in *your* books. In the bank's books the bills that left the ATM were **Cash – Vault**.",
+            explanation: "**Cash** (your wallet) is in *your* books. In the bank's books the bills that left the ATM were **Cash: Vault**.",
           },
         },
       ],
@@ -169,11 +169,11 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         "Maple Street Robotics' balance went down. In the bank's books, what type of account is a business customer's balance, and which side decreases it?",
       ],
       explanation:
-        "The bank owes you more → **Cr Customer Deposits – Checking 2,000** (given). It owes Maple Street Robotics less → **Dr Business Deposits 2,000**. No money left the bank, so no asset changes: it's a **liability swap**. Your *Salary Income* and your employer's *Salary Expense* don't appear here — the bank only records what it owes whom.",
+        "The bank owes you more → **Cr Customer Deposits: Checking 2,000** (given). It owes Maple Street Robotics less → **Dr Business Deposits 2,000**. No money left the bank, so no asset changes: it's a **liability swap**. Your *Salary Income* and your employer's *Salary Expense* don't appear here — the bank only records what it owes whom.",
       diagnosticExplanations: {
         WRONG_SIDE: "Business Deposits is a liability. The bank owes the employer **less**, so it is **debited**.",
         EXTRA_ACCOUNT:
-          "No money left the bank — both customers bank here — so no asset (Cash – Vault or Reserves) changes. And salary isn't the bank's income or expense.",
+          "No money left the bank — both customers bank here — so no asset (Cash: Vault or Reserves) changes. And salary isn't the bank's income or expense.",
         MISSING_ACCOUNT: "The $2,000 came out of Maple Street Robotics' account. What the bank owes a business customer is **Business Deposits**.",
       },
       showBalanceSheets: true,
@@ -231,12 +231,12 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         'The bank now owes you $100 more. Liabilities increase on which side?',
       ],
       explanation:
-        "Bills in the teller drawer ↑ → Cash – Vault (Asset) → **Dr Cash – Vault 100**. The bank owes you $100 more → Customer Deposits – Checking (Liability) ↑ → **Cr Customer Deposits – Checking 100**. Both assets and liabilities grow by 100; the bank's equity is unchanged — taking a deposit doesn't make the bank richer. In your books the same event was an asset swap (Dr Checking / Cr Cash).",
+        "Bills in the teller drawer ↑ → Cash: Vault (Asset) → **Dr Cash: Vault 100**. The bank owes you $100 more → Customer Deposits: Checking (Liability) ↑ → **Cr Customer Deposits: Checking 100**. Both assets and liabilities grow by 100; the bank's equity is unchanged — taking a deposit doesn't make the bank richer. In your books the same event was an asset swap (Dr Checking / Cr Cash).",
       diagnosticExplanations: {
         WRONG_SIDE:
-          "Customer Deposits – Checking is a liability (credit-normal) that went **up** → credit. Cash – Vault is an asset that went **up** → debit.",
+          "Customer Deposits: Checking is a liability (credit-normal) that went **up** → credit. Cash: Vault is an asset that went **up** → debit.",
         EXTRA_ACCOUNT:
-          "The bills went into the teller drawer — **Cash – Vault** — not to the Fed. (Later the bank may ship surplus bills to the Fed: Dr Reserves / Cr Cash – Vault. That's a separate event.)",
+          "The bills went into the teller drawer — **Cash: Vault** — not to the Fed. (Later the bank may ship surplus bills to the Fed: Dr Reserves / Cr Cash: Vault. That's a separate event.)",
         WRONG_TYPE: "To the bank, your deposit is money it **owes** you on demand — a **Liability**.",
       },
       showBalanceSheets: true,
@@ -269,7 +269,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         'Liabilities decrease on the debit side and increase on the credit side.',
       ],
       explanation:
-        "Nothing entered or left the bank, so no asset changes. The bank owes you $500 less on checking → **Dr Customer Deposits – Checking 500**, and $500 more on savings → **Cr Customer Deposits – Savings 500**. A **liability swap**: total liabilities and equity are unchanged. Your asset swap is the bank's liability swap.",
+        "Nothing entered or left the bank, so no asset changes. The bank owes you $500 less on checking → **Dr Customer Deposits: Checking 500**, and $500 more on savings → **Cr Customer Deposits: Savings 500**. A **liability swap**: total liabilities and equity are unchanged. Your asset swap is the bank's liability swap.",
       diagnosticExplanations: {
         WRONG_SIDE: 'Both are liabilities (credit-normal). Checking deposits went **down** → debit; savings deposits went **up** → credit.',
         EXTRA_ACCOUNT: "No money moved in or out of the bank, so no cash or reserves account changes — and moving your balance isn't income or expense for the bank.",
@@ -284,7 +284,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
           type: 'asset',
           trap: {
             kind: 'counterparty',
-            explanation: "**Savings Account** (asset) is *your* record. To the bank, your savings balance is a liability: **Customer Deposits – Savings**.",
+            explanation: "**Savings Account** (asset) is *your* record. To the bank, your savings balance is a liability: **Customer Deposits: Savings**.",
           },
         },
       ],
@@ -342,7 +342,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
       trapAccounts: [
         {
           id: 'deposits-checking',
-          name: 'Customer Deposits – Checking',
+          name: 'Customer Deposits: Checking',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -351,7 +351,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         },
         {
           id: 'deposits-savings',
-          name: 'Customer Deposits – Savings',
+          name: 'Customer Deposits: Savings',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -400,10 +400,10 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         "Did any money leave the bank? The landlord banks here too. What does the bank now owe the landlord?",
       ],
       explanation:
-        "The bank owes you $1,200 less → **Dr Customer Deposits – Checking 1,200**. It owes Oakwood Property Management $1,200 more → **Cr Business Deposits 1,200**. No money left the bank, so no asset changes. Your **Rent Expense** has no counterpart in the bank's books: the expense is about *your* net worth; the bank just moved a balance from one depositor to another.",
+        "The bank owes you $1,200 less → **Dr Customer Deposits: Checking 1,200**. It owes Oakwood Property Management $1,200 more → **Cr Business Deposits 1,200**. No money left the bank, so no asset changes. Your **Rent Expense** has no counterpart in the bank's books: the expense is about *your* net worth; the bank just moved a balance from one depositor to another.",
       diagnosticExplanations: {
         WRONG_SIDE: "Both bank accounts are liabilities. Yours shrinks (debit); the landlord's grows (credit).",
-        COUNTERPARTY_ACCOUNT: "Rent Expense and Checking Account are in *your* books (the reference). The bank records deposits it owes — **Customer Deposits – Checking** and **Business Deposits**.",
+        COUNTERPARTY_ACCOUNT: "Rent Expense and Checking Account are in *your* books (the reference). The bank records deposits it owes — **Customer Deposits: Checking** and **Business Deposits**.",
         EXTRA_ACCOUNT:
           "No cash or reserves moved — both parties bank at First Example Bank. And the bank isn't paying rent: its Occupancy Expense is for its own branches.",
       },
@@ -493,7 +493,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         },
         {
           id: 'deposits-checking',
-          name: 'Customer Deposits – Checking',
+          name: 'Customer Deposits: Checking',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -542,7 +542,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         "Banks settle with each other through their accounts at the Fed. Which of First Example Bank's assets went down?",
       ],
       explanation:
-        "The bank owes you $90 less → **Dr Customer Deposits – Checking 90**. To pay the electric company's bank, First Example Bank transfers $90 of its **reserves at the Fed** → **Cr Reserves at the Federal Reserve 90**. Compare with the previous rewrite: when the payee banks *at the same bank*, it's a liability swap; when the payee banks *elsewhere*, the bank's reserves leave. (In reality payments like ACH settle in batches, with an in-transit step — we skip that here and revisit clearing in §11.)",
+        "The bank owes you $90 less → **Dr Customer Deposits: Checking 90**. To pay the electric company's bank, First Example Bank transfers $90 of its **reserves at the Fed** → **Cr Reserves at the Federal Reserve 90**. Compare with the previous rewrite: when the payee banks *at the same bank*, it's a liability swap; when the payee banks *elsewhere*, the bank's reserves leave. (In reality payments like ACH settle in batches, with an in-transit step — we skip that here and revisit clearing in §11.)",
       diagnosticExplanations: {
         WRONG_SIDE: 'Customer Deposits (liability) went down → debit. Reserves (asset) went down → credit.',
         COUNTERPARTY_ACCOUNT: "Utilities Expense and Checking Account are your accounts. The bank has no electricity expense here.",
@@ -594,7 +594,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
       explanation:
         "Your deposit is a **liability** of the bank: it owes you $100. The bills became the bank's asset and are **fungible** — the bank can move them around its asset side (vault → Fed reserves → securities or loans) without changing what it owes you. There's no account at the Fed with your name on it, and since March 2020 the US statutory reserve requirement has been 0%.",
       options: [
-        { text: 'The bank owes you $100; on its books that is a liability.', correct: true, explanation: 'Yes — Customer Deposits – Checking.' },
+        { text: 'The bank owes you $100; on its books that is a liability.', correct: true, explanation: 'Yes — Customer Deposits: Checking.' },
         { text: "Your $100 sits in a sub-account at the Federal Reserve with your name on it.", correct: false, explanation: "No. The Fed holds one reserve balance for the whole bank. There's no 1:1 mapping from your deposit to any slice of it." },
         { text: 'By law, the bank must keep at least 10% of your deposit as reserves.', correct: false, explanation: 'The US statutory reserve requirement has been **0% since March 2020**. Banks hold reserves for liquidity and other regulatory reasons, not a fixed ratio.' },
         { text: 'The bank may have shipped the bills to the Fed or used the money to fund loans or buy securities — and it still owes you exactly $100.', correct: true, explanation: 'Right. Moves on the asset side don\'t change the liability to you.' },
@@ -615,7 +615,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         "You didn't give anything up and you don't owe it back. What kind of account explains a gain?",
       ],
       explanation:
-        "Savings (Asset) ↑ → **Dr Savings Account 50**. You earned it → **Cr Interest Income 50** (Revenue ↑ → credit). Your net worth rose by $50. (In the bank's books, the mirror image is Dr Interest Expense / Cr Customer Deposits – Savings.)",
+        "Savings (Asset) ↑ → **Dr Savings Account 50**. You earned it → **Cr Interest Income 50** (Revenue ↑ → credit). Your net worth rose by $50. (In the bank's books, the mirror image is Dr Interest Expense / Cr Customer Deposits: Savings.)",
       diagnosticExplanations: {
         WRONG_SIDE: 'Interest Income is revenue → credit-normal → credited when it goes up. Savings is an asset going up → debit.',
         EXTRA_ACCOUNT: "Only Savings and Interest Income change. Don't credit Net Worth directly — use the income account so you can see where the gain came from.",
@@ -633,7 +633,7 @@ When you deposit $100, where does "your" money go? Not into a box with your name
         },
         {
           id: 'deposits-savings',
-          name: 'Customer Deposits – Savings',
+          name: 'Customer Deposits: Savings',
           type: 'liability',
           trap: {
             kind: 'counterparty',

@@ -149,7 +149,7 @@ describe('coa-design', () => {
     id: '12-coa',
     kind: 'coa-design',
     candidates: [
-      { name: 'Cash – FBO', answerType: 'asset', required: true, explanation: 'E0' },
+      { name: 'Cash: FBO', answerType: 'asset', required: true, explanation: 'E0' },
       { name: 'Customer Balances Payable', answerType: 'liability', required: true, explanation: 'E1' },
       { name: 'Inventory', answerType: 'asset', required: false, explanation: 'E2' },
     ],

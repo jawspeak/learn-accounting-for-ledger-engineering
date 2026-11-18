@@ -31,7 +31,7 @@ export function emptyState(): SandboxState {
   return { v: 1, title: '', scenario: '', entities: [newEntity([], 'You')] };
 }
 
-/** kebab-case slug: "Cash – Vault" → "cash-vault". Never empty. */
+/** kebab-case slug: "Cash: Vault" → "cash-vault". Never empty. */
 export function slugify(name: string, fallback = 'account'): string {
   const s = name
     .normalize('NFKD')

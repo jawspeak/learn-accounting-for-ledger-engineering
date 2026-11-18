@@ -23,7 +23,7 @@ const coffee: EntityCoA = {
     },
     {
       id: 'savings',
-      name: 'Savings Account – First Example Bank',
+      name: 'Savings Account: First Example Bank',
       type: 'asset',
       description: 'Interest-bearing savings account at First Example Bank.',
     },
@@ -36,12 +36,12 @@ const coffee: EntityCoA = {
       description: 'Estimate of receivables we expect never to collect. Reduces Accounts Receivable on the balance sheet.',
     },
     { id: 'interest-receivable', name: 'Interest Receivable', type: 'asset', description: 'Interest earned on savings but not yet paid into the account.' },
-    { id: 'inventory', name: 'Inventory – Beans & Supplies', type: 'asset', description: 'Coffee beans, milk, cups and lids on hand.' },
+    { id: 'inventory', name: 'Inventory: Beans & Supplies', type: 'asset', description: 'Coffee beans, milk, cups and lids on hand.' },
     { id: 'prepaid-rent', name: 'Prepaid Rent', type: 'asset', description: 'Rent paid in advance for months not yet used.' },
     { id: 'equipment', name: 'Equipment', type: 'asset', description: 'Espresso machine, grinders and other equipment, at original cost.' },
     {
       id: 'accum-depreciation',
-      name: 'Accumulated Depreciation – Equipment',
+      name: 'Accumulated Depreciation: Equipment',
       type: 'contra-asset',
       contraOf: 'equipment',
       description: 'Total depreciation recorded so far on equipment. Reduces Equipment on the balance sheet.',
@@ -51,7 +51,7 @@ const coffee: EntityCoA = {
     { id: 'wages-payable', name: 'Wages Payable', type: 'liability', description: 'Wages employees have earned but have not been paid yet.' },
     {
       id: 'unearned-gift-cards',
-      name: 'Unearned Revenue – Gift Cards',
+      name: 'Unearned Revenue: Gift Cards',
       type: 'liability',
       description: 'Cash received for gift cards not yet redeemed — we owe the coffee.',
     },

@@ -24,7 +24,7 @@ Assets = Liabilities + Paid-in Capital + Retained Earnings + Revenue − Expense
 
 The **[[income statement]]** for a period is just *Revenue − Expenses = Net Income*, read off those accounts. At period end, **[[closing entries]]** move each revenue and expense balance (and dividends) into **[[Retained Earnings]]**, so the next month starts at zero.
 
-Two Bean There conventions to know:
+Two conventions to know:
 - Bean There is a small corporation: Maya's investment goes to **[[Paid-in Capital]]**, and money she takes out goes to **Dividends (Owner Draws)**. (In a sole proprietorship they're Owner's Capital and Owner's Draws, and there's no separate Retained Earnings: profit and draws close straight into Owner's Capital.)
 - Beans and cups are bought into **[[Inventory]]**. At month-end Maya counts what's left, and what was used becomes **[[Cost of Goods Sold]]**. So a sale only touches cash/receivables and Sales Revenue.
 
@@ -104,7 +104,7 @@ const mod: SectionModule = {
       trapAccounts: [
         {
           id: 'owner-loan-payable',
-          name: 'Loan Payable – Owner',
+          name: 'Loan Payable: Owner',
           type: 'liability',
           trap: {
             kind: 'near-synonym',
@@ -148,7 +148,7 @@ const mod: SectionModule = {
         'Nothing was paid today. Which liability records a bill you’ll pay later?',
       ],
       explanation:
-        '**Dr Inventory – Beans & Supplies 300 / Cr Accounts Payable 300.** Bean There gained an asset (supplies it hasn’t used yet) and a liability (it owes the supplier). No cash moved, and no expense yet — the supplies become **Cost of Goods Sold** only when they’re used up (we record that at the month-end count).',
+        '**Dr Inventory: Beans & Supplies 300 / Cr Accounts Payable 300.** Bean There gained an asset (supplies it hasn’t used yet) and a liability (it owes the supplier). No cash moved, and no expense yet — the supplies become **Cost of Goods Sold** only when they’re used up (we record that at the month-end count).',
       showBalanceSheets: true,
       opening: bs({ cash: 20000, 'paid-in-capital': 20000 }),
       prefill: {
@@ -168,7 +168,7 @@ const mod: SectionModule = {
         },
         {
           id: 'roastery-sales-revenue',
-          name: 'Roastery Ridge – Sales Revenue',
+          name: 'Roastery Ridge: Sales Revenue',
           type: 'revenue',
           trap: {
             kind: 'counterparty',
@@ -263,7 +263,7 @@ const mod: SectionModule = {
         },
         {
           id: 'sales-net-of-fees',
-          name: 'Sales Revenue – Net of Fees',
+          name: 'Sales Revenue: Net of Fees',
           type: 'revenue',
           trap: {
             kind: 'near-synonym',
@@ -550,7 +550,7 @@ const mod: SectionModule = {
         'To the bank, a customer’s deposit is a liability, not revenue.',
       ],
       explanation:
-        '**Dr Cash – Vault 600 / Cr Business Deposits 600.** The bank receives physical currency (Asset ↑ → debit) and now owes Bean There $600 more (Liability ↑ → credit).\n\nCompare with Bean There’s books: its Cash account covers both the till and the bank account, so moving till cash into the bank needs **no entry at all** (with separate accounts it would be an asset-to-asset swap). For the bank, the same event is a *new asset + new liability*.',
+        '**Dr Cash: Vault 600 / Cr Business Deposits 600.** The bank receives physical currency (Asset ↑ → debit) and now owes Bean There $600 more (Liability ↑ → credit).\n\nCompare with Bean There’s books: its Cash account covers both the till and the bank account, so moving till cash into the bank needs **no entry at all** (with separate accounts it would be an asset-to-asset swap). For the bank, the same event is a *new asset + new liability*.',
       showBalanceSheets: true,
       opening: bs({
         'vault-cash': 5000,
@@ -582,7 +582,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Bean There is a business customer — the bank uses **Business Deposits**, not Customer Deposits – Checking (for personal customers). And physical cash goes to the vault, not to the Fed.',
+          'Bean There is a business customer — the bank uses **Business Deposits**, not Customer Deposits: Checking (for personal customers). And physical cash goes to the vault, not to the Fed.',
         WRONG_SIDE: 'For the bank, a deposit is a liability → it increases with a **credit**. The vault cash (Asset) increases with a **debit**.',
       },
       solution: [row('t1', 'Bean There deposits till cash', dr('vault-cash', 600), cr('deposits-business', 600))],
@@ -603,7 +603,7 @@ const mod: SectionModule = {
       explanation:
         'Assets: Inventory, Card Receivables, Savings Account. Liability: Accounts Payable — and **Business Deposits in the bank’s books** (what the bank owes Bean There). Equity: Paid-in Capital. Revenue: Sales Revenue. Expense: Card Processing Fees. Dividend: Dividends (Owner Draws).',
       items: [
-        { label: 'Inventory – Beans & Supplies', entityId: 'coffee', answer: 'asset', explanation: 'Beans on the shelf are owned and not yet used up.' },
+        { label: 'Inventory: Beans & Supplies', entityId: 'coffee', answer: 'asset', explanation: 'Beans on the shelf are owned and not yet used up.' },
         { label: 'Accounts Payable', entityId: 'coffee', answer: 'liability', explanation: 'Bills Bean There owes suppliers.' },
         { label: 'Paid-in Capital', entityId: 'coffee', answer: 'equity', explanation: 'Maya’s investment in the company.' },
         { label: 'Sales Revenue', entityId: 'coffee', answer: 'revenue', explanation: 'Earned by selling coffee.' },
@@ -616,7 +616,7 @@ const mod: SectionModule = {
           explanation: 'The processor owes Bean There this money; it arrives in a day or two.',
         },
         {
-          label: 'Savings Account – First Example Bank',
+          label: 'Savings Account: First Example Bank',
           entityId: 'coffee',
           answer: 'asset',
           explanation: 'Bean There owns the money in its savings account.',

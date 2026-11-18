@@ -15,17 +15,17 @@ export const YOU = {
 } satisfies Record<string, Account>;
 
 export const BANK = {
-  vaultCash: { id: 'vault-cash', name: 'Cash – Vault', type: 'asset' },
+  vaultCash: { id: 'vault-cash', name: 'Cash: Vault', type: 'asset' },
   reserves: { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset' },
   loansReceivable: { id: 'loans-receivable', name: 'Loans Receivable', type: 'asset' },
-  depositsChecking: { id: 'deposits-checking', name: 'Customer Deposits – Checking', type: 'liability' },
-  depositsFbo: { id: 'deposits-fbo', name: 'Deposits – FBO Accounts', type: 'liability' },
+  depositsChecking: { id: 'deposits-checking', name: 'Customer Deposits: Checking', type: 'liability' },
+  depositsFbo: { id: 'deposits-fbo', name: 'Deposits: FBO Accounts', type: 'liability' },
   paidInCapital: { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   interestIncome: { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
 } satisfies Record<string, Account>;
 
 export const COFFEE = {
-  savings: { id: 'savings', name: 'Savings Account – First Example Bank', type: 'asset' },
+  savings: { id: 'savings', name: 'Savings Account: First Example Bank', type: 'asset' },
   interestReceivable: { id: 'interest-receivable', name: 'Interest Receivable', type: 'asset' },
   paidInCapital: { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   interestIncome: { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
@@ -34,10 +34,10 @@ export const COFFEE = {
 export const ZAP = {
   cashFbo: {
     id: 'cash-fbo',
-    name: 'Cash – FBO (Restricted)',
+    name: 'Cash: FBO (Restricted)',
     type: 'asset',
     description: 'Customer money held in the For-Benefit-Of account at the bank. Restricted: not Zap’s to spend.',
   },
-  cbpAlice: { id: 'cbp-alice', name: 'Customer Balances Payable – Alice', type: 'liability' },
-  cbpBob: { id: 'cbp-bob', name: 'Customer Balances Payable – Bob', type: 'liability' },
+  cbpAlice: { id: 'cbp-alice', name: 'Customer Balances Payable: Alice', type: 'liability' },
+  cbpBob: { id: 'cbp-bob', name: 'Customer Balances Payable: Bob', type: 'liability' },
 } satisfies Record<string, Account>;

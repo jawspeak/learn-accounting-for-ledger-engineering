@@ -16,7 +16,7 @@ When cash and the economic event happen at different times, a balance-sheet acco
 
 | | Cash comes **later** (accrual) | Cash comes **first** ([[deferral]]) |
 |---|---|---|
-| **Revenue** | **Accrued revenue** → asset, e.g. *Interest Receivable*, *[[Accounts Receivable]]* | **[[Unearned revenue]]** → liability, e.g. *Unearned Revenue – Gift Cards* |
+| **Revenue** | **Accrued revenue** → asset, e.g. *Interest Receivable*, *[[Accounts Receivable]]* | **[[Unearned revenue]]** → liability, e.g. *Unearned Revenue: Gift Cards* |
 | **Expense** | **Accrued expense** → liability, e.g. *Wages Payable*, *Accrued Interest Payable* | **[[Prepaid expense]]** → asset, e.g. *Prepaid Rent* |
 
 Every one of these is a two-step pattern:
@@ -205,7 +205,7 @@ const mod: SectionModule = {
       trapAccounts: [
         {
           id: 'bt-savings-asset',
-          name: 'Savings Account – Bean There',
+          name: 'Savings Account: Bean There',
           type: 'asset',
           trap: {
             kind: 'counterparty',
@@ -215,7 +215,7 @@ const mod: SectionModule = {
         },
         {
           id: 'interest-income-deposits',
-          name: 'Interest Income – Deposits',
+          name: 'Interest Income: Deposits',
           type: 'revenue',
           trap: {
             kind: 'near-synonym',
@@ -226,7 +226,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Interest Receivable and Interest Income are for interest the bank *earns* on loans. Here the bank owes interest. And Bean There is a business customer, so its balance lives in **Business Deposits**, not Customer Deposits – Savings.',
+          'Interest Receivable and Interest Income are for interest the bank *earns* on loans. Here the bank owes interest. And Bean There is a business customer, so its balance lives in **Business Deposits**, not Customer Deposits: Savings.',
         MISSING_ACCOUNT:
           'Daily: the expense (Interest Expense) and what’s owed (Accrued Interest Payable). Month-end: Accrued Interest Payable goes to zero and Business Deposits goes up.',
         WRONG_SIDE:
@@ -255,7 +255,7 @@ const mod: SectionModule = {
         'Row 2: Coffee is served, so revenue is earned now. What happens to the obligation? Did any cash move?',
       ],
       explanation:
-        '**Row 1: Dr Cash 500 / Cr Unearned Revenue – Gift Cards 500.** Bean There has the cash but owes $500 of coffee (or a refund). That’s a **liability**, not revenue.\n\n**Row 2: Dr Unearned Revenue – Gift Cards 120 / Cr Sales Revenue 120.** Serving the coffee fulfils part of the obligation: the liability goes down and revenue is earned *now*. No cash moves in row 2.\n\nAfter both rows $380 of gift cards are still outstanding — still a liability. Revenue in December: $0. Revenue in January: $120.',
+        '**Row 1: Dr Cash 500 / Cr Unearned Revenue: Gift Cards 500.** Bean There has the cash but owes $500 of coffee (or a refund). That’s a **liability**, not revenue.\n\n**Row 2: Dr Unearned Revenue: Gift Cards 120 / Cr Sales Revenue 120.** Serving the coffee fulfils part of the obligation: the liability goes down and revenue is earned *now*. No cash moves in row 2.\n\nAfter both rows $380 of gift cards are still outstanding — still a liability. Revenue in December: $0. Revenue in January: $120.',
       showBalanceSheets: true,
       opening: bs({ cash: 2000, 'paid-in-capital': 2000 }),
       trapAccounts: [
@@ -266,7 +266,7 @@ const mod: SectionModule = {
           trap: {
             kind: 'near-synonym',
             explanation:
-              'Selling a gift card isn’t earning revenue — Bean There hasn’t delivered anything yet. The cash creates an obligation: **Unearned Revenue – Gift Cards** (a liability).',
+              'Selling a gift card isn’t earning revenue — Bean There hasn’t delivered anything yet. The cash creates an obligation: **Unearned Revenue: Gift Cards** (a liability).',
           },
         },
         {
@@ -425,7 +425,7 @@ const mod: SectionModule = {
         },
         {
           id: 'client-ap',
-          name: 'Accounts Payable – Bean There',
+          name: 'Accounts Payable: Bean There',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -524,7 +524,7 @@ const mod: SectionModule = {
       explanation: 'Increase = normal side; decrease = opposite side. Names like "Unearned Revenue" or "Prepaid Rent" can mislead — always go by the *type*.',
       items: [
         { accountName: 'Interest Receivable', accountType: 'asset', change: 'increase', answer: 'dr', explanation: 'Asset → Dr-normal → increase is Dr.' },
-        { accountName: 'Unearned Revenue – Gift Cards', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'It’s a **liability**, despite "revenue" in its name → increase is Cr.' },
+        { accountName: 'Unearned Revenue: Gift Cards', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'It’s a **liability**, despite "revenue" in its name → increase is Cr.' },
         { accountName: 'Prepaid Rent', accountType: 'asset', change: 'decrease', answer: 'cr', explanation: 'Asset → decrease is Cr.' },
         { accountName: 'Wages Payable', accountType: 'liability', change: 'decrease', answer: 'dr', explanation: 'Liability → decrease is Dr.' },
         { accountName: 'Accrued Interest Payable (bank)', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'Liability → increase is Cr.' },

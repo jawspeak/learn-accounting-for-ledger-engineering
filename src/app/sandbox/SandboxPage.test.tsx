@@ -72,7 +72,7 @@ describe('SandboxPage', () => {
 
   it('add entity → create account via builder → add rows → URL round-trips', () => {
     render(<SandboxPage />);
-    fireEvent.click(screen.getByRole('button', { name: /Add the other party/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Add another party/ }));
     expect(screen.getAllByTestId('builder')).toHaveLength(2);
 
     // Builder creates an account with its own id; sandbox re-ids it as a slug.

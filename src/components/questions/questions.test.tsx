@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AttemptState } from '@contracts';
 import { QuestionInput, QuestionView, marksFor, type NonBookingProblem } from './QuestionView';
 import { stripAnswerWord } from './types';
+import { optionOrder } from './MultipleChoice';
 import {
   classifyFx,
   coaFx,
@@ -141,17 +142,26 @@ describe('StatementFill', () => {
 describe('MultipleChoice', () => {
   it('single select replaces', () => {
     const spy = mount(mcFx);
-    fireEvent.click(screen.getAllByRole('radio')[0]!);
-    fireEvent.click(screen.getAllByRole('radio')[1]!);
+    fireEvent.click(screen.getByRole('radio', { name: /Cash/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /loan/ }));
     expect(spy.v.items).toEqual([[1]]);
   });
   it('multi select toggles, sorted', () => {
     const spy = mount(mcMultiFx);
-    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
-    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
+    fireEvent.click(screen.getByRole('checkbox', { name: /loan/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Cash/ }));
     expect(spy.v.items).toEqual([[0, 1]]);
-    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Cash/ }));
     expect(spy.v.items).toEqual([[1]]);
+  });
+});
+
+describe('option order', () => {
+  it('is a deterministic shuffle of the authored order (same for everyone, every link)', () => {
+    const a = optionOrder('01-why-expense-debit', 4);
+    expect(a).toEqual(optionOrder('01-why-expense-debit', 4));
+    expect([...a].sort()).toEqual([0, 1, 2, 3]);
+    expect(a[0]).not.toBe(0); // Q8's correct answer (authored first) is not shown first
   });
 });
 
@@ -159,12 +169,12 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
   it('single select: wrong pick explains why, stays "tried"; right pick shows the key concept + next', () => {
     render(<QuestionView problem={mcFx} next={{ href: '#/p/x', title: 'Next one' }} />);
     expect(screen.queryByRole('button', { name: 'Check answer' })).toBeNull();
-    fireEvent.click(screen.getAllByRole('radio')[1]!);
+    fireEvent.click(screen.getByRole('radio', { name: /loan/ }));
     expect(screen.getByText(/Not quite\./)).toBeTruthy();
     expect(screen.getByText(/Try another option/)).toBeTruthy();
     expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull();
 
-    fireEvent.click(screen.getAllByRole('radio')[0]!);
+    fireEvent.click(screen.getByRole('radio', { name: /Cash/ }));
     expect(screen.getByText(/Correct\./)).toBeTruthy();
     expect(screen.getByText('Why not this one?')).toBeTruthy(); // the earlier wrong pick, kept
     const key = screen.getByRole('complementary', { name: 'Key concept' });
@@ -174,13 +184,13 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
 
   it('multi select: each ticked option judged on its own, progress shown, done only with exactly the right set', () => {
     render(<QuestionView problem={mcMultiFx} />);
-    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
+    fireEvent.click(screen.getByRole('checkbox', { name: /loan/ }));
     expect(screen.getByText(/Not this one\./)).toBeTruthy();
     expect(screen.getByText(/0 of 1 correct choice found · untick the one marked ✗/)).toBeTruthy();
-    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Cash/ }));
     expect(screen.getByText(/Correct\./)).toBeTruthy();
     expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull(); // a wrong one is still ticked
-    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
+    fireEvent.click(screen.getByRole('checkbox', { name: /loan/ }));
     expect(screen.getByText('That’s the one.')).toBeTruthy();
     expect(screen.getByRole('complementary', { name: 'Key concept' })).toBeTruthy();
   });

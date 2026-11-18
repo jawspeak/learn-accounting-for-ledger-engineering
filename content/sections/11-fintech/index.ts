@@ -20,22 +20,22 @@ In **Zap’s** books (the *[[gross-up]]* model):
 
 | Account | Type | Meaning |
 |---|---|---|
-| Cash – FBO (Restricted) | Asset | Customers’ money in the FBO account. Zap controls it, can’t spend it. |
+| Cash: FBO (Restricted) | Asset | Customers’ money in the FBO account. Zap controls it, can’t spend it. |
 | Customer Balances Payable – *Alice/Bob/Carol* | Liability | What Zap owes each customer: their wallet balance. |
-| Cash – Operating | Asset | Zap’s own money. |
-| Clearing – Pending ACH Cash-outs | Liability | Cash-outs already deducted from a wallet but not yet settled out of the FBO account. |
+| Cash: Operating | Asset | Zap’s own money. |
+| Clearing: Pending ACH Cash-outs | Liability | Cash-outs already deducted from a wallet but not yet settled out of the FBO account. |
 | Transaction Fee Revenue | Revenue | Zap’s earnings. |
 
-In **the bank’s** books, the FBO account is just another deposit: **Deposits – FBO Accounts** (liability). Zap’s operating account is in **Business Deposits**. The bank sees *one* FBO balance; it doesn’t know who Alice and Bob are.
+In **the bank’s** books, the FBO account is just another deposit: **Deposits: FBO Accounts** (liability). Zap’s operating account is in **Business Deposits**. The bank sees *one* FBO balance; it doesn’t know who Alice and Bob are.
 
 Three patterns to master:
-- **Money in / out of Zap** touches Cash – FBO *and* a customer liability (and the bank’s books).
+- **Money in / out of Zap** touches Cash: FBO *and* a customer liability (and the bank’s books).
 - **Money between customers** touches only customer liabilities — no cash moves, the bank sees nothing.
 - **Money in flight** sits in a **clearing** account until it settles.
 
 The [[invariant]] Zap’s engineers check every day:
 \`\`\`
-Cash – FBO + in-flight receipts (Settlement Receivable, Cash in Transit)
+Cash: FBO + in-flight receipts (Settlement Receivable, Cash in Transit)
     =  Σ Customer Balances + Pending Cash-outs + Suspense + Zap fees not yet swept
 \`\`\`
 `;
@@ -44,7 +44,7 @@ const lens = `
 **Ledger-engineer's lens: in-flight money, [[sub-ledgers]] and [[reversals]]**
 
 - **[[Clearing accounts]] are state.** "Cash-out requested but not settled" is a real state of real money. Model it as a balance in a clearing account rather than a status flag on a row — then your [[balance sheet]] is always correct, and a non-zero clearing balance after [[settlement]] windows is an alert.
-- **Sub-ledger vs. GL.** Real Zap would have millions of wallets. The GL has **one** [[control account]], *Customer Balances Payable*; the per-customer balances live in a **sub-ledger**. Daily reconciliation: Σ sub-ledger = GL control account, and the FBO bank statement = Cash – FBO.
+- **Sub-ledger vs. GL.** Real Zap would have millions of wallets. The GL has **one** [[control account]], *Customer Balances Payable*; the per-customer balances live in a **sub-ledger**. Daily reconciliation: Σ sub-ledger = GL control account, and the FBO bank statement = Cash: FBO.
 - **Never edit, reverse.** A wrong [[posting]] is fixed by a **reversal** (exact mirror) plus a **correcting** entry, each linked to the original by id. Netting the fix into one entry (“Dr Carol / Cr Bob”) hides what happened.
 - **[[Idempotency keys]]** on every payment request: a retried “Alice pays Bob $20” must not post twice.
 - **[[Suspense|suspense-account]]** is a quarantine queue: unmatched money goes there, an operator (or matcher job) resolves it, and the balance should trend to zero.
@@ -77,12 +77,12 @@ Some companies instead keep customer funds **off-balance-sheet**, tracking them 
 const fboTraps = [
   {
     id: 'bank-deposits-fbo',
-    name: 'Deposits – FBO Accounts',
+    name: 'Deposits: FBO Accounts',
     type: 'liability' as const,
     trap: {
       kind: 'counterparty' as const,
       explanation:
-        '**Deposits – FBO Accounts** is in **First Example Bank’s** books — the bank owes the money. In Zap’s books, the money in the FBO account is an asset (**Cash – FBO**), and what Zap owes each customer is **Customer Balances Payable**.',
+        '**Deposits: FBO Accounts** is in **First Example Bank’s** books — the bank owes the money. In Zap’s books, the money in the FBO account is an asset (**Cash: FBO**), and what Zap owes each customer is **Customer Balances Payable**.',
     },
   },
   {
@@ -135,17 +135,17 @@ const mod: SectionModule = {
         'Alice sends **$100** from her account at another bank into her Zap wallet. The money lands in Zap’s **FBO account** at First Example Bank. Book this in **Zap’s** books.',
       hints: [
         'Whose books? Zap’s. Which Zap account holds customer money at the bank?',
-        'Cash – FBO goes up. What does Zap now owe, and to whom?',
+        'Cash: FBO goes up. What does Zap now owe, and to whom?',
         'Is any of this Zap’s money — revenue or equity?',
       ],
       walkthrough: [
-        '**Start from the account you know.** $100 arrived in the FBO account. In Zap’s books that’s **Cash – FBO (Restricted)**, an Asset → Dr Cash – FBO 100.',
-        'Why not Cash – Operating? That’s Zap’s *own* money in a different account. Customer money must stay segregated.',
-        'What did Zap give in return? A wallet balance Alice can spend or withdraw — Zap **owes** her $100. That’s a liability: **Customer Balances Payable – Alice** → Cr 100.',
+        '**Start from the account you know.** $100 arrived in the FBO account. In Zap’s books that’s **Cash: FBO (Restricted)**, an Asset → Dr Cash: FBO 100.',
+        'Why not Cash: Operating? That’s Zap’s *own* money in a different account. Customer money must stay segregated.',
+        'What did Zap give in return? A wallet balance Alice can spend or withdraw — Zap **owes** her $100. That’s a liability: **Customer Balances Payable: Alice** → Cr 100.',
         'Check: Assets +100, Liabilities +100, Equity unchanged. Customer money never touches Zap’s equity — the gross-up model just makes both sides bigger.',
       ],
       explanation:
-        '**Dr Cash – FBO (Restricted) 100 / Cr Customer Balances Payable – Alice 100.** Zap holds the money (restricted asset) and owes it to Alice (liability) — like a landlord holding a security deposit. No revenue: Zap earns nothing by holding Alice’s money.\n\nOn the bank’s side, the same event is Dr Reserves at the Fed / Cr Deposits – FBO Accounts (next problem but one).',
+        '**Dr Cash: FBO (Restricted) 100 / Cr Customer Balances Payable: Alice 100.** Zap holds the money (restricted asset) and owes it to Alice (liability) — like a landlord holding a security deposit. No revenue: Zap earns nothing by holding Alice’s money.\n\nOn the bank’s side, the same event is Dr Reserves at the Fed / Cr Deposits: FBO Accounts (next problem but one).',
       perspectivePairId: '11-fbo-load-bank',
       showBalanceSheets: true,
       journalView: true,
@@ -153,9 +153,9 @@ const mod: SectionModule = {
       trapAccounts: fboTraps,
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Customer money goes into the **FBO** account, never the operating account — and it isn’t revenue or equity. Only Cash – FBO and Alice’s balance change.',
-        WRONG_TYPE: 'Cash – FBO is an **Asset** (restricted cash); Customer Balances Payable is a **Liability**.',
-        COUNTERPARTY_ACCOUNT: 'That account belongs to the bank’s books. In Zap’s books use **Cash – FBO** and **Customer Balances Payable – Alice**.',
+          'Customer money goes into the **FBO** account, never the operating account — and it isn’t revenue or equity. Only Cash: FBO and Alice’s balance change.',
+        WRONG_TYPE: 'Cash: FBO is an **Asset** (restricted cash); Customer Balances Payable is a **Liability**.',
+        COUNTERPARTY_ACCOUNT: 'That account belongs to the bank’s books. In Zap’s books use **Cash: FBO** and **Customer Balances Payable: Alice**.',
       },
       solution: [row('t1', 'Alice loads $100', dr('cash-fbo', 100), cr('cbp-alice', 100))],
     },
@@ -170,7 +170,7 @@ const mod: SectionModule = {
       prompt: 'Row 1 (Alice loads $100) is booked. Now book **row 2**: Bob loads **$50** into his Zap wallet; it lands in the FBO account.',
       hints: ['Row 2 has the same shape as row 1 — which customer’s balance changes?', 'Debit the restricted cash; credit what Zap owes Bob.'],
       explanation:
-        '**Row 2: Dr Cash – FBO 50 / Cr Customer Balances Payable – Bob 50.** Each customer has their own liability (sub-ledger) account. After both rows: Cash – FBO 150 = Alice 100 + Bob 50 — the FBO invariant holds.',
+        '**Row 2: Dr Cash: FBO 50 / Cr Customer Balances Payable: Bob 50.** Each customer has their own liability (sub-ledger) account. After both rows: Cash: FBO 150 = Alice 100 + Bob 50 — the FBO invariant holds.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(zap0),
@@ -200,7 +200,7 @@ const mod: SectionModule = {
         'Does the bank know or care that the money is Alice’s?',
       ],
       explanation:
-        '**Dr Reserves at the Federal Reserve 100 / Cr Deposits – FBO Accounts 100.** The incoming ACH settles between banks through the Fed, raising the bank’s reserves; the bank now owes $100 more on the FBO account.\n\nThe bank records **one** pooled FBO balance — it doesn’t track Alice. Compare Zap’s books: Dr Cash – FBO / Cr Customer Balances Payable – Alice. Zap’s **asset** (Cash – FBO) is the bank’s **liability** (Deposits – FBO).',
+        '**Dr Reserves at the Federal Reserve 100 / Cr Deposits: FBO Accounts 100.** The incoming ACH settles between banks through the Fed, raising the bank’s reserves; the bank now owes $100 more on the FBO account.\n\nThe bank records **one** pooled FBO balance — it doesn’t track Alice. Compare Zap’s books: Dr Cash: FBO / Cr Customer Balances Payable: Alice. Zap’s **asset** (Cash: FBO) is the bank’s **liability** (Deposits: FBO).',
       perspectivePairId: '11-fbo-load',
       showBalanceSheets: true,
       opening: bs({ 'reserves-fed': 10000, 'deposits-business': 6000, 'paid-in-capital': 3000, 'retained-earnings': 1000 }),
@@ -211,19 +211,19 @@ const mod: SectionModule = {
           type: 'liability',
           trap: {
             kind: 'counterparty',
-            explanation: 'That’s **Zap’s** liability to its customers. The bank’s liability is to the FBO account holder: **Deposits – FBO Accounts**.',
+            explanation: 'That’s **Zap’s** liability to its customers. The bank’s liability is to the FBO account holder: **Deposits: FBO Accounts**.',
           },
         },
         {
           id: 'zap-cash-fbo-trap',
-          name: 'Cash – FBO (Restricted)',
+          name: 'Cash: FBO (Restricted)',
           type: 'asset',
-          trap: { kind: 'counterparty', explanation: 'Cash – FBO is **Zap’s** asset. For the bank, the same money is a deposit **liability**.' },
+          trap: { kind: 'counterparty', explanation: 'Cash: FBO is **Zap’s** asset. For the bank, the same money is a deposit **liability**.' },
         },
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Use **Deposits – FBO Accounts**, not Business Deposits — Business Deposits holds Zap’s own operating account. And the money arrived electronically (reserves), not as vault cash.',
+          'Use **Deposits: FBO Accounts**, not Business Deposits — Business Deposits holds Zap’s own operating account. And the money arrived electronically (reserves), not as vault cash.',
         WRONG_SIDE: 'For the bank, the deposit is a liability → it increases with a **credit**.',
       },
       solution: [row('t1', 'ACH in to Zap FBO account', dr('reserves-fed', 100), cr('deposits-fbo', 100))],
@@ -243,7 +243,7 @@ const mod: SectionModule = {
         'Both accounts are liabilities. Which side decreases a liability, and which increases one?',
       ],
       explanation:
-        '**Dr Customer Balances Payable – Alice 20 / Cr Customer Balances Payable – Bob 20.** A P2P payment is a **liability-to-liability** move: Zap owes Alice $20 less and Bob $20 more. The FBO cash doesn’t move — total customer balances (and the FBO account) are unchanged. Nothing happens at the bank.\n\nThis is why P2P inside a wallet is instant and free to run: it’s just two postings in Zap’s ledger.',
+        '**Dr Customer Balances Payable: Alice 20 / Cr Customer Balances Payable: Bob 20.** A P2P payment is a **liability-to-liability** move: Zap owes Alice $20 less and Bob $20 more. The FBO cash doesn’t move — total customer balances (and the FBO account) are unchanged. Nothing happens at the bank.\n\nThis is why P2P inside a wallet is instant and free to run: it’s just two postings in Zap’s ledger.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(zapAB),
@@ -256,7 +256,7 @@ const mod: SectionModule = {
         },
         {
           id: 'bank-deposits-fbo-p2p',
-          name: 'Deposits – FBO Accounts',
+          name: 'Deposits: FBO Accounts',
           type: 'liability',
           trap: {
             kind: 'counterparty',
@@ -266,7 +266,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'No money moved at the bank, so **Cash – FBO** doesn’t change. Only Alice’s and Bob’s balances change.',
+          'No money moved at the bank, so **Cash: FBO** doesn’t change. Only Alice’s and Bob’s balances change.',
         WRONG_SIDE: 'Alice’s balance **decreases** (debit a liability); Bob’s **increases** (credit a liability).',
       },
       solution: [row('t1', 'Alice pays Bob', dr('cbp-alice', 20), cr('cbp-bob', 20))],
@@ -286,17 +286,17 @@ const mod: SectionModule = {
       options: [
         { text: 'Nothing — no entry.', correct: true, explanation: 'The pooled FBO balance doesn’t change; only Zap’s sub-ledger does.' },
         {
-          text: 'Dr Deposits – FBO Accounts 20 / Cr Deposits – FBO Accounts 20',
+          text: 'Dr Deposits: FBO Accounts 20 / Cr Deposits: FBO Accounts 20',
           correct: false,
           explanation: 'Debiting and crediting the same account nets to zero — there’s nothing to record. The bank has no per-customer FBO accounts.',
         },
         {
-          text: 'Dr Deposits – FBO Accounts 20 / Cr Business Deposits 20',
+          text: 'Dr Deposits: FBO Accounts 20 / Cr Business Deposits 20',
           correct: false,
           explanation: 'That would move money from the FBO account into a business (e.g. Zap’s operating) account. Nothing left the FBO account.',
         },
         {
-          text: 'Dr Reserves at the Federal Reserve 20 / Cr Deposits – FBO Accounts 20',
+          text: 'Dr Reserves at the Federal Reserve 20 / Cr Deposits: FBO Accounts 20',
           correct: false,
           explanation: 'No money came in from another bank. The $20 never left the FBO account.',
         },
@@ -318,7 +318,7 @@ const mod: SectionModule = {
         'Row 2: Zap’s own money shouldn’t stay in the customers’ account. Which cash goes up, which goes down?',
       ],
       explanation:
-        '**Row 1: Dr Customer Balances Payable – Alice 21 / Cr Customer Balances Payable – Bob 20 / Cr Transaction Fee Revenue 1.** The fee moves $1 from what Zap owes Alice into Zap’s revenue. One event, one compound row.\n\n**Row 2: Dr Cash – Operating 1 / Cr Cash – FBO 1.** The $1 is now Zap’s money but physically still in the FBO account, which must hold only customer funds. The sweep moves it out — an asset swap, no revenue.\n\nAfter both rows: Cash – FBO 149 = Alice 79 + Bob 70. ✓ Invariant restored.',
+        '**Row 1: Dr Customer Balances Payable: Alice 21 / Cr Customer Balances Payable: Bob 20 / Cr Transaction Fee Revenue 1.** The fee moves $1 from what Zap owes Alice into Zap’s revenue. One event, one compound row.\n\n**Row 2: Dr Cash: Operating 1 / Cr Cash: FBO 1.** The $1 is now Zap’s money but physically still in the FBO account, which must hold only customer funds. The sweep moves it out — an asset swap, no revenue.\n\nAfter both rows: Cash: FBO 149 = Alice 79 + Bob 70. ✓ Invariant restored.',
       perspectivePairId: '11-sweep-bank',
       showBalanceSheets: true,
       journalView: true,
@@ -365,7 +365,7 @@ const mod: SectionModule = {
         'The bank owes less on one deposit account and more on another. Which is which?',
       ],
       explanation:
-        '**Dr Deposits – FBO Accounts 1 / Cr Business Deposits 1.** A liability-to-liability swap inside the bank: it owes $1 less on the FBO account and $1 more on Zap’s operating account. Reserves don’t move — both accounts are at the same bank. The bank books no revenue: the fee was Zap’s, not the bank’s.',
+        '**Dr Deposits: FBO Accounts 1 / Cr Business Deposits 1.** A liability-to-liability swap inside the bank: it owes $1 less on the FBO account and $1 more on Zap’s operating account. Reserves don’t move — both accounts are at the same bank. The bank books no revenue: the fee was Zap’s, not the bank’s.',
       perspectivePairId: '11-fee-and-sweep',
       showBalanceSheets: true,
       opening: bs({
@@ -384,9 +384,9 @@ const mod: SectionModule = {
         },
         {
           id: 'zap-cash-operating-trap',
-          name: 'Cash – Operating',
+          name: 'Cash: Operating',
           type: 'asset',
-          trap: { kind: 'counterparty', explanation: 'Cash – Operating is **Zap’s** asset. The bank records Zap’s operating account as a liability: **Business Deposits**.' },
+          trap: { kind: 'counterparty', explanation: 'Cash: Operating is **Zap’s** asset. The bank records Zap’s operating account as a liability: **Business Deposits**.' },
         },
       ],
       diagnosticExplanations: {
@@ -411,7 +411,7 @@ const mod: SectionModule = {
         'Wednesday: the clearing balance goes away and the cash finally leaves.',
       ],
       explanation:
-        '**Row 1: Dr Customer Balances Payable – Bob 50 / Cr Clearing – Pending ACH Cash-outs 50.** Bob’s wallet is reduced at once. The money is still in the FBO account, and Zap is still on the hook to deliver it — now to Bob’s other bank. That obligation sits in the clearing liability.\n\n**Row 2: Dr Clearing – Pending ACH Cash-outs 50 / Cr Cash – FBO 50.** On settlement the cash leaves and the clearing account returns to zero.\n\nBetween Monday and Wednesday the invariant reads: Cash – FBO 149 = customers 99 + pending cash-outs 50. Without the clearing account you’d either show Bob money he no longer has, or show FBO cash that doesn’t match the bank statement.',
+        '**Row 1: Dr Customer Balances Payable: Bob 50 / Cr Clearing: Pending ACH Cash-outs 50.** Bob’s wallet is reduced at once. The money is still in the FBO account, and Zap is still on the hook to deliver it — now to Bob’s other bank. That obligation sits in the clearing liability.\n\n**Row 2: Dr Clearing: Pending ACH Cash-outs 50 / Cr Cash: FBO 50.** On settlement the cash leaves and the clearing account returns to zero.\n\nBetween Monday and Wednesday the invariant reads: Cash: FBO 149 = customers 99 + pending cash-outs 50. Without the clearing account you’d either show Bob money he no longer has, or show FBO cash that doesn’t match the bank statement.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs({
@@ -425,7 +425,7 @@ const mod: SectionModule = {
       trapAccounts: [
         {
           id: 'bob-external-bank',
-          name: 'Cash – Bob’s External Bank',
+          name: 'Cash: Bob’s External Bank',
           type: 'asset',
           trap: { kind: 'counterparty', explanation: 'Bob’s account at his other bank is **Bob’s** asset — it never appears in Zap’s books.' },
         },
@@ -438,9 +438,9 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Monday: no money has left the FBO account, so **Cash – FBO** doesn’t change yet. **Cash in Transit – Incoming ACH** is for money coming *in*; outgoing pending cash-outs use the clearing **liability**.',
-        MISSING_ACCOUNT: 'Monday needs the clearing account: Bob’s balance moves into **Clearing – Pending ACH Cash-outs** until settlement.',
-        WRONG_ROW: 'Cash – FBO only changes on Wednesday, when the ACH settles.',
+          'Monday: no money has left the FBO account, so **Cash: FBO** doesn’t change yet. **Cash in Transit: Incoming ACH** is for money coming *in*; outgoing pending cash-outs use the clearing **liability**.',
+        MISSING_ACCOUNT: 'Monday needs the clearing account: Bob’s balance moves into **Clearing: Pending ACH Cash-outs** until settlement.',
+        WRONG_ROW: 'Cash: FBO only changes on Wednesday, when the ACH settles.',
       },
       solution: [
         row('t1', 'Bob requests $50 cash-out', dr('cbp-bob', 50), cr('ach-cashout-clearing', 50)),
@@ -463,7 +463,7 @@ const mod: SectionModule = {
         'Does Zap lose or earn anything from the return?',
       ],
       explanation:
-        '**Row 1: Dr Customer Balances Payable – Carol 30 / Cr Clearing – Pending ACH Cash-outs 30.**\n**Row 2: Dr Clearing 30 / Cr Cash – FBO 30.**\n**Row 3: Dr Cash – FBO 30 / Cr Customer Balances Payable – Carol 30.**\n\nThe return is a new event — we don’t delete rows 1–2; they really happened. Cash comes back to the FBO account and Zap owes it to Carol again. Net effect of all three rows: nothing, and Carol’s balance is back to $50. No revenue or expense: it was always Carol’s money. (Some ledgers route returns through their own clearing account; booking straight back to the customer is fine when the return is matched immediately.)',
+        '**Row 1: Dr Customer Balances Payable: Carol 30 / Cr Clearing: Pending ACH Cash-outs 30.**\n**Row 2: Dr Clearing 30 / Cr Cash: FBO 30.**\n**Row 3: Dr Cash: FBO 30 / Cr Customer Balances Payable: Carol 30.**\n\nThe return is a new event — we don’t delete rows 1–2; they really happened. Cash comes back to the FBO account and Zap owes it to Carol again. Net effect of all three rows: nothing, and Carol’s balance is back to $50. No revenue or expense: it was always Carol’s money. (Some ledgers route returns through their own clearing account; booking straight back to the customer is fine when the return is matched immediately.)',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(zapABC),
@@ -484,7 +484,7 @@ const mod: SectionModule = {
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
           'Row 3: once the ACH has settled, the clearing account is already zero. The returned money lands in the FBO account and is owed straight back to Carol.',
-        MISSING_ACCOUNT: 'Row 3 restores Carol’s balance: Dr Cash – FBO, Cr Customer Balances Payable – Carol.',
+        MISSING_ACCOUNT: 'Row 3 restores Carol’s balance: Dr Cash: FBO, Cr Customer Balances Payable: Carol.',
       },
       solution: [
         row('t1', 'Carol requests $30 cash-out', dr('cbp-carol', 30), cr('ach-cashout-clearing', 30)),
@@ -508,7 +508,7 @@ const mod: SectionModule = {
         'Why not a single "Dr Carol / Cr Bob" fix? Think about what an auditor reading the ledger later would see.',
       ],
       explanation:
-        '**Row 2 (reversal): Dr Customer Balances Payable – Carol 20 / Cr Customer Balances Payable – Alice 20.** Exactly undoes row 1.\n\n**Row 3 (correction): Dr Customer Balances Payable – Alice 20 / Cr Customer Balances Payable – Bob 20.** What should have happened.\n\nFinal balances: Alice 80, Bob 70, Carol 50. A single netted fix (Dr Carol / Cr Bob) reaches the same balances, but the ledger would then claim "money moved from Carol to Bob" — which never happened — and the link to the original error is lost. Reverse + rebook keeps an honest, append-only history, and each new row should reference the original by id. No cash moves at any point.',
+        '**Row 2 (reversal): Dr Customer Balances Payable: Carol 20 / Cr Customer Balances Payable: Alice 20.** Exactly undoes row 1.\n\n**Row 3 (correction): Dr Customer Balances Payable: Alice 20 / Cr Customer Balances Payable: Bob 20.** What should have happened.\n\nFinal balances: Alice 80, Bob 70, Carol 50. A single netted fix (Dr Carol / Cr Bob) reaches the same balances, but the ledger would then claim "money moved from Carol to Bob" — which never happened — and the link to the original error is lost. Reverse + rebook keeps an honest, append-only history, and each new row should reference the original by id. No cash moves at any point.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(zapABC),
@@ -539,7 +539,7 @@ const mod: SectionModule = {
       diagnosticExplanations: {
         MISSING_ACCOUNT:
           'Row 2 must mirror row 1 exactly (Carol and Alice); row 3 is the intended payment (Alice and Bob). A netted Carol → Bob row hides what happened.',
-        EXTRA_ACCOUNT: 'No cash moves in a correction — Cash – FBO is unchanged. And Suspense is for unidentified money, not known errors.',
+        EXTRA_ACCOUNT: 'No cash moves in a correction — Cash: FBO is unchanged. And Suspense is for unidentified money, not known errors.',
         WRONG_SIDE: 'A reversal swaps the sides of the original: Carol was credited, so now Carol is **debited**.',
       },
       solution: [
@@ -564,7 +564,7 @@ const mod: SectionModule = {
         'Row 2: no cash moves — you just learn who the liability belongs to.',
       ],
       explanation:
-        '**Row 1: Dr Cash – FBO 75 / Cr Suspense 75.** The cash must be recorded (it’s on the bank statement), but it belongs to an unknown customer. Suspense holds the liability until it’s identified — it’s **not** income.\n\n**Row 2: Dr Suspense 75 / Cr Customer Balances Payable – Carol 75.** Once matched, the liability moves to Carol, and Suspense goes back to zero. A suspense account should always be trending to zero; old items need investigation (and, if never claimed, eventually follow unclaimed-property rules — still not revenue).',
+        '**Row 1: Dr Cash: FBO 75 / Cr Suspense 75.** The cash must be recorded (it’s on the bank statement), but it belongs to an unknown customer. Suspense holds the liability until it’s identified — it’s **not** income.\n\n**Row 2: Dr Suspense 75 / Cr Customer Balances Payable: Carol 75.** Once matched, the liability moves to Carol, and Suspense goes back to zero. A suspense account should always be trending to zero; old items need investigation (and, if never claimed, eventually follow unclaimed-property rules — still not revenue).',
       showBalanceSheets: true,
       journalView: true,
       opening: bs(zapABC),
@@ -609,7 +609,7 @@ const mod: SectionModule = {
         'Which asset was holding the earned-but-unpaid interest? Which cash account receives it?',
       ],
       explanation:
-        '**Dr Cash – Operating 40 / Cr Interest Receivable 40.** Same pattern as Bean There’s savings in §8: daily accruals built up Interest Receivable; the payment converts it to cash. No new revenue (that would double-count). It goes to **operating** cash because it’s interest on Zap’s own money.',
+        '**Dr Cash: Operating 40 / Cr Interest Receivable 40.** Same pattern as Bean There’s savings in §8: daily accruals built up Interest Receivable; the payment converts it to cash. No new revenue (that would double-count). It goes to **operating** cash because it’s interest on Zap’s own money.',
       showBalanceSheets: true,
       opening: bs({ 'cash-operating': 50000, 'interest-receivable': 40, 'paid-in-capital': 50000, 'interest-income': 40 }),
       trapAccounts: [
@@ -628,7 +628,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'The interest was already recognized daily. Crediting Interest Income again would double-count it. And this is Zap’s own money → **Cash – Operating**, not Cash – FBO.',
+          'The interest was already recognized daily. Crediting Interest Income again would double-count it. And this is Zap’s own money → **Cash: Operating**, not Cash: FBO.',
       },
       solution: [row('t1', 'Bank pays November interest', dr('cash-operating', 40), cr('interest-receivable', 40))],
     },

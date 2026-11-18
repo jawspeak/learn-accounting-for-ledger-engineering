@@ -280,7 +280,7 @@ The **[[balance sheets]]** before and after the transaction must both satisfy \`
       trapAccounts: [
         {
           id: 'customer-deposits-savings',
-          name: 'Customer Deposits – Savings',
+          name: 'Customer Deposits: Savings',
           type: 'liability',
           trap: {
             kind: 'counterparty',

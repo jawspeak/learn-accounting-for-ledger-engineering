@@ -29,7 +29,6 @@ const typeLabel = (t: AccountType) => ACCOUNT_TYPES.find((x) => x.type === t)?.l
 export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove }: Props) {
   const uid = useId();
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const [journalView, setJournalView] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
   const [showOpening, setShowOpening] = useState(false);
   const summary = summarize(entity);
@@ -84,10 +83,6 @@ export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove
           Show balance sheets
         </label>
         <label className="sbx-check">
-          <input type="checkbox" checked={journalView} onChange={(e) => setJournalView(e.target.checked)} />
-          Journal view
-        </label>
-        <label className="sbx-check">
           <input
             type="checkbox"
             checked={!!entity.columnOrder}
@@ -109,7 +104,8 @@ export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove
           onAccountsChange={setAccounts}
           showBalanceSheets={entity.showBalanceSheets}
           opening={entity.opening}
-          journalView={journalView}
+          // The builder's "Journal view" toggle button is always available in the sandbox.
+          journalView
           columnOrder={entity.columnOrder}
           onColumnOrderChange={(order) => onChange(withColumnOrder(entity, order))}
         />

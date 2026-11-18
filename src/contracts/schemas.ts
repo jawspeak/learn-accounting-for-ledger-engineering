@@ -168,12 +168,14 @@ export const problemSchema = z.discriminatedUnion('kind', [
   z.object({
     ...base,
     kind: z.literal('equation-fill'),
+    hideGiven: z.boolean().optional(),
     items: z
       .array(
         z.object({
           assets: z.number().nullable(),
           liabilities: z.number().nullable(),
           equity: z.number().nullable(),
+          story: md.optional(),
           explanation: md,
         }),
       )

@@ -85,7 +85,8 @@ export function App() {
         </button>
       </header>
       {/* The spreadsheet view takes the whole width; the section list stays reachable via ☰ Sections. */}
-      <div className={route.name === 'sheet' ? 'layout no-side' : 'layout'}>
+      {/* Workspaces (sandbox, spreadsheet) start with the lesson nav collapsed; ☰ Sections still opens it. */}
+      <div className={route.name === 'sheet' || route.name === 'sandbox' ? 'layout no-side' : 'layout'}>
         <nav id="site-nav" className={`sidebar ${navOpen ? 'open' : ''}`} aria-label="Sections">
           <ol>
             <li>

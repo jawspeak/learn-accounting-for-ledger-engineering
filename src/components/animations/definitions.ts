@@ -102,14 +102,14 @@ function bankViewDeposit(): LedgerAnimationDef {
     },
     {
       caption:
-        '**Now the bank’s books.** What does the bank know changed? It physically received $100 of bills: **Cash – Vault ↑**, an asset, so *Dr Cash – Vault 100*.',
+        '**Now the bank’s books.** What does the bank know changed? It physically received $100 of bills: **Cash: Vault ↑**, an asset, so *Dr Cash: Vault 100*.',
       draft: { ledger: 'bank', row: row('bank-deposit', bankRow.label!, dr('vault-cash', 100)) },
       flows: [{ from: { ledger: 'you', account: 'cash' }, to: { ledger: 'bank', account: 'vault-cash' }, amount: usd(100) }],
       highlight: [{ ledger: 'bank', account: 'vault-cash', note: '↑ Dr' }],
     },
     {
       caption:
-        '**What does it owe in return?** The bank must give you $100 back whenever you ask — a **liability**. **Customer Deposits – Checking ↑** → *Cr Customer Deposits – Checking 100*.',
+        '**What does it owe in return?** The bank must give you $100 back whenever you ask — a **liability**. **Customer Deposits: Checking ↑** → *Cr Customer Deposits: Checking 100*.',
       draft: { ledger: 'bank', row: bankRow },
       highlight: [{ ledger: 'bank', account: 'deposits-checking', note: '↑ Cr' }],
     },
@@ -120,7 +120,7 @@ function bankViewDeposit(): LedgerAnimationDef {
     },
     {
       caption:
-        '**The mirror.** Your *Checking Account* (an asset, debit-normal) and the bank’s *Customer Deposits – Checking* (a liability, credit-normal) are the same $100 seen from opposite sides. **Your money is the bank’s debt to you.** That’s why your bank statement says it “credited” your account: it’s describing *its* books.',
+        '**The mirror.** Your *Checking Account* (an asset, debit-normal) and the bank’s *Customer Deposits: Checking* (a liability, credit-normal) are the same $100 seen from opposite sides. **Your money is the bank’s debt to you.** That’s why your bank statement says it “credited” your account: it’s describing *its* books.',
       highlight: [
         { ledger: 'you', account: 'checking', note: 'your asset' },
         { ledger: 'bank', account: 'deposits-checking', note: 'bank’s liability' },
@@ -187,7 +187,7 @@ function loanCreatesDeposit(): LedgerAnimationDef {
     },
     {
       caption:
-        '**Where did the $1,000 go?** Into your checking account — which, on the bank’s books, is money it owes you: **Customer Deposits – Checking ↑** (liability) → *Cr Customer Deposits – Checking 1,000*.',
+        '**Where did the $1,000 go?** Into your checking account — which, on the bank’s books, is money it owes you: **Customer Deposits: Checking ↑** (liability) → *Cr Customer Deposits: Checking 1,000*.',
       draft: { ledger: 'bank', row: bankLoan },
       highlight: [{ ledger: 'bank', account: 'deposits-checking', note: '↑ Cr' }],
     },
@@ -220,7 +220,7 @@ function loanCreatesDeposit(): LedgerAnimationDef {
     },
     {
       caption:
-        '**The bank’s books.** It takes $1,050 out of your deposit: *Dr Customer Deposits – Checking 1,050*. Your loan is settled: *Cr Loans Receivable 1,000*. The $50 is revenue: *Cr Interest Income 50*, which grows the bank’s equity.',
+        '**The bank’s books.** It takes $1,050 out of your deposit: *Dr Customer Deposits: Checking 1,050*. Your loan is settled: *Cr Loans Receivable 1,000*. The $50 is revenue: *Cr Interest Income 50*, which grows the bank’s equity.',
       post: [{ ledger: 'bank', row: bankRepay }],
       flows: [
         {
@@ -361,19 +361,19 @@ function fboGrossUp(): LedgerAnimationDef {
     },
     {
       caption:
-        '**Zap’s customer Alice sends $100 into Zap.** It lands in the FBO account: **Cash – FBO ↑** → *Dr Cash – FBO 100*. An asset on Zap’s books — but a *restricted* one: Zap can’t spend it on rent or payroll.',
+        '**Zap’s customer Alice sends $100 into Zap.** It lands in the FBO account: **Cash: FBO ↑** → *Dr Cash: FBO 100*. An asset on Zap’s books — but a *restricted* one: Zap can’t spend it on rent or payroll.',
       draft: { ledger: 'zap', row: row('zap-in', zapIn.label!, dr('cash-fbo', 100)) },
       highlight: [{ ledger: 'zap', account: 'cash-fbo', note: '↑ Dr' }],
     },
     {
       caption:
-        '**But it isn’t Zap’s money.** Zap owes it to Alice on demand → **Customer Balances Payable – Alice ↑** (liability) → *Cr 100*. Zap’s balance sheet **grosses up**: assets and liabilities both +$100, equity unchanged. Like a landlord holding a tenant’s security deposit: the cash is in the landlord’s account, and so is the debt to give it back.',
+        '**But it isn’t Zap’s money.** Zap owes it to Alice on demand → **Customer Balances Payable: Alice ↑** (liability) → *Cr 100*. Zap’s balance sheet **grosses up**: assets and liabilities both +$100, equity unchanged. Like a landlord holding a tenant’s security deposit: the cash is in the landlord’s account, and so is the debt to give it back.',
       post: [{ ledger: 'zap', row: zapIn }],
       highlight: [{ ledger: 'zap', account: 'cbp-alice', note: '↑ Cr' }],
     },
     {
       caption:
-        '**The bank’s books.** The money arrived by transfer, so it lands in the bank’s own account at the Fed: *Dr Reserves at the Federal Reserve 100*. The bank now owes that $100 to the FBO account: *Cr Deposits – FBO Accounts 100*. To the bank it’s one deposit; it doesn’t track Alice’s share.',
+        '**The bank’s books.** The money arrived by transfer, so it lands in the bank’s own account at the Fed: *Dr Reserves at the Federal Reserve 100*. The bank now owes that $100 to the FBO account: *Cr Deposits: FBO Accounts 100*. To the bank it’s one deposit; it doesn’t track Alice’s share.',
       post: [{ ledger: 'bank', row: bankIn }],
       flows: [{ from: { ledger: 'zap', account: 'cash-fbo' }, to: { ledger: 'bank', account: 'reserves-fed' }, amount: usd(100) }],
       highlight: [
@@ -383,13 +383,13 @@ function fboGrossUp(): LedgerAnimationDef {
     },
     {
       caption:
-        '**Alice pays Bob $20 inside Zap.** Zap now owes Alice $20 less → **Customer Balances Payable – Alice ↓** → *Dr 20*.',
+        '**Alice pays Bob $20 inside Zap.** Zap now owes Alice $20 less → **Customer Balances Payable: Alice ↓** → *Dr 20*.',
       draft: { ledger: 'zap', row: row('p2p', p2p.label!, dr('cbp-alice', 20)) },
       highlight: [{ ledger: 'zap', account: 'cbp-alice', note: '↓ Dr' }],
     },
     {
       caption:
-        '…and owes Bob $20 more → **Customer Balances Payable – Bob ↑** → *Cr 20*. Dr $20 = Cr $20 ✓. That one row *is* the whole payment.',
+        '…and owes Bob $20 more → **Customer Balances Payable: Bob ↑** → *Cr 20*. Dr $20 = Cr $20 ✓. That one row *is* the whole payment.',
       post: [{ ledger: 'zap', row: p2p }],
       flows: [
         {

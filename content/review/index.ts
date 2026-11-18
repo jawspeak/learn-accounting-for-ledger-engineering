@@ -66,18 +66,18 @@ const mod: SectionModule = {
       buckets: ['asset', 'contra-asset', 'liability', 'equity', 'revenue', 'expense'],
       hints: ['For each, ask: from *that* entity’s point of view, is it owned, owed, earned or used up?', 'Several pairs here are the same money seen from two sides.'],
       explanation:
-        'Mirror pairs: Bean There’s **Savings Account** (asset) ↔ the bank’s **Business Deposits** (liability); Zap’s **Cash – FBO** (asset) ↔ the bank’s **Deposits – FBO Accounts** (liability); Bean There’s **Interest Receivable** (asset) ↔ the bank’s **Accrued Interest Payable** (liability); Bean There’s **Interest Income** (revenue) ↔ the bank’s **Interest Expense** (expense). Accumulated Depreciation is a contra-asset; Customer Balances Payable is Zap’s liability.',
+        'Mirror pairs: Bean There’s **Savings Account** (asset) ↔ the bank’s **Business Deposits** (liability); Zap’s **Cash: FBO** (asset) ↔ the bank’s **Deposits: FBO Accounts** (liability); Bean There’s **Interest Receivable** (asset) ↔ the bank’s **Accrued Interest Payable** (liability); Bean There’s **Interest Income** (revenue) ↔ the bank’s **Interest Expense** (expense). Accumulated Depreciation is a contra-asset; Customer Balances Payable is Zap’s liability.',
       items: [
-        { label: 'Savings Account – First Example Bank [Bean There]', entityId: 'coffee', answer: 'asset', explanation: 'Bean There owns its savings.' },
+        { label: 'Savings Account: First Example Bank [Bean There]', entityId: 'coffee', answer: 'asset', explanation: 'Bean There owns its savings.' },
         { label: 'Business Deposits [First Example Bank]', entityId: 'bank', answer: 'liability', explanation: 'The bank owes it to business customers.' },
-        { label: 'Cash – FBO (Restricted) [Zap]', entityId: 'zap', answer: 'asset', explanation: 'Restricted cash Zap holds for customers.' },
-        { label: 'Deposits – FBO Accounts [First Example Bank]', entityId: 'bank', answer: 'liability', explanation: 'The bank owes the FBO balance.' },
-        { label: 'Customer Balances Payable – Alice [Zap]', entityId: 'zap', answer: 'liability', explanation: 'Zap owes Alice her balance.' },
+        { label: 'Cash: FBO (Restricted) [Zap]', entityId: 'zap', answer: 'asset', explanation: 'Restricted cash Zap holds for customers.' },
+        { label: 'Deposits: FBO Accounts [First Example Bank]', entityId: 'bank', answer: 'liability', explanation: 'The bank owes the FBO balance.' },
+        { label: 'Customer Balances Payable: Alice [Zap]', entityId: 'zap', answer: 'liability', explanation: 'Zap owes Alice her balance.' },
         { label: 'Interest Receivable [Bean There]', entityId: 'coffee', answer: 'asset', explanation: 'Interest earned, owed to Bean There.' },
         { label: 'Accrued Interest Payable [First Example Bank]', entityId: 'bank', answer: 'liability', explanation: 'Interest the bank owes, not yet posted.' },
         { label: 'Interest Income [Bean There]', entityId: 'coffee', answer: 'revenue', explanation: 'Earned on savings.' },
         { label: 'Interest Expense [First Example Bank]', entityId: 'bank', answer: 'expense', explanation: 'The bank’s cost of paying depositors.' },
-        { label: 'Accumulated Depreciation – Equipment [Bean There]', entityId: 'coffee', answer: 'contra-asset', explanation: 'Reduces Equipment; credit-normal.' },
+        { label: 'Accumulated Depreciation: Equipment [Bean There]', entityId: 'coffee', answer: 'contra-asset', explanation: 'Reduces Equipment; credit-normal.' },
       ],
     },
     {
@@ -154,7 +154,7 @@ const mod: SectionModule = {
         },
         {
           id: 'rv-bt-cash',
-          name: 'Cash – Bean There',
+          name: 'Cash: Bean There',
           type: 'asset',
           trap: { kind: 'counterparty', explanation: 'Bean There’s cash is Bean There’s asset. The bank sees its own liability (Business Deposits) going down.' },
         },
@@ -181,15 +181,15 @@ const mod: SectionModule = {
         '1. Carol loads **$200** into Zap; it lands in the FBO account.\n2. Carol pays Bob **$50** with the instant option, which costs her a **$1** fee.\n\nBook both events in **Zap’s** books. (No sweep yet.)',
       hints: ['Row 1: restricted cash and a new customer liability.', 'Row 2: three accounts — Carol, Bob, and Zap’s revenue. Does FBO cash move?'],
       explanation:
-        '**Row 1: Dr Cash – FBO 200 / Cr Customer Balances Payable – Carol 200.**\n\n**Row 2: Dr Customer Balances Payable – Carol 51 / Cr Customer Balances Payable – Bob 50 / Cr Transaction Fee Revenue 1.**\n\nAfter row 2 the FBO account still holds 350 = Alice 100 + Bob 100 + Carol 149 + $1 of Zap’s fees not yet swept.',
+        '**Row 1: Dr Cash: FBO 200 / Cr Customer Balances Payable: Carol 200.**\n\n**Row 2: Dr Customer Balances Payable: Carol 51 / Cr Customer Balances Payable: Bob 50 / Cr Transaction Fee Revenue 1.**\n\nAfter row 2 the FBO account still holds 350 = Alice 100 + Bob 100 + Carol 149 + $1 of Zap’s fees not yet swept.',
       showBalanceSheets: true,
       opening: bs({ 'cash-operating': 50000, 'cash-fbo': 150, 'cbp-alice': 100, 'cbp-bob': 50, 'paid-in-capital': 50000 }),
       trapAccounts: [
         {
           id: 'rv-bank-deposits-fbo',
-          name: 'Deposits – FBO Accounts',
+          name: 'Deposits: FBO Accounts',
           type: 'liability',
-          trap: { kind: 'counterparty', explanation: 'That’s the bank’s liability. Zap owes **Carol**: Customer Balances Payable – Carol.' },
+          trap: { kind: 'counterparty', explanation: 'That’s the bank’s liability. Zap owes **Carol**: Customer Balances Payable: Carol.' },
         },
         {
           id: 'rv-load-revenue',
@@ -199,7 +199,7 @@ const mod: SectionModule = {
         },
       ],
       diagnosticExplanations: {
-        EXTRA_ACCOUNT: 'Row 2 moves no bank money — Cash – FBO doesn’t change. And customer money never goes to Cash – Operating.',
+        EXTRA_ACCOUNT: 'Row 2 moves no bank money — Cash: FBO doesn’t change. And customer money never goes to Cash: Operating.',
         WRONG_AMOUNT: 'Row 2: Carol pays 50 + 1 = **51**, Bob gets **50**, Zap earns **1**.',
       },
       solution: [
@@ -218,11 +218,11 @@ const mod: SectionModule = {
       hints: ['Find the type first; the name can mislead.', 'Contra accounts are the opposite of their parent.'],
       explanation: 'Increase → normal side; decrease → opposite. Contra accounts flip their parent’s normal side.',
       items: [
-        { accountName: 'Accumulated Depreciation – Equipment', accountType: 'contra-asset', change: 'increase', answer: 'cr', explanation: 'Contra-asset → credit-normal.' },
+        { accountName: 'Accumulated Depreciation: Equipment', accountType: 'contra-asset', change: 'increase', answer: 'cr', explanation: 'Contra-asset → credit-normal.' },
         { accountName: 'Sales Returns & Allowances', accountType: 'contra-revenue', change: 'increase', answer: 'dr', explanation: 'Contra-revenue → debit-normal.' },
-        { accountName: 'Clearing – Pending ACH Cash-outs (Zap)', accountType: 'liability', change: 'decrease', answer: 'dr', explanation: 'Liability decreasing → debit (on settlement).' },
-        { accountName: 'Cash – FBO (Zap)', accountType: 'asset', change: 'decrease', answer: 'cr', explanation: 'Asset decreasing → credit.' },
-        { accountName: 'Deposits – FBO Accounts (bank)', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'Liability increasing → credit.' },
+        { accountName: 'Clearing: Pending ACH Cash-outs (Zap)', accountType: 'liability', change: 'decrease', answer: 'dr', explanation: 'Liability decreasing → debit (on settlement).' },
+        { accountName: 'Cash: FBO (Zap)', accountType: 'asset', change: 'decrease', answer: 'cr', explanation: 'Asset decreasing → credit.' },
+        { accountName: 'Deposits: FBO Accounts (bank)', accountType: 'liability', change: 'increase', answer: 'cr', explanation: 'Liability increasing → credit.' },
         { accountName: 'Allowance for Doubtful Accounts', accountType: 'contra-asset', change: 'decrease', answer: 'dr', explanation: 'Credit-normal contra; decrease (write-off) → debit.' },
         { accountName: 'Retained Earnings', accountType: 'equity', change: 'increase', answer: 'cr', explanation: 'Equity increasing → credit (e.g. closing a profit).' },
       ],
@@ -239,7 +239,7 @@ const mod: SectionModule = {
         '1. Bean There buys a **$2,400** grinder for cash. It will last **2 years** with no resale value (it’s recorded in the Equipment account).\n2. At month-end, record the first month’s straight-line depreciation.',
       hints: ['Row 1: is buying a long-lived asset an expense?', 'Row 2: $2,400 over 24 months = ?', 'Which contra account takes the credit?'],
       explanation:
-        '**Row 1: Dr Equipment 2,400 / Cr Cash 2,400** — an asset swap.\n\n**Row 2: Dr Depreciation Expense 100 / Cr Accumulated Depreciation – Equipment 100** ($2,400 ÷ 24 months).',
+        '**Row 1: Dr Equipment 2,400 / Cr Cash 2,400** — an asset swap.\n\n**Row 2: Dr Depreciation Expense 100 / Cr Accumulated Depreciation: Equipment 100** ($2,400 ÷ 24 months).',
       showBalanceSheets: true,
       opening: bs({ cash: 5000, 'paid-in-capital': 5000 }),
       trapAccounts: [
@@ -289,13 +289,13 @@ const mod: SectionModule = {
         },
         {
           id: 'rv-zap-cash-op',
-          name: 'Cash – Operating',
+          name: 'Cash: Operating',
           type: 'asset',
           trap: { kind: 'counterparty', explanation: 'Zap’s operating cash is Zap’s asset; for the bank it’s a deposit liability (Business Deposits).' },
         },
       ],
       diagnosticExplanations: {
-        EXTRA_ACCOUNT: 'Borrowed money is Zap’s own — it goes into Zap’s operating account (Business Deposits), never Deposits – FBO. No reserves move.',
+        EXTRA_ACCOUNT: 'Borrowed money is Zap’s own — it goes into Zap’s operating account (Business Deposits), never Deposits: FBO. No reserves move.',
       },
       solution: [row('t1', 'Lend to Zap', dr('loans-receivable', 10000), cr('deposits-business', 10000))],
     },
@@ -362,7 +362,7 @@ const mod: SectionModule = {
         '1. **Nov 30:** Zap used **$3,000** of cloud hosting in November. The invoice hasn’t arrived yet.\n2. **Dec 12:** the invoice arrives for exactly $3,000 and Zap pays it immediately from its operating account.\n\nBook both events.',
       hints: ['Row 1: which month bears the cost? No invoice yet — which liability in Zap’s chart?', 'Row 2: is there new expense in December?'],
       explanation:
-        '**Row 1: Dr Cloud Hosting Expense 3,000 / Cr Accrued Expenses 3,000** — incurred in November, not yet invoiced.\n\n**Row 2: Dr Accrued Expenses 3,000 / Cr Cash – Operating 3,000** — the payment settles the accrual; no December expense. (Had the invoice been paid later, you might first reclassify the accrual to Accounts Payable.)',
+        '**Row 1: Dr Cloud Hosting Expense 3,000 / Cr Accrued Expenses 3,000** — incurred in November, not yet invoiced.\n\n**Row 2: Dr Accrued Expenses 3,000 / Cr Cash: Operating 3,000** — the payment settles the accrual; no December expense. (Had the invoice been paid later, you might first reclassify the accrual to Accounts Payable.)',
       showBalanceSheets: true,
       opening: bs({ 'cash-operating': 50000, 'paid-in-capital': 50000 }),
       trapAccounts: [
@@ -381,7 +381,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Row 1 moves no cash, and Prepaid Expenses is for paying *before* using. Row 2 adds no new expense. Zap pays its own bills from **Cash – Operating**, never Cash – FBO.',
+          'Row 1 moves no cash, and Prepaid Expenses is for paying *before* using. Row 2 adds no new expense. Zap pays its own bills from **Cash: Operating**, never Cash: FBO.',
       },
       solution: [
         row('t1', 'Accrue November hosting', dr('hosting-expense', 3000), cr('accrued-expenses', 3000)),
@@ -456,7 +456,7 @@ const mod: SectionModule = {
         {
           text: 'Under the gross-up model, Zap shows the FBO cash as an asset and an equal liability to customers.',
           correct: true,
-          explanation: 'Dr Cash – FBO / Cr Customer Balances Payable.',
+          explanation: 'Dr Cash: FBO / Cr Customer Balances Payable.',
         },
         {
           text: 'Pass-through FDIC insurance protects customers if Zap (the fintech) goes bankrupt.',

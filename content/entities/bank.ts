@@ -13,17 +13,17 @@ const bank: EntityCoA = {
   basis: 'accrual',
   accounts: [
     // Assets
-    { id: 'vault-cash', name: 'Cash – Vault', type: 'asset', description: 'Physical currency held in the vault, teller drawers and ATMs.' },
+    { id: 'vault-cash', name: 'Cash: Vault', type: 'asset', description: 'Physical currency held in the vault, teller drawers and ATMs.' },
     { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset', description: "The bank's own account at the Fed. Payments to and from other banks settle here." },
     { id: 'securities', name: 'Investment Securities', type: 'asset', description: 'Treasury bonds and other securities the bank owns.' },
     { id: 'interest-receivable', name: 'Interest Receivable', type: 'asset', description: 'Interest earned on loans, not yet collected.' },
     { id: 'loans-receivable', name: 'Loans Receivable', type: 'asset', description: 'Principal owed to the bank by borrowers.' },
     { id: 'premises', name: 'Premises & Equipment', type: 'asset', description: 'Branches, ATMs, computers.' },
     // Liabilities
-    { id: 'deposits-checking', name: 'Customer Deposits – Checking', type: 'liability', description: 'What the bank owes checking customers.' },
-    { id: 'deposits-savings', name: 'Customer Deposits – Savings', type: 'liability', description: 'What the bank owes savings customers.' },
+    { id: 'deposits-checking', name: 'Customer Deposits: Checking', type: 'liability', description: 'What the bank owes checking customers.' },
+    { id: 'deposits-savings', name: 'Customer Deposits: Savings', type: 'liability', description: 'What the bank owes savings customers.' },
     { id: 'deposits-business', name: 'Business Deposits', type: 'liability', description: 'What the bank owes business customers (e.g. Bean There Coffee Co.).' },
-    { id: 'deposits-fbo', name: 'Deposits – FBO Accounts', type: 'liability', description: 'Funds held in For-Benefit-Of accounts for fintechs’ customers.' },
+    { id: 'deposits-fbo', name: 'Deposits: FBO Accounts', type: 'liability', description: 'Funds held in For-Benefit-Of accounts for fintechs’ customers.' },
     { id: 'accrued-interest-payable', name: 'Accrued Interest Payable', type: 'liability', description: 'Interest owed to depositors, accrued but not yet posted.' },
     // Equity
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in', description: "Money the bank's shareholders invested." },

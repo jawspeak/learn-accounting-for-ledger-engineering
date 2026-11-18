@@ -154,7 +154,7 @@ A = L + Paid-in Capital + Revenue − Expenses − Dividends
       buckets: ['asset', 'liability', 'equity', 'revenue', 'expense'],
       items: [
         { label: 'Checking Account (your books)', entityId: 'you', answer: 'asset', explanation: 'You own the claim on the bank.' },
-        { label: 'Customer Deposits – Checking (bank)', entityId: 'bank', answer: 'liability', explanation: 'The bank owes depositors this money — it must pay it out on demand.' },
+        { label: 'Customer Deposits: Checking (bank)', entityId: 'bank', answer: 'liability', explanation: 'The bank owes depositors this money — it must pay it out on demand.' },
         { label: 'Loan Payable (your books)', entityId: 'you', answer: 'liability', explanation: 'You owe the bank.' },
         { label: 'Loans Receivable (bank)', entityId: 'bank', answer: 'asset', explanation: 'Borrowers owe the bank; that claim is the bank\'s asset.' },
         { label: 'Interest Expense on your loan (your books)', entityId: 'you', answer: 'expense', explanation: 'Interest you pay reduces your net worth.' },
@@ -171,25 +171,58 @@ A = L + Paid-in Capital + Revenue − Expenses − Dividends
       title: 'Equation stories',
       role: 'practice',
       difficulty: 2,
-      prompt: `
-Fill in the blank (whole dollars) for each situation:
-
-1. You own $8,000 of stuff (checking, savings, car) and owe $1,500 on your credit card. What is your net worth?
-2. Your net worth is $12,000 and your assets total $30,000. How much do you owe?
-3. You owe $20,000 on a car loan and your net worth is **−$2,000**. What are your assets worth?
-4. A small bank has $900,000 of customer deposits (its only liabilities) and $100,000 of equity. What are its total assets?
-`.trim(),
+      prompt:
+        "Last time the totals were given. Now they aren't: for each story, **sort the items into assets and liabilities, add them up**, then fill in the blank (whole dollars).",
+      hideGiven: true,
       hints: [
-        'Write `A = L + E` and plug in the two numbers you know.',
+        'Go item by item: is it something you **own** (asset) or something you **owe** (liability)? Total each side, then use `A = L + E`.',
         'Negative equity is allowed: it just means you owe more than you own.',
+        'In the last story, look at what changed on **both** sides.',
       ],
       explanation:
-        '1. E = 8,000 − 1,500 = **6,500**. 2. L = 30,000 − 12,000 = **18,000**. 3. A = 20,000 + (−2,000) = **18,000** — you owe more than you own. 4. A = 900,000 + 100,000 = **1,000,000** — a bank is mostly funded by what it owes depositors.',
+        'The skill here is the sorting, not the algebra: every item is either owned (asset) or owed (liability), and net worth is what\'s left. 1. A = 3,000 + 500 + 12,000 = 15,500; L = 9,000 + 1,000 = 10,000; E = **5,500**. 2. A = 25,000 + 5,000 = 30,000; L = 30,000 − 12,000 = **18,000**. 3. L = 20,000 + 2,000 = 22,000; A = 22,000 + (−4,000) = **18,000**. 4. L = 900,000 + 300,000 = 1,200,000; A = 1,200,000 + 100,000 = **1,300,000**. 5. A = 10,000 − 1,000 = 9,000; L = 4,000 − 1,000 = 3,000; E = **6,000** — unchanged: paying off debt shrinks both sides equally.',
       items: [
-        { assets: 8000, liabilities: 1500, equity: null, explanation: 'Net worth = 8,000 − 1,500 = 6,500.' },
-        { assets: 30000, liabilities: null, equity: 12000, explanation: 'Liabilities = 30,000 − 12,000 = 18,000.' },
-        { assets: null, liabilities: 20000, equity: -2000, explanation: 'Assets = 20,000 + (−2,000) = 18,000. Negative net worth: debts exceed assets.' },
-        { assets: null, liabilities: 900000, equity: 100000, explanation: 'Assets = 900,000 + 100,000 = 1,000,000.' },
+        {
+          assets: 15500,
+          liabilities: 10000,
+          equity: null,
+          story:
+            'You have **$3,000** in checking, **$500** in cash and a car worth **$12,000**. You owe **$9,000** on the car loan and **$1,000** on your credit card. What is your **net worth**?',
+          explanation: 'Assets 3,000 + 500 + 12,000 = 15,500; liabilities 9,000 + 1,000 = 10,000; net worth = 5,500.',
+        },
+        {
+          assets: 30000,
+          liabilities: null,
+          equity: 12000,
+          story:
+            'Your net worth is **$12,000**. You own a car worth **$25,000** and have **$5,000** in savings. The only thing you owe is the car loan. How much is **left on the loan**?',
+          explanation: 'Assets 25,000 + 5,000 = 30,000; liabilities = 30,000 − 12,000 = 18,000.',
+        },
+        {
+          assets: null,
+          liabilities: 22000,
+          equity: -4000,
+          story:
+            'You owe **$20,000** in student loans and **$2,000** on a credit card, and your net worth is **−$4,000**. What are **all your assets** worth?',
+          explanation: 'Liabilities 20,000 + 2,000 = 22,000; assets = 22,000 + (−4,000) = 18,000. Negative net worth: debts exceed assets.',
+        },
+        {
+          assets: null,
+          liabilities: 1200000,
+          equity: 100000,
+          story:
+            "A small bank owes its customers **$900,000** in checking deposits and **$300,000** in savings deposits (its only liabilities). Its shareholders' equity is **$100,000**. What are its **total assets**?",
+          explanation: 'Liabilities 900,000 + 300,000 = 1,200,000; assets = 1,200,000 + 100,000 = 1,300,000 — a bank is mostly funded by what it owes depositors.',
+        },
+        {
+          assets: 9000,
+          liabilities: 3000,
+          equity: null,
+          story:
+            'Last month your assets were **$10,000** and you owed **$4,000**. This month you pay **$1,000** of your credit-card bill from checking (nothing else happens). What is your **net worth now**?',
+          explanation:
+            'Assets 10,000 − 1,000 = 9,000; liabilities 4,000 − 1,000 = 3,000; net worth 6,000 — the same as before. Paying down debt moves both sides equally.',
+        },
       ],
     },
     {
@@ -261,10 +294,30 @@ Using \`A = L + PIC + Rev − Exp − Div\`, what are total **assets**?
       explanation:
         "Equity is on the right of `A = L + E` and increases with credits. An expense **reduces** equity, so it's recorded on the opposite side: an increase in an expense is a **debit** (which is a decrease to equity). Expense accounts are just a detailed breakdown of the debits to equity.",
       options: [
-        { text: 'Because expenses reduce equity, and equity increases on the credit side — so a reduction is a debit.', correct: true, explanation: 'Exactly. Expense accounts collect the debits (decreases) to equity, one category at a time.' },
-        { text: 'Because spending money is bad, and debits are bad.', correct: false, explanation: 'Debit and credit just mean **left** and **right**. They carry no judgment.' },
-        { text: 'Because expenses are a kind of asset.', correct: false, explanation: 'Expenses are gone — they are not assets. They are a reduction of equity.' },
-        { text: "Because the bank's statement shows payments as debits.", correct: false, explanation: "The bank's statement is written from the bank's books, not yours. The reason is the equation, not the statement." },
+        {
+          text: 'Expenses **reduce** equity, and equity **increases** with a credit — so an increase in an expense is recorded as a **debit**.',
+          correct: true,
+          explanation:
+            'Expense accounts collect the reductions to equity, one category at a time. Equity grows on the credit side, so anything that shrinks it grows on the debit side.',
+        },
+        {
+          text: 'Expenses **increase** equity, and equity **increases** with a debit — so an increase in an expense is recorded as a **debit**.',
+          correct: false,
+          explanation:
+            'Both halves are backwards: expenses **reduce** equity (they make you poorer), and equity increases with a **credit** (it sits on the right of `A = L + E`).',
+        },
+        {
+          text: 'Expenses **reduce** equity, and equity **decreases** with a credit — so an increase in an expense is recorded as a **debit**.',
+          correct: false,
+          explanation:
+            'The first half is right, the second isn’t: equity **decreases** with a **debit** and increases with a credit. The conclusion only works because equity grows on the credit side.',
+        },
+        {
+          text: 'Expenses are assets that have been **used up**, and assets **increase** with a debit — so an increase in an expense is recorded as a **debit**.',
+          correct: false,
+          explanation:
+            'Tempting — both are debit-normal — but an expense is **not** an asset: it’s gone, so nobody owns it any more. Expenses are debit-normal because they reduce equity.',
+        },
       ],
     },
     {
@@ -292,7 +345,7 @@ Using \`A = L + PIC + Rev − Exp − Div\`, what are total **assets**?
       trapAccounts: [
         {
           id: 'customer-deposits-checking',
-          name: 'Customer Deposits – Checking',
+          name: 'Customer Deposits: Checking',
           type: 'liability',
           trap: {
             kind: 'counterparty',

@@ -605,6 +605,18 @@ textarea {
   width: 8rem;
   font-family: var(--font-mono);
 }
+/* Word problems: the story sits above the row (full width); known totals show as "…" to work out. */
+.eq-story {
+  flex-basis: 100%;
+  max-width: 40rem;
+}
+.eq-story .md p {
+  margin: 0;
+}
+.eq-hidden {
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
 .money-input {
   width: 7.5rem;
   text-align: right;

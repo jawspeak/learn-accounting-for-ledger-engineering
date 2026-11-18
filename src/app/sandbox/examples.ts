@@ -30,11 +30,11 @@ const youAccounts = (extra: Account[] = []) =>
 
 const bankAccounts = (ids: AccountId[]) => {
   const all: Account[] = [
-    { id: 'vault-cash', name: 'Cash – Vault', type: 'asset' },
+    { id: 'vault-cash', name: 'Cash: Vault', type: 'asset' },
     { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset' },
     { id: 'loans-receivable', name: 'Loans Receivable', type: 'asset' },
-    { id: 'deposits-checking', name: 'Customer Deposits – Checking', type: 'liability' },
-    { id: 'deposits-fbo', name: 'Deposits – FBO Accounts', type: 'liability' },
+    { id: 'deposits-checking', name: 'Customer Deposits: Checking', type: 'liability' },
+    { id: 'deposits-fbo', name: 'Deposits: FBO Accounts', type: 'liability' },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
     { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
   ];
@@ -159,8 +159,8 @@ function loan(): SandboxState {
 // ---------- 3. FBO top-up ----------
 function fboTopUp(): SandboxState {
   const zap: Account[] = [
-    { id: 'operating-cash', name: 'Cash – Operating', type: 'asset', description: 'Zap’s own money at the bank.' },
-    { id: 'fbo-cash', name: 'Cash – FBO Account', type: 'asset', description: 'Customer money held at the bank for the benefit of Zap users.' },
+    { id: 'operating-cash', name: 'Cash: Operating', type: 'asset', description: 'Zap’s own money at the bank.' },
+    { id: 'fbo-cash', name: 'Cash: FBO Account', type: 'asset', description: 'Customer money held at the bank for the benefit of Zap users.' },
     { id: 'customer-balances', name: 'Customer Balances Payable', type: 'liability', description: 'What Zap owes its users (their wallet balances).' },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   ];

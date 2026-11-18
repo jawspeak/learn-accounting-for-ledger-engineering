@@ -114,10 +114,17 @@ export interface DrCrPredictProblem extends ProblemBase {
 /** Fill the blank in A = L + E (or expanded form). Exactly one field per item is null (the blank). */
 export interface EquationFillProblem extends ProblemBase {
   kind: 'equation-fill';
+  /**
+   * Word problems: don't print the two known totals — the learner works them out from each item's `story`
+   * (sorting and adding several accounts). The blank is still the one `null` field.
+   */
+  hideGiven?: boolean;
   items: {
     assets: number | null;
     liabilities: number | null;
     equity: number | null;
+    /** Shown above the item's row (used with `hideGiven`). */
+    story?: Markdown;
     explanation: Markdown;
   }[];
 }

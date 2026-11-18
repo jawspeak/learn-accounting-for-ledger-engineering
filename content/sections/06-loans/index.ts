@@ -72,7 +72,7 @@ const yourCheckingTrap: TrapAccount = {
   type: 'asset',
   trap: {
     kind: 'counterparty',
-    explanation: "**Checking Account** is the borrower's asset in *their* books. In the bank's books the same balance is a liability it owes: **Customer Deposits – Checking**.",
+    explanation: "**Checking Account** is the borrower's asset in *their* books. In the bank's books the same balance is a liability it owes: **Customer Deposits: Checking**.",
   },
 };
 
@@ -88,7 +88,7 @@ A loan is one claim seen from two sides:
 | | **Your** books (borrower) | **Bank's** books (lender) |
 |---|---|---|
 | The claim | **Loan Payable** — liability | **Loans Receivable** — asset |
-| The money | **Checking Account** — asset | **Customer Deposits – Checking** — liability |
+| The money | **Checking Account** — asset | **Customer Deposits: Checking** — liability |
 | The price of borrowing | **Interest Expense** | **Interest Income** |
 
 **[[Principal]] vs. [[interest]].** *Principal* is the amount borrowed; repaying it just shrinks the debt (no gain or loss for anyone). *Interest* is the cost of borrowing: an **expense** for the borrower and **revenue** for the lender. A single repayment usually contains both, so it's booked as **one [[compound entry]]** with three lines:
@@ -100,7 +100,7 @@ Interest Expense (expense): Dr 50
 Checking Account (asset): Cr 1,050
 
 The bank receives your payment
-Customer Deposits – Checking (liability): Dr 1,050
+Customer Deposits: Checking (liability): Dr 1,050
 Loans Receivable (asset): Cr 1,000
 Interest Income (revenue): Cr 50
 \`\`\`
@@ -116,7 +116,7 @@ Check both: Σ Dr = Σ Cr, and every account mirrors its counterpart on the othe
 When First Example Bank lends you $1,000, it doesn't take $1,000 out of anyone else's account, and it doesn't touch its [[reserves]]. It records two new things at once:
 
 - an **asset**: Loans Receivable +1,000 (you owe it), and
-- a **liability**: Customer Deposits – Checking +1,000 (it owes you).
+- a **liability**: Customer Deposits: Checking +1,000 (it owes you).
 
 The bank's [[balance sheet]] **grows on both sides**. The $1,000 in your checking account is a **brand-new deposit** — new money that didn't exist before the loan. (When you repay, the reverse happens and the deposit disappears.)
 
@@ -205,12 +205,12 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         'The bank now **owes** you $1,000 more. Which liability, and which side increases it?',
       ],
       explanation:
-        "The bank is owed $1,000 → **Dr Loans Receivable 1,000** (given). It credited your checking account, so it owes you $1,000 more → **Cr Customer Deposits – Checking 1,000**. No cash or reserves moved: **the loan created a deposit**. The bank's balance sheet grows on both sides by 1,000; its equity is unchanged.",
+        "The bank is owed $1,000 → **Dr Loans Receivable 1,000** (given). It credited your checking account, so it owes you $1,000 more → **Cr Customer Deposits: Checking 1,000**. No cash or reserves moved: **the loan created a deposit**. The bank's balance sheet grows on both sides by 1,000; its equity is unchanged.",
       diagnosticExplanations: {
-        WRONG_SIDE: 'Customer Deposits – Checking is a liability going **up** → credit.',
+        WRONG_SIDE: 'Customer Deposits: Checking is a liability going **up** → credit.',
         EXTRA_ACCOUNT:
-          "Reserves at the Federal Reserve and Cash – Vault don't change: no money left the bank. The loan was paid out by creating a deposit. Reserves only move later, if you spend the money at another bank.",
-        MISSING_ACCOUNT: 'The $1,000 landed in your checking account. In the bank\'s books, that is **Customer Deposits – Checking**.',
+          "Reserves at the Federal Reserve and Cash: Vault don't change: no money left the bank. The loan was paid out by creating a deposit. Reserves only move later, if you spend the money at another bank.",
+        MISSING_ACCOUNT: 'The $1,000 landed in your checking account. In the bank\'s books, that is **Customer Deposits: Checking**.',
       },
       showBalanceSheets: true,
       opening: bankOpening,
@@ -307,7 +307,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "The $50 isn't returning principal — it's what the bank earned for lending. What type of account?",
       ],
       explanation:
-        "```journal\nDr  Customer Deposits – Checking   1,050\n    Cr  Loans Receivable                1,000\n    Cr  Interest Income                    50\n```\nThe bank owes you 1,050 less (liability ↓ → debit). It is no longer owed the 1,000 principal (asset ↓ → credit). It earned 50 (revenue ↑ → credit). Liabilities fall 1,050 = assets fall 1,000 + equity rises 50. Mirror image of your entry: your Interest Expense is its Interest Income. And notice the repayment **destroyed** $1,050 of deposits.",
+        "```journal\nDr  Customer Deposits: Checking   1,050\n    Cr  Loans Receivable                1,000\n    Cr  Interest Income                    50\n```\nThe bank owes you 1,050 less (liability ↓ → debit). It is no longer owed the 1,000 principal (asset ↓ → credit). It earned 50 (revenue ↑ → credit). Liabilities fall 1,050 = assets fall 1,000 + equity rises 50. Mirror image of your entry: your Interest Expense is its Interest Income. And notice the repayment **destroyed** $1,050 of deposits.",
       diagnosticExplanations: {
         WRONG_SIDE:
           'Customer Deposits (liability) ↓ → debit. Loans Receivable (asset) ↓ → credit. Interest Income (revenue) ↑ → credit.',
@@ -323,7 +323,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         yourCheckingTrap,
         {
           id: 'interest-expense-borrower',
-          name: 'Interest Expense – Borrowers',
+          name: 'Interest Expense: Borrowers',
           type: 'expense',
           trap: {
             kind: 'counterparty',
@@ -440,10 +440,10 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         "The borrower's Interest Expense is the bank's…?",
       ],
       explanation:
-        "```journal\nDr  Customer Deposits – Checking   200\n    Cr  Loans Receivable                180\n    Cr  Interest Income                  20\n```\nEach account flips: borrower's Checking (asset, Cr) ↔ bank's Customer Deposits (liability, **Dr**); Loan Payable (liability, Dr) ↔ Loans Receivable (asset, **Cr**); Interest Expense (Dr) ↔ Interest Income (**Cr**).",
+        "```journal\nDr  Customer Deposits: Checking   200\n    Cr  Loans Receivable                180\n    Cr  Interest Income                  20\n```\nEach account flips: borrower's Checking (asset, Cr) ↔ bank's Customer Deposits (liability, **Dr**); Loan Payable (liability, Dr) ↔ Loans Receivable (asset, **Cr**); Interest Expense (Dr) ↔ Interest Income (**Cr**).",
       diagnosticExplanations: {
         WRONG_SIDE: "Every account flips sides between borrower and lender. Don't copy the reference's sides.",
-        COUNTERPARTY_ACCOUNT: "Loan Payable, Interest Expense and Checking Account are the borrower's accounts (the reference). The bank uses Loans Receivable, Interest Income and Customer Deposits – Checking.",
+        COUNTERPARTY_ACCOUNT: "Loan Payable, Interest Expense and Checking Account are the borrower's accounts (the reference). The bank uses Loans Receivable, Interest Income and Customer Deposits: Checking.",
         WRONG_AMOUNT: 'Principal 180 → Loans Receivable; interest 20 → Interest Income; deposit falls by 200.',
       },
       showBalanceSheets: false,
@@ -479,7 +479,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
         'Accounts not touched by either event keep their opening balance.',
       ],
       explanation:
-        'Loans Receivable 1,400,000 + 1,000 = **1,401,000**. Customer Deposits – Checking 1,000,000 + 1,000 − 400 = **1,000,600**. Reserves at the Fed 180,000 − 400 = **179,600**. Everything else unchanged. Totals: assets 2,000,600 = liabilities 1,800,600 + equity 200,000. The loan created a deposit without touching reserves; reserves left only when the money was spent at another bank.',
+        'Loans Receivable 1,400,000 + 1,000 = **1,401,000**. Customer Deposits: Checking 1,000,000 + 1,000 − 400 = **1,000,600**. Reserves at the Fed 180,000 − 400 = **179,600**. Everything else unchanged. Totals: assets 2,000,600 = liabilities 1,800,600 + equity 200,000. The loan created a deposit without touching reserves; reserves left only when the money was spent at another bank.',
       opening: bankOpening,
       rows: [
         {
@@ -527,7 +527,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
       prompt: "Right after First Example Bank lends you $1,000 into your checking account (and before you spend any of it), which statements are **true**?",
       hints: ["Look at the bank's entry: which accounts changed?", 'Did any asset decrease?'],
       explanation:
-        "The bank's entry is Dr Loans Receivable 1,000 / Cr Customer Deposits – Checking 1,000. Both sides of its balance sheet grew; nothing was taken from other depositors or from reserves. The loan **created** a new deposit. Equity doesn't change — the bank only earns from the loan later, as interest.",
+        "The bank's entry is Dr Loans Receivable 1,000 / Cr Customer Deposits: Checking 1,000. Both sides of its balance sheet grew; nothing was taken from other depositors or from reserves. The loan **created** a new deposit. Equity doesn't change — the bank only earns from the loan later, as interest.",
       options: [
         { text: "The bank's Loans Receivable and Customer Deposits both rose by $1,000.", correct: true, explanation: 'Yes — the balance sheet grew on both sides.' },
         { text: "The bank's reserves at the Fed fell by $1,000.", correct: false, explanation: 'No money left the bank. Reserves move only if you pay someone at another bank.' },
@@ -601,7 +601,7 @@ Reserves (or vault cash) only come into it when you **spend** the money at anoth
       prompt: "Review from §4. First Example Bank charges a customer a **$35 overdraft fee**, taken from the customer's **checking account**. Book it in **the bank's** books.",
       hints: ['What does the bank owe the customer after the fee?', 'Did the bank earn something? What type of account?'],
       explanation:
-        "The bank owes the customer $35 less → **Dr Customer Deposits – Checking 35**. It earned a fee → **Cr Fee Income 35**. Liabilities fall 35, equity rises 35. (The customer books the mirror image: Dr Bank Fees Expense / Cr Checking.)",
+        "The bank owes the customer $35 less → **Dr Customer Deposits: Checking 35**. It earned a fee → **Cr Fee Income 35**. Liabilities fall 35, equity rises 35. (The customer books the mirror image: Dr Bank Fees Expense / Cr Checking.)",
       diagnosticExplanations: {
         WRONG_SIDE: 'Customer Deposits (liability) ↓ → debit. Fee Income (revenue) ↑ → credit.',
         EXTRA_ACCOUNT: 'No cash or reserves move: the fee is taken from a balance the bank already holds — it simply owes the customer less.',

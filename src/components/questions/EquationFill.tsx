@@ -1,4 +1,5 @@
 import type { EquationFillAnswer, EquationFillProblem } from '@contracts';
+import { Markdown } from '../../app/Markdown';
 import { itemClass, itemsOf, Mark, type QuestionInputProps } from './types';
 
 type Part = 'assets' | 'liabilities' | 'equity';
@@ -34,6 +35,11 @@ export function EquationFill({
       {problem.items.map((it, i) => (
         <li key={i} className={`q-item ${itemClass(i, correctItems, wrongItems)}`}>
           <Mark i={i} correct={correctItems} wrong={wrongItems} />
+          {it.story && (
+            <div className="eq-story">
+              <Markdown text={it.story} />
+            </div>
+          )}
           <div className="eq">
             {PARTS.map((p) => {
               const given = it[p.key];
@@ -41,7 +47,15 @@ export function EquationFill({
                 <span key={p.key} style={{ display: 'contents' }}>
                   <label>
                     <span className="note">{p.label}</span>{' '}
-                    {given === null ? (
+                    {given !== null && problem.hideGiven ? (
+                      // Word problem: the learner works this total out from the story.
+                      <span
+                        className="eq-hidden"
+                        aria-label={`${p.label}: work it out from the story`}
+                      >
+                        …
+                      </span>
+                    ) : given === null ? (
                       <input
                         inputMode="decimal"
                         className="money-input"

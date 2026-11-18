@@ -13,17 +13,17 @@ const bs = (o: Record<string, number>): BalanceSheet => ({
 const zapCoaTable = `
 | No. | Account name | Type | Normal | Notes |
 |---|---|---|---|---|
-| 1010 | Cash – Operating | Asset | Dr | Zap’s own bank account |
-| 1020 | Cash – FBO (Restricted) | Asset | Dr | Customer funds at First Example Bank |
-| 1030 | Cash in Transit – Incoming ACH | Asset | Dr | Incoming ACH not yet landed |
+| 1010 | Cash: Operating | Asset | Dr | Zap’s own bank account |
+| 1020 | Cash: FBO (Restricted) | Asset | Dr | Customer funds at First Example Bank |
+| 1030 | Cash in Transit: Incoming ACH | Asset | Dr | Incoming ACH not yet landed |
 | 1100 | Settlement Receivable | Asset | Dr | Debit-card top-ups owed by the card processor |
 | 1200 | Interest Receivable | Asset | Dr | |
 | 1300 | Prepaid Expenses | Asset | Dr | |
 | 2000 | Customer Balances Payable (control) | Liability | Cr | Total of 2010–2012; the one line on the balance sheet (not postable) |
-| 2010 | Customer Balances Payable – Alice | Liability | Cr | Sub-ledger of 2000 control |
-| 2011 | Customer Balances Payable – Bob | Liability | Cr | Sub-ledger of 2000 control |
-| 2012 | Customer Balances Payable – Carol | Liability | Cr | Sub-ledger of 2000 control |
-| 2100 | Clearing – Pending ACH Cash-outs | Liability | Cr | Should be 0 after settlement |
+| 2010 | Customer Balances Payable: Alice | Liability | Cr | Sub-ledger of 2000 control |
+| 2011 | Customer Balances Payable: Bob | Liability | Cr | Sub-ledger of 2000 control |
+| 2012 | Customer Balances Payable: Carol | Liability | Cr | Sub-ledger of 2000 control |
+| 2100 | Clearing: Pending ACH Cash-outs | Liability | Cr | Should be 0 after settlement |
 | 2200 | Suspense | Liability | Cr | Unmatched receipts; clear daily |
 | 2300 | Accounts Payable | Liability | Cr | Invoices received |
 | 2400 | Accrued Expenses | Liability | Cr | Incurred, not yet invoiced |
@@ -44,7 +44,7 @@ Engineers usually meet a [[Chart of Accounts]] in one of two ways: **designing**
 **Designing a CoA from business activities**
 1. List the **events** the business has: money in, money out, money between customers, fees, costs, errors.
 2. For each event ask the five questions: what do we **own**? what do we **owe**? what is **owners’** money? what do we **earn**? what do we **use up**?
-3. Name accounts by **economic meaning**, not by system or vendor (*Clearing – Pending ACH Cash-outs*, not *Stripe pending*).
+3. Name accounts by **economic meaning**, not by system or vendor (*Clearing: Pending ACH Cash-outs*, not *Stripe pending*).
 4. Separate what must be separated: restricted vs. operating cash, money in flight, unidentified money.
 5. Leave out what the business doesn’t do — a P2P app has no [[inventory]].
 
@@ -64,7 +64,7 @@ const lens = `
 - **Type is effectively immutable** once postings exist — retyping an account silently changes every historical report. Treat it like a schema migration.
 - Adding accounts is cheap; splitting one later (e.g. one *Cash* into *Operating* and *FBO*) means reclassifying history. Design the obvious splits up front.
 - Keep high-cardinality detail (one wallet per user) in a **sub-ledger** keyed by customer, rolling up to a GL **control account**. Reconcile Σ sub-ledger = control account continuously.
-- Encode [[invariants]] next to the schema: *[[clearing accounts]] settle to zero*, *Suspense ages out*, *Cash – FBO (+ in-flight receipts) = customer balances + pending cash-outs + suspense + unswept fees*.
+- Encode [[invariants]] next to the schema: *[[clearing accounts]] settle to zero*, *Suspense ages out*, *Cash: FBO (+ in-flight receipts) = customer balances + pending cash-outs + suspense + unswept fees*.
 `;
 
 const callouts = [
@@ -111,13 +111,13 @@ const mod: SectionModule = {
         'What does the money pay for — something used up this month? Look in the 5xxx–6xxx range.',
       ],
       walkthrough: [
-        '**Start from the account you know.** Zap pays from its own money: **1010 Cash – Operating** (Asset, normal Dr). It decreases → **credit** 2,000.',
-        'Never touch **1020 Cash – FBO** for Zap’s own bills — that’s customers’ money.',
+        '**Start from the account you know.** Zap pays from its own money: **1010 Cash: Operating** (Asset, normal Dr). It decreases → **credit** 2,000.',
+        'Never touch **1020 Cash: FBO** for Zap’s own bills — that’s customers’ money.',
         'The debit side: this month’s hosting is used up this month → an expense. Scanning the 6xxx range: **6020 Cloud Hosting Expense** (Expense, normal Dr) → **debit** 2,000.',
         'Row balances: Dr 2,000 = Cr 2,000. The table’s "Normal" column did the Dr/Cr work for you.',
       ],
       explanation:
-        '**Dr 6020 Cloud Hosting Expense 2,000 / Cr 1010 Cash – Operating 2,000.** The table tells you each account’s type and normal side; increase on the normal side, decrease on the opposite. Paying from Cash – FBO would be spending customer money — exactly what segregation forbids.',
+        '**Dr 6020 Cloud Hosting Expense 2,000 / Cr 1010 Cash: Operating 2,000.** The table tells you each account’s type and normal side; increase on the normal side, decrease on the opposite. Paying from Cash: FBO would be spending customer money — exactly what segregation forbids.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs({ 'cash-operating': 50000, 'paid-in-capital': 50000 }),
@@ -136,7 +136,7 @@ const mod: SectionModule = {
         },
       ],
       diagnosticExplanations: {
-        EXTRA_ACCOUNT: 'Zap pays its own bills from **1010 Cash – Operating**. 1020 Cash – FBO holds customer money and must never pay Zap’s expenses.',
+        EXTRA_ACCOUNT: 'Zap pays its own bills from **1010 Cash: Operating**. 1020 Cash: FBO holds customer money and must never pay Zap’s expenses.',
         WRONG_SIDE: 'Check the "Normal" column: an asset decreasing is a **credit**; an expense increasing is a **debit**.',
       },
       solution: [row('t1', 'Pay hosting bill', dr('hosting-expense', 2000), cr('cash-operating', 2000))],
@@ -155,7 +155,7 @@ const mod: SectionModule = {
         'When the processor pays, which asset goes away and which asset (careful: which **cash** account?) goes up?',
       ],
       explanation:
-        '**Row 1:** Dr 1100 Settlement Receivable 300 / Cr 2012 Customer Balances Payable – Carol 300 — Carol’s balance is credited immediately, while the money is owed by the processor.\n\n**Row 2: Dr 1020 Cash – FBO 300 / Cr 1100 Settlement Receivable 300.** The receivable becomes cash — in the **FBO** account, because it’s Carol’s money. No change to Carol’s balance in row 2.\n\nBetween rows 1 and 2, Cash – FBO (1,000) is $300 short of customer balances (1,300); the gap is the Settlement Receivable. Reconciliations include in-flight receivables, and many fintechs pre-fund the FBO account from operating cash so that customer balances are always fully backed.',
+        '**Row 1:** Dr 1100 Settlement Receivable 300 / Cr 2012 Customer Balances Payable: Carol 300 — Carol’s balance is credited immediately, while the money is owed by the processor.\n\n**Row 2: Dr 1020 Cash: FBO 300 / Cr 1100 Settlement Receivable 300.** The receivable becomes cash — in the **FBO** account, because it’s Carol’s money. No change to Carol’s balance in row 2.\n\nBetween rows 1 and 2, Cash: FBO (1,000) is $300 short of customer balances (1,300); the gap is the Settlement Receivable. Reconciliations include in-flight receivables, and many fintechs pre-fund the FBO account from operating cash so that customer balances are always fully backed.',
       showBalanceSheets: true,
       journalView: true,
       opening: bs({ 'cash-operating': 50000, 'cash-fbo': 1000, 'cbp-alice': 600, 'cbp-bob': 400, 'paid-in-capital': 50000 }),
@@ -176,7 +176,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'The settlement is Carol’s money, so it lands in **1020 Cash – FBO**, not 1010 Operating. 1030 Cash in Transit is for incoming **ACH**, not card settlements.',
+          'The settlement is Carol’s money, so it lands in **1020 Cash: FBO**, not 1010 Operating. 1030 Cash in Transit is for incoming **ACH**, not card settlements.',
       },
       solution: [
         row('t1', 'Carol tops up by debit card', dr('settlement-receivable', 300), cr('cbp-carol', 300)),
@@ -198,13 +198,13 @@ const mod: SectionModule = {
         'Leave out accounts for things Zap doesn’t do — it sells no goods and makes no loans.',
       ],
       explanation:
-        '**Include:** Cash – Operating (asset), Cash – FBO (Restricted) (asset), Customer Balances Payable (liability), Clearing – Pending ACH Cash-outs (liability), Suspense (liability), Paid-in Capital (equity), Retained Earnings (equity), Transaction Fee Revenue (revenue), Interest Income (revenue), Processing Expense (expense), Salaries Expense (expense).\n\n**Exclude:** Inventory and Cost of Goods Sold (Zap sells no goods), Loans Receivable (Zap doesn’t lend), Customer Deposits (that’s a bank’s liability; Zap isn’t a bank and shouldn’t describe balances as deposits), Unearned Revenue – Gift Cards (no gift cards).',
+        '**Include:** Cash: Operating (asset), Cash: FBO (Restricted) (asset), Customer Balances Payable (liability), Clearing: Pending ACH Cash-outs (liability), Suspense (liability), Paid-in Capital (equity), Retained Earnings (equity), Transaction Fee Revenue (revenue), Interest Income (revenue), Processing Expense (expense), Salaries Expense (expense).\n\n**Exclude:** Inventory and Cost of Goods Sold (Zap sells no goods), Loans Receivable (Zap doesn’t lend), Customer Deposits (that’s a bank’s liability; Zap isn’t a bank and shouldn’t describe balances as deposits), Unearned Revenue: Gift Cards (no gift cards).',
       candidates: [
-        { name: 'Cash – Operating', answerType: 'asset', required: true, explanation: 'Zap’s own money; pays salaries and vendors.' },
-        { name: 'Cash – FBO (Restricted)', answerType: 'asset', required: true, explanation: 'Customer funds at the bank — must be separate from operating cash.' },
+        { name: 'Cash: Operating', answerType: 'asset', required: true, explanation: 'Zap’s own money; pays salaries and vendors.' },
+        { name: 'Cash: FBO (Restricted)', answerType: 'asset', required: true, explanation: 'Customer funds at the bank — must be separate from operating cash.' },
         { name: 'Customer Balances Payable', answerType: 'liability', required: true, explanation: 'What Zap owes customers — the other half of the gross-up.' },
         {
-          name: 'Clearing – Pending ACH Cash-outs',
+          name: 'Clearing: Pending ACH Cash-outs',
           answerType: 'liability',
           required: true,
           explanation: 'Cash-outs take two days: money deducted from wallets but not yet out of the FBO account needs a home.',
@@ -225,7 +225,7 @@ const mod: SectionModule = {
           required: false,
           explanation: 'Deposits are what a **bank** owes its depositors. Zap isn’t a bank; it owes customer balances (and should avoid "deposit" language).',
         },
-        { name: 'Unearned Revenue – Gift Cards', answerType: 'liability', required: false, explanation: 'Zap sells no gift cards.' },
+        { name: 'Unearned Revenue: Gift Cards', answerType: 'liability', required: false, explanation: 'Zap sells no gift cards.' },
       ],
     },
     {
@@ -243,7 +243,7 @@ const mod: SectionModule = {
         'Rows 3 and 4: which cash account does each touch? Zap’s own money never stays in, or gets paid from, the FBO account.',
       ],
       explanation:
-        '1. **Dr 5010 Processing Expense 45 / Cr 2300 Accounts Payable 45** — an invoice was received, so Accounts Payable (Accrued Expenses is for costs not yet invoiced).\n2. **Dr 2012 Carol 101 / Cr 2010 Alice 100 / Cr 4010 Transaction Fee Revenue 1.**\n3. **Dr 1010 Cash – Operating 1 / Cr 1020 Cash – FBO 1.**\n4. **Dr 2300 Accounts Payable 45 / Cr 1010 Cash – Operating 45.**\n\nCheck the FBO invariant afterwards: Cash – FBO 1,299 = Alice 700 + Bob 400 + Carol 199. ✓',
+        '1. **Dr 5010 Processing Expense 45 / Cr 2300 Accounts Payable 45** — an invoice was received, so Accounts Payable (Accrued Expenses is for costs not yet invoiced).\n2. **Dr 2012 Carol 101 / Cr 2010 Alice 100 / Cr 4010 Transaction Fee Revenue 1.**\n3. **Dr 1010 Cash: Operating 1 / Cr 1020 Cash: FBO 1.**\n4. **Dr 2300 Accounts Payable 45 / Cr 1010 Cash: Operating 45.**\n\nCheck the FBO invariant afterwards: Cash: FBO 1,299 = Alice 700 + Bob 400 + Carol 199. ✓',
       showBalanceSheets: true,
       journalView: true,
       opening: bs({
@@ -270,7 +270,7 @@ const mod: SectionModule = {
       ],
       diagnosticExplanations: {
         EXTRA_ACCOUNT:
-          'Row 1 uses **2300 Accounts Payable** because the invoice has arrived. Rows 3–4: Zap’s fees and bills move through **1010 Cash – Operating**; the FBO account only gives up the swept $1.',
+          'Row 1 uses **2300 Accounts Payable** because the invoice has arrived. Rows 3–4: Zap’s fees and bills move through **1010 Cash: Operating**; the FBO account only gives up the swept $1.',
         WRONG_AMOUNT: 'Row 2: Carol pays 100 + 1 fee = **101**; Alice receives **100**; Zap earns **1**.',
         SPLIT_ENTRY: 'Carol’s payment and its fee are one event — one compound row.',
       },
@@ -297,14 +297,14 @@ const mod: SectionModule = {
         'Where does a $75 wire from an unknown sender go?',
       ],
       explanation:
-        'Zap needs **Cash – FBO (Restricted)** separate from operating cash (segregation; the FBO invariant), a **clearing** liability for pending ACH cash-outs (in-flight money), and **Suspense** for unmatched receipts. Inventory and gift-card liabilities don’t fit Zap’s business, and customer money is never revenue.',
+        'Zap needs **Cash: FBO (Restricted)** separate from operating cash (segregation; the FBO invariant), a **clearing** liability for pending ACH cash-outs (in-flight money), and **Suspense** for unmatched receipts. Inventory and gift-card liabilities don’t fit Zap’s business, and customer money is never revenue.',
       options: [
-        { text: 'Split Cash into **Cash – Operating** and **Cash – FBO (Restricted)**', correct: true, explanation: 'Customer funds must be tracked separately from Zap’s own money.' },
-        { text: '**Clearing – Pending ACH Cash-outs** (liability)', correct: true, explanation: 'Cash-outs are deducted from wallets two days before cash leaves the FBO account.' },
+        { text: 'Split Cash into **Cash: Operating** and **Cash: FBO (Restricted)**', correct: true, explanation: 'Customer funds must be tracked separately from Zap’s own money.' },
+        { text: '**Clearing: Pending ACH Cash-outs** (liability)', correct: true, explanation: 'Cash-outs are deducted from wallets two days before cash leaves the FBO account.' },
         { text: '**Suspense** (liability)', correct: true, explanation: 'Unmatched wires need a home until they’re identified.' },
         { text: '**Inventory** (asset)', correct: false, explanation: 'Zap sells no goods.' },
         { text: '**Customer Load Revenue** (revenue)', correct: false, explanation: 'Loaded money is owed back to customers — a liability, never revenue.' },
-        { text: '**Unearned Revenue – Gift Cards** (liability)', correct: false, explanation: 'Zap doesn’t sell gift cards.' },
+        { text: '**Unearned Revenue: Gift Cards** (liability)', correct: false, explanation: 'Zap doesn’t sell gift cards.' },
       ],
     },
     {
@@ -322,7 +322,7 @@ const mod: SectionModule = {
         'Customer wallet balances are money the startup **owes** its customers — a **liability** (2xxx range), not revenue. Classifying them as revenue would wildly overstate income every time a customer loads money. The normal side (Cr) happens to be the same for liabilities and revenue, which is why this kind of error can go unnoticed in a trial balance.',
       options: [
         { text: 'It should be a **liability** (2xxx), because the startup owes the balances to customers.', correct: true, explanation: 'Customer money is owed back — a liability.' },
-        { text: 'It should be an **asset**, because the startup holds the cash.', correct: false, explanation: 'The cash held is the asset (Cash – FBO). The balance owed to customers is the liability.' },
+        { text: 'It should be an **asset**, because the startup holds the cash.', correct: false, explanation: 'The cash held is the asset (Cash: FBO). The balance owed to customers is the liability.' },
         { text: 'Its normal side should be **Dr**.', correct: false, explanation: 'Cr is right for a liability too — the problem is the type, not the side.' },
         { text: 'Nothing is wrong; wallet loads are revenue for a payments company.', correct: false, explanation: 'Only fees are revenue. Customer money is never the company’s income.' },
       ],
@@ -341,19 +341,19 @@ const mod: SectionModule = {
         'The same FBO money appears in two sets of books with opposite types.',
       ],
       explanation:
-        'Assets: Cash – FBO, Settlement Receivable. Liabilities: Customer Balances Payable, Clearing – Pending ACH Cash-outs, Suspense, and the bank’s Deposits – FBO Accounts. Equity: Paid-in Capital. Revenue: Transaction Fee Revenue, Interchange Revenue. Expense: Fraud & Chargeback Losses.',
+        'Assets: Cash: FBO, Settlement Receivable. Liabilities: Customer Balances Payable, Clearing: Pending ACH Cash-outs, Suspense, and the bank’s Deposits: FBO Accounts. Equity: Paid-in Capital. Revenue: Transaction Fee Revenue, Interchange Revenue. Expense: Fraud & Chargeback Losses.',
       items: [
-        { label: 'Cash – FBO (Restricted)', entityId: 'zap', answer: 'asset', explanation: 'Customer money Zap holds — a restricted asset.' },
+        { label: 'Cash: FBO (Restricted)', entityId: 'zap', answer: 'asset', explanation: 'Customer money Zap holds — a restricted asset.' },
         { label: 'Settlement Receivable', entityId: 'zap', answer: 'asset', explanation: 'Money the card processor owes Zap.' },
         { label: 'Customer Balances Payable', entityId: 'zap', answer: 'liability', explanation: 'What Zap owes its customers.' },
-        { label: 'Clearing – Pending ACH Cash-outs', entityId: 'zap', answer: 'liability', explanation: 'Still owed until the ACH settles.' },
+        { label: 'Clearing: Pending ACH Cash-outs', entityId: 'zap', answer: 'liability', explanation: 'Still owed until the ACH settles.' },
         { label: 'Suspense', entityId: 'zap', answer: 'liability', explanation: 'Owed to an as-yet-unidentified sender.' },
         { label: 'Paid-in Capital', entityId: 'zap', answer: 'equity', explanation: 'Investor funding.' },
         { label: 'Transaction Fee Revenue', entityId: 'zap', answer: 'revenue', explanation: 'Fees Zap earns.' },
         { label: 'Interchange Revenue', entityId: 'zap', answer: 'revenue', explanation: 'Zap’s share of card fees.' },
         { label: 'Fraud & Chargeback Losses', entityId: 'zap', answer: 'expense', explanation: 'A cost of running a payments business.' },
         {
-          label: 'Deposits – FBO Accounts (in First Example Bank’s books)',
+          label: 'Deposits: FBO Accounts (in First Example Bank’s books)',
           entityId: 'bank',
           answer: 'liability',
           explanation: 'The bank owes the FBO balance — its liability, Zap’s asset.',
@@ -408,7 +408,7 @@ const mod: SectionModule = {
         'Bob’s **$50** Zap cash-out settles: First Example Bank sends $50 by ACH from **Zap’s FBO account** to Bob’s account at another bank (settling through the Fed). Book it in the **bank’s** books.',
       hints: ['Which deposit account at First Example Bank goes down?', 'The money leaves for another bank. Which bank asset goes with it?'],
       explanation:
-        '**Dr Deposits – FBO Accounts 50 / Cr Reserves at the Federal Reserve 50.** The bank owes less on the FBO account, and its reserves fall as the ACH settles to the other bank. In Zap’s books, the same settlement is Dr Clearing – Pending ACH Cash-outs / Cr Cash – FBO.',
+        '**Dr Deposits: FBO Accounts 50 / Cr Reserves at the Federal Reserve 50.** The bank owes less on the FBO account, and its reserves fall as the ACH settles to the other bank. In Zap’s books, the same settlement is Dr Clearing: Pending ACH Cash-outs / Cr Cash: FBO.',
       showBalanceSheets: true,
       opening: bs({
         'reserves-fed': 10000,
@@ -420,13 +420,13 @@ const mod: SectionModule = {
       trapAccounts: [
         {
           id: 'zap-clearing-trap',
-          name: 'Clearing – Pending ACH Cash-outs',
+          name: 'Clearing: Pending ACH Cash-outs',
           type: 'liability',
           trap: { kind: 'counterparty', explanation: 'That clearing account lives in **Zap’s** books. The bank just sees its FBO deposit and its reserves go down.' },
         },
         {
           id: 'bob-deposit-trap',
-          name: 'Customer Balances Payable – Bob',
+          name: 'Customer Balances Payable: Bob',
           type: 'liability',
           trap: { kind: 'counterparty', explanation: 'Bob’s wallet is in **Zap’s** sub-ledger. The bank only knows the pooled FBO account.' },
         },

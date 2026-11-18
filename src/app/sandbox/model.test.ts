@@ -20,7 +20,7 @@ import { isSafeHref, renderUntrustedMarkdown } from './safeMarkdown';
 
 describe('ids', () => {
   it('slugifies to kebab-case', () => {
-    expect(slugify('Cash – Vault')).toBe('cash-vault');
+    expect(slugify('Cash: Vault')).toBe('cash-vault');
     expect(slugify('  Café Receivable!! ')).toBe('cafe-receivable');
     expect(slugify('***')).toBe('account');
   });
