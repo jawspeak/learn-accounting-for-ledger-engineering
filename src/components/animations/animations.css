@@ -176,53 +176,67 @@
 .tacct__sides span:last-child {
   text-align: right;
 }
+/* One ledger line per entry (opening first); each entry sits on its own side, the other half of the line is empty.
+   The stem of the T is the Dr cells' right border, so it runs unbroken through every line. */
 .tacct__body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 2.2rem;
-}
-.tacct__col {
   list-style: none;
   margin: 0;
-  padding: 0 0.25rem;
+  padding: 0;
+  min-height: 2.2rem;
   font-variant-numeric: tabular-nums;
   font-size: 0.8rem;
 }
-.tacct__col:first-child {
-  border-right: 2px solid var(--sa-fg);
+.tacct__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
-.tacct__entry {
+.tacct__cell {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   gap: 0 0.25rem;
+  padding: 0 0.25rem;
+  min-height: 1.2rem;
+}
+.tacct__cell.tacct__dr {
+  border-right: 2px solid var(--sa-fg);
 }
 .tacct__ref {
   color: var(--sa-muted);
 }
 .tacct__more {
-  flex-basis: 100%;
   color: var(--sa-muted);
   font-size: 0.72rem;
 }
-.tacct__entry.is-opening .tacct__ref {
+.tacct__row.is-opening .tacct__ref {
   font-style: italic;
 }
-.tacct__entry.is-new {
+.tacct__row.is-new {
   animation: sa-slide-in calc(var(--sa-dur) * 1.6) ease-out;
 }
-.tacct__entry.is-draft {
+.tacct__row.is-draft .tacct__cell:not(:empty) {
   outline: 1px dashed var(--sa-accent);
   outline-offset: -1px;
   color: var(--sa-accent);
   animation: sa-pop var(--sa-dur) ease-out;
 }
-.tacct__bal {
-  border-top: 1px solid var(--sa-border);
-  margin-top: 0.15rem;
-  padding-top: 0.15rem;
+/* The total: extra space above, a short rule only under the side that carries the balance. */
+.tacct__total .tacct__cell {
+  padding-top: 0.6rem;
+  position: relative;
   font-size: 0.75rem;
-  color: var(--sa-muted);
+}
+.tacct__total .tacct__cell.is-total::before {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  width: 62%;
+  border-top: 2px solid var(--sa-fg);
+}
+.tacct__total .tacct__dr.is-total::before {
+  right: 0;
+}
+.tacct__total .tacct__cr.is-total::before {
+  left: 0;
 }
 .tacct__balval {
   color: var(--sa-fg);

@@ -10,7 +10,8 @@
  * Balance
  * ```
  *
- * A blank line starts the next account; accounts are shown side by side in Assets → Liabilities → Equity order.
+ * One posting per line (opening first), each on its own side. A blank line starts the next account; accounts are
+ * shown side by side in Assets → Liabilities → Equity order.
  * Each posting line is `[label:] Dr|Cr amount` ("Opening" is shown as the starting balance); a line that says
  * just `Balance` adds the computed balance (on the side it falls, flagged if abnormal).
  */
@@ -96,12 +97,9 @@ const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
 function ledgerHtml(l: Ledger): string {
   const inc = engine.normalSide(l.type);
   // Openings first on each side, then postings in authored order.
-  const side = (s: Side) => [
-    ...l.postings.filter((p) => p.side === s && p.opening),
-    ...l.postings.filter((p) => p.side === s && !p.opening),
-  ];
-  const dr = side('dr');
-  const cr = side('cr');
+  // One line per posting, like a ledger: the opening balance(s) first, then each transaction in authored order,
+  // each on its own line on its own side (the other half of that line stays empty).
+  const lines = [...l.postings.filter((p) => p.opening), ...l.postings.filter((p) => !p.opening)];
   const entry = (p: LedgerPosting | undefined, s: Side) => {
     if (!p) return `<span class="tacct-cell tacct-${s} tl-cell"></span>`;
     const up = p.side === inc;
@@ -117,10 +115,12 @@ function ledgerHtml(l: Ledger): string {
     const inner = s === 'dr' ? `${label}${amt}` : `${amt}${label}`;
     return `<span class="tacct-cell tacct-${s} tl-cell${p.opening ? ' is-opening' : ''}"><span aria-hidden="true" class="tl-entry">${inner}</span>${sr}</span>`;
   };
-  const rows = Array.from(
-    { length: Math.max(dr.length, cr.length) },
-    (_, i) => entry(dr[i], 'dr') + entry(cr[i], 'cr'),
-  ).join('');
+  const rows = lines
+    .map(
+      (p) =>
+        entry(p.side === 'dr' ? p : undefined, 'dr') + entry(p.side === 'cr' ? p : undefined, 'cr'),
+    )
+    .join('');
   let balance = '';
   if (l.showBalance) {
     const b = ledgerBalance(l);

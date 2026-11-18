@@ -205,12 +205,13 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const hasOpeningRow = placed.some((c) => openingOf.has(c.accountId));
 
   /** Amount shown on the normal side; an abnormal (negative) balance moves to the other side. */
-  const sideCells = (id: AccountId, amount: number | undefined, key: string) => {
+  /** `total`: the balance line — the side that carries the amount gets `is-total` (its rule; see builder.css). */
+  const sideCells = (id: AccountId, amount: number | undefined, key: string, total = false) => {
     const t = typeOf(id) ?? 'asset';
     const normal = engine.normalSide(t);
     const shownSide: Side = (amount ?? 0) < 0 ? (normal === 'dr' ? 'cr' : 'dr') : normal;
     return SIDES.map((s) => (
-      <td key={`${key}-${s}`} className={`tab-cell tab-num tab-${s}`}>
+      <td key={`${key}-${s}`} className={`tab-cell tab-num tab-${s}${total && s === shownSide ? ' is-total' : ''}`}>
         {amount !== undefined && amount !== 0 && s === shownSide ? (
           <>
             {formatDollars(Math.abs(amount))}
@@ -532,7 +533,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             <th scope="row" className="tab-rowhead">
               Balance
             </th>
-            {eachCol((c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal'), eqCell)}
+            {eachCol((c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal', true), eqCell)}
             <td className="tab-check-col" />
           </tr>
         </tfoot>

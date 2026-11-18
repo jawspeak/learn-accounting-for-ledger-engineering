@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { Fragment, useLayoutEffect, useRef, type RefObject } from 'react';
 import type { AccountId, AccountType, Money, Side, TransactionRow } from '@contracts';
 import { normalSide } from '@engine';
 import {
@@ -87,26 +87,22 @@ function TAccount({
   const balance = balancesOf(ledger, posted).get(accountId) ?? 0;
   const balSide: Side = balance >= 0 ? normal : normal === 'dr' ? 'cr' : 'dr';
 
-  const column = (side: Side) => {
-    const list = entries.filter((e) => e.side === side);
-    const c = collapse(list, 6, 3, 2);
-    return (
-      <ul className="tacct__col" aria-label={`${sideName(side)} side`}>
-        {c.items.map((e, i) => (
-          <li key={e.key} className={`tacct__entry is-${e.state}`}>
-            {i === c.at && c.hidden > 0 && (
-              <span className="tacct__more">
-                ⋯ {c.hidden} more
-              </span>
-            )}
-            <span className="tacct__ref">{e.ref}</span>
-            <span className="tacct__amt">{formatMoney(e.amount)}</span>
-            {e.state === 'draft' && <span className="visually-hidden"> (pending)</span>}
-          </li>
-        ))}
-      </ul>
+  // One line per entry, like a ledger: the opening balance first, then each posting on its own line on its side.
+  const c = collapse(entries, 7, 3, 3);
+  const cell = (e: Entry, side: Side) =>
+    e.side === side ? (
+      <span className={`tacct__cell tacct__${side}`}>
+        <span className="tacct__ref">{e.ref}</span>
+        <span className="tacct__amt">{formatMoney(e.amount)}</span>
+        <span className="visually-hidden">
+          {' '}
+          {sideName(side)}
+          {e.state === 'draft' ? ' (pending)' : ''}
+        </span>
+      </span>
+    ) : (
+      <span className={`tacct__cell tacct__${side}`} />
     );
-  };
 
   return (
     <div
@@ -126,16 +122,37 @@ function TAccount({
         <span>Dr</span>
         <span>Cr</span>
       </div>
-      <div className="tacct__body">
-        {column('dr')}
-        {column('cr')}
-      </div>
-      <div className="tacct__bal">
-        Balance{' '}
-        <strong key={balance} className="tacct__balval">
-          {formatMoney(Math.abs(balance))} {sideName(balSide)}
-        </strong>
-      </div>
+      <ul className="tacct__body">
+        {c.items.map((e, i) => (
+          <Fragment key={e.key}>
+            {i === c.at && c.hidden > 0 && (
+              <li className="tacct__row tacct__more-row">
+                <span className="tacct__cell tacct__dr tacct__more">⋯ {c.hidden} more</span>
+                <span className="tacct__cell tacct__cr" />
+              </li>
+            )}
+            <li className={`tacct__row is-${e.state}`}>
+              {cell(e, 'dr')}
+              {cell(e, 'cr')}
+            </li>
+          </Fragment>
+        ))}
+        {/* The total: extra space above it, a short rule only under the side that carries it. */}
+        <li className="tacct__row tacct__total">
+          {(['dr', 'cr'] as Side[]).map((s) => (
+            <span key={s} className={`tacct__cell tacct__${s}${s === balSide ? ' is-total' : ''}`}>
+              {s === balSide && (
+                <>
+                  <span className="tacct__ref">balance</span>
+                  <strong key={balance} className="tacct__balval">
+                    {formatMoney(Math.abs(balance))}
+                  </strong>
+                </>
+              )}
+            </span>
+          ))}
+        </li>
+      </ul>
     </div>
   );
 }

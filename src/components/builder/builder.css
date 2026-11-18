@@ -399,10 +399,24 @@ tr.is-locked .tab-cell.is-locked-cell {
   color: var(--muted, #6b6b70);
   border-bottom: 1px dashed var(--border, #d9d6cf);
 }
+/* The balance line, drawn like a hand-written T: extra space above the total and a rule only under the side
+   that carries it (the other half stays open; the stem keeps running). */
 .tab-balance-row th,
 .tab-balance-row td {
-  border-top: 1px solid var(--tab-line);
   font-weight: 650;
+  padding-top: 0.85rem !important;
+}
+.tab-balance-row td.is-total {
+  background-image: linear-gradient(var(--tab-line), var(--tab-line));
+  background-size: 70% 2px;
+  background-repeat: no-repeat;
+  background-origin: padding-box;
+}
+.tab-balance-row td.tab-dr.is-total {
+  background-position: right 0.35rem;
+}
+.tab-balance-row td.tab-cr.is-total {
+  background-position: left 0.35rem;
 }
 .tab-abnormal {
   font-weight: 400;

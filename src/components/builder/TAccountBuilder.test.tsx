@@ -323,6 +323,19 @@ describe('TAccountBuilder — balance sheets, overlays, journal', () => {
     ],
   };
 
+  it('balance line: only the side that carries each total is marked (gets the rule)', () => {
+    const { container } = render(<Harness initialRows={rows} showBalanceSheets opening={opening} />);
+    const totals = [...container.querySelectorAll('tr.tab-balance-row td.is-total')].map((td) => [
+      td.getAttribute('class')!.includes('tab-dr') ? 'dr' : 'cr',
+      td.textContent,
+    ]);
+    // Checking: $100 Dr balance; Cash: opening 100 − 100 = $0 (shown on its normal Dr side).
+    expect(totals).toEqual([
+      ['dr', '$0'],
+      ['dr', '$100'],
+    ]);
+  });
+
   it('computes the after balance sheet with an A = L + E indicator', () => {
     render(<Harness initialRows={rows} showBalanceSheets opening={opening} />);
     const after = screen.getByRole('region', { name: 'After' });

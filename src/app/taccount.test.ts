@@ -35,6 +35,18 @@ describe('taccount', () => {
     expect(html).not.toContain('(abnormal)');
   });
 
+  it('one posting per line: opening on line 1 (Dr), the $60 credit on its own line 2 (Cr)', () => {
+    const cells = [
+      ...tAccountsHtml(primer).matchAll(
+        /<span class="tacct-cell tacct-(dr|cr) tl-cell([^"]*)">(.*?)<\/span>(?=<span class="tacct-cell|<\/div>)/g,
+      ),
+    ];
+    const lines = cells
+      .filter((c) => !c[2]!.includes('tl-balance'))
+      .map((c) => `${c[1]}:${c[3]!.includes('$') ? c[3]!.match(/\$[\d,]+/)![0] : ''}`);
+    expect(lines).toEqual(['dr:$1,000', 'cr:', 'dr:', 'cr:$60']);
+  });
+
   it('orders several accounts Assets → Liabilities → Equity and flags an abnormal balance', () => {
     const html = tAccountsHtml(
       'Groceries Expense (expense)\n(1): Dr 120\n\nChecking Account (asset)\n(2): Cr 120\nBalance',
