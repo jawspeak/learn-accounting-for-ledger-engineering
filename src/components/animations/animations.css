@@ -137,6 +137,35 @@
   transition: box-shadow var(--sa-dur), background var(--sa-dur);
   min-width: 0;
 }
+/* Line the T's in one set of books up with each other: every T is two rows (header, T) of its ledger's grid
+   (subgrid), so T's side by side share a header height — top bars level even when a name wraps — and a T
+   height; inside the T the total sits at the bottom, so totals line up on one line too. */
+@supports (grid-template-rows: subgrid) {
+  .ledger__taccts {
+    grid-auto-rows: auto;
+  }
+  .tacct {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+  .tacct__head {
+    justify-content: flex-end;
+  }
+}
+.tacct__t {
+  display: flex;
+  flex-direction: column;
+}
+.tacct__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.tacct__total {
+  margin-top: auto;
+}
 /* The account this step is about: an outline, not a fill — the fill is reserved for the increasing side. */
 .tacct.is-highlighted {
   box-shadow: 0 0 0 2px var(--sa-accent);
