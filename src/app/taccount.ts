@@ -127,7 +127,7 @@ function ledgerHtml(l: Ledger): string {
     const shown: Side = b < 0 ? (inc === 'dr' ? 'cr' : 'dr') : inc;
     const cell = (s: Side) =>
       s === shown
-        ? `<span class="tacct-cell tacct-${s} tl-cell tl-balance"><span class="tl-entry">${s === 'dr' ? '<span class="tl-label">balance</span>' : ''}<strong class="tl-amt">${usd(Math.abs(b))}</strong>${s === 'cr' ? '<span class="tl-label">balance</span>' : ''}</span>${b < 0 ? '<span class="tl-abnormal">(abnormal)</span>' : ''}</span>`
+        ? `<span class="tacct-cell tacct-${s} tl-cell tl-balance is-total"><span class="tl-entry">${s === 'dr' ? '<span class="tl-label">balance</span>' : ''}<strong class="tl-amt">${usd(Math.abs(b))}</strong>${s === 'cr' ? '<span class="tl-label">balance</span>' : ''}</span>${b < 0 ? '<span class="tl-abnormal">(abnormal)</span>' : ''}</span>`
         : `<span class="tacct-cell tacct-${s} tl-cell tl-balance"></span>`;
     balance = cell('dr') + cell('cr');
   }

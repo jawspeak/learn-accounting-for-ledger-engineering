@@ -25,9 +25,13 @@ describe('taccount', () => {
     const html = tAccountsHtml(primer);
     expect(html).toContain('class="tacct tledger inc-dr tone-asset"');
     expect(html).toMatch(
-      /tl-balance"><span class="tl-entry"><span class="tl-label">balance<\/span><strong class="tl-amt">\$940/,
+      /tl-balance is-total"><span class="tl-entry"><span class="tl-label">balance<\/span><strong class="tl-amt">\$940/,
     );
     expect(html).toContain('tacct-effect is-down'); // the $60 credit lowers an asset
+    // Only the side carrying the total gets the rule (is-total); the other half of the balance row stays open.
+    expect(html.match(/tl-balance is-total/g)).toHaveLength(1);
+    expect(html).toContain('tacct-dr tl-cell tl-balance is-total');
+    expect(html).toContain('tacct-cr tl-cell tl-balance"');
     expect(html).not.toContain('(abnormal)');
   });
 

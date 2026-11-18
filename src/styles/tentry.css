@@ -179,9 +179,26 @@
   font-weight: 500;
   color: var(--muted);
 }
+/* Extra space above the final total only; only the side that carries the total gets a short rule that meets
+   the stem, as on a hand-drawn T. The other half stays open (the stem keeps running through the gap). */
 .tl-balance {
+  padding-top: 1.1rem !important;
+}
+.tl-balance.is-total {
+  position: relative;
+}
+.tl-balance.is-total::before {
+  content: '';
+  position: absolute;
+  top: 0.45rem;
+  width: 62%;
   border-top: 2px solid var(--fg);
-  padding-top: 0.25rem;
+}
+.tl-balance.is-total.tacct-dr::before {
+  right: 0;
+}
+.tl-balance.is-total.tacct-cr::before {
+  left: 0;
 }
 .tl-balance .tl-amt {
   font-weight: 800;
