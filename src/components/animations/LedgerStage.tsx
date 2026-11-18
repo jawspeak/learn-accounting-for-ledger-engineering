@@ -118,6 +118,9 @@ function TAccount({
         </span>
         {note && <span className="tacct__note">{note}</span>}
       </div>
+      {/* The T: one continuous stem from the top bar to the bottom, drawn by .tacct__t (not per row), so even an
+          account with no entries reads as a T. */}
+      <div className="tacct__t">
       <div className="tacct__sides" aria-hidden="true">
         <span>Dr</span>
         <span>Cr</span>
@@ -153,6 +156,7 @@ function TAccount({
           ))}
         </li>
       </ul>
+      </div>
     </div>
   );
 }

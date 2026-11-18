@@ -173,11 +173,24 @@
   font-size: 0.7rem;
   color: var(--sa-muted);
 }
-.tacct__sides span:last-child {
-  text-align: right;
+.tacct__sides span {
+  text-align: center;
 }
-/* One ledger line per entry (opening first); each entry sits on its own side, the other half of the line is empty.
-   The stem of the T is the Dr cells' right border, so it runs unbroken through every line. */
+/* The T's stem: one line down the middle of the whole T (labels, every entry line and the total), drawn once
+   here rather than per row, so it is continuous even when an account has no entries yet. */
+.tacct__t {
+  position: relative;
+}
+.tacct__t::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  border-left: 2px solid var(--sa-fg);
+  pointer-events: none;
+}
+/* One ledger line per entry (opening first); each entry sits on its own side, the other half of the line is empty. */
 .tacct__body {
   list-style: none;
   margin: 0;
@@ -192,13 +205,21 @@
 }
 .tacct__cell {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 0 0.25rem;
-  padding: 0 0.25rem;
+  padding: 0 0.4rem 0 0.25rem;
   min-height: 1.2rem;
+  min-width: 0;
 }
-.tacct__cell.tacct__dr {
-  border-right: 2px solid var(--sa-fg);
+.tacct__cell.tacct__cr {
+  padding: 0 0.25rem 0 0.4rem;
+}
+/* In a narrow T the label wraps above the amount; the amount stays against the stem, never across it. */
+.tacct__amt,
+.tacct__balval {
+  margin-left: auto;
+  white-space: nowrap;
 }
 .tacct__ref {
   color: var(--sa-muted);
