@@ -122,19 +122,31 @@ describe('rendering every animation', () => {
   it('cash-to-checking final step shows Cash $0 and Checking $100', () => {
     const { figure } = renderAnim('cash-to-checking');
     fireEvent.keyDown(figure, { key: 'End' });
-    expect(screen.getByRole('group', { name: /Cash T-account, balance \$0/ })).toBeTruthy();
-    expect(screen.getByRole('group', { name: /Checking Account T-account, balance \$100 Dr/ })).toBeTruthy();
+    expect(
+      screen.getByRole('group', {
+        name: /^Cash, asset T-account \(increases on the debit side\), balance \$0/,
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('group', { name: /^Checking Account, asset T-account .*balance \$100 Dr/ }),
+    ).toBeTruthy();
   });
 
   it('daily-accrual collapses 30 stacked rows', () => {
     const { figure } = renderAnim('daily-accrual');
     for (let i = 0; i < 4; i++) fireEvent.keyDown(figure, { key: 'ArrowRight' });
     expect(figure.textContent).toContain('more identical rows');
-    expect(screen.getByRole('group', { name: /Interest Receivable T-account, balance \$30 Dr/ })).toBeTruthy();
+    expect(
+      screen.getByRole('group', {
+        name: /^Interest Receivable, asset T-account .*balance \$30 Dr/,
+      }),
+    ).toBeTruthy();
   });
 
   it('gallery renders all animations', () => {
     const { container } = render(<AnimationGallery />);
-    expect(container.querySelectorAll('figure.step-anim')).toHaveLength(Object.keys(animations).length);
+    expect(container.querySelectorAll('figure.step-anim')).toHaveLength(
+      Object.keys(animations).length,
+    );
   });
 });

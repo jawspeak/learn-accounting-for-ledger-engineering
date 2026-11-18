@@ -131,15 +131,16 @@ function TAccount({
 
   return (
     <div
-      className={`tacct${highlighted ? ' is-highlighted' : ''}`}
+      className={`tacct inc-${normal}${highlighted ? ' is-highlighted' : ''}`}
       data-acct={`${ledger.id}:${accountId}`}
       role="group"
-      aria-label={`${account.name} T-account, balance ${formatMoney(Math.abs(balance))} ${sideName(balSide)}`}
+      aria-label={`${account.name}, ${TYPE_LABEL[account.type]} T-account (increases on the ${normal === 'dr' ? 'debit' : 'credit'} side), balance ${formatMoney(Math.abs(balance))} ${sideName(balSide)}`}
     >
       <div className="tacct__head">
         <span className="tacct__name">{account.name}</span>
+        {/* The type only — the increasing side is shown by the shaded half and its ▲ (same as everywhere else). */}
         <span className="tacct__type">
-          {TYPE_LABEL[account.type]} · normal {sideName(normal)}
+          {TYPE_LABEL[account.type].replace(/^./, (c) => c.toUpperCase())}
         </span>
         {note && <span className="tacct__note">{note}</span>}
       </div>
@@ -147,8 +148,8 @@ function TAccount({
           account with no entries reads as a T. */}
       <div className="tacct__t">
         <div className="tacct__sides" aria-hidden="true">
-          <span>Dr</span>
-          <span>Cr</span>
+          <span>Dr{normal === 'dr' && <span className="tacct__inc"> ▲</span>}</span>
+          <span>Cr{normal === 'cr' && <span className="tacct__inc"> ▲</span>}</span>
         </div>
         <ul className="tacct__body">
           {c.items.map((e, i) => (
