@@ -24,12 +24,11 @@ const mod: SectionModule = {
     primer: `
 A **T-account** is one account drawn as a big "T": debits on the left, credits on the right. Its **balance** is the difference between the two sides, shown on whichever side is bigger (normally its normal side).
 
-\`\`\`
-     Checking Account (A)
-   Dr               Cr
-  1,000 (opening) |   60  ATM withdrawal
-  ----------------+------
-    940 balance   |
+\`\`\`taccount
+Checking Account (asset)
+Opening: Dr 1,000
+ATM withdrawal: Cr 60
+Balance
 \`\`\`
 
 **Double entry** means every transaction touches **at least two accounts**, and the debits equal the credits. That's what keeps \`A = L + E\` true after every single transaction.

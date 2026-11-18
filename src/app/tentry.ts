@@ -46,7 +46,7 @@ export interface TEvent {
   lines: TLine[];
 }
 
-const TYPE_ALIASES: Record<string, AccountType> = {
+export const TYPE_ALIASES: Record<string, AccountType> = {
   asset: 'asset',
   'contra-asset': 'contra-asset',
   liability: 'liability',
@@ -61,7 +61,7 @@ const TYPE_ALIASES: Record<string, AccountType> = {
   dividends: 'dividend',
   draws: 'dividend',
 };
-const TYPE_LABEL: Record<AccountType, string> = {
+export const TYPE_LABEL: Record<AccountType, string> = {
   asset: 'Asset',
   'contra-asset': 'Contra-asset',
   liability: 'Liability',

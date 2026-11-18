@@ -190,10 +190,16 @@ Toggle the **journal view** in the builder to see your T-account entry as journa
       prompt: `
 Here are three of your T-accounts with two transactions posted (numbers in brackets are the transaction).
 
-\`\`\`
-   Groceries Expense        Credit Card Payable        Checking Account
-   Dr    |  Cr              Dr    |  Cr                Dr    |  Cr
- (1) 120 |               (2) 120  | (1) 120                  | (2) 120
+\`\`\`taccount
+Groceries Expense (expense)
+(1): Dr 120
+
+Credit Card Payable (liability)
+(2): Dr 120
+(1): Cr 120
+
+Checking Account (asset)
+(2): Cr 120
 \`\`\`
 
 **Enter the same two transactions** (two rows) and check them in the **journal view**. Then say to yourself what happened in each (the explanation tells you).

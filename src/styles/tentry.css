@@ -134,3 +134,72 @@
   color: var(--err);
   white-space: pre-wrap;
 }
+
+/* ---------- T-account ledgers (```taccount; see src/app/taccount.ts) ----------
+   Same T as the entry figures (shading/▲ on the increasing side), but with every posting listed and an
+   optional balance under a rule. Several accounts sit side by side. */
+.tledgers {
+  margin: var(--space-4) 0;
+  max-width: 52rem;
+  display: grid;
+  gap: var(--space-2);
+}
+.tledgers-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+.tledger {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.tledgers-row:has(> .tledger:only-child) {
+  grid-template-columns: minmax(12.5rem, 22rem);
+}
+.tl-cell {
+  min-height: 1.6rem;
+}
+.tl-entry {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.tl-amt {
+  font-weight: 650;
+}
+.tl-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.tl-cell.is-opening .tl-amt {
+  font-weight: 500;
+  color: var(--muted);
+}
+.tl-balance {
+  border-top: 2px solid var(--fg);
+  padding-top: 0.25rem;
+}
+.tl-balance .tl-amt {
+  font-weight: 800;
+}
+.tl-abnormal {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--warn);
+}
+.tledger .tacct-effect.is-up {
+  color: var(--ok);
+}
+.tledger .tacct-effect.is-down {
+  color: var(--err);
+}
+.tledgers .tentry-legend .is-up {
+  color: var(--ok);
+}
+.tledgers .tentry-legend .is-down {
+  color: var(--err);
+}
