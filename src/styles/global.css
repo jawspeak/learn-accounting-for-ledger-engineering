@@ -247,7 +247,10 @@ textarea {
   border-left: 4px solid var(--border);
   color: var(--muted);
 }
-.md table {
+/* Plain markdown tables. Built figures (journal sheets, T-account blocks) bring their own table styles and
+   are excluded, or these rules would leak into them (grid lines; a block-level table that no longer fills
+   its box). */
+.md table:not(.je-table) {
   border-collapse: collapse;
   margin: var(--space-3) 0;
   /* Wide tables scroll sideways inside themselves on small screens instead of widening the page. */
@@ -255,8 +258,8 @@ textarea {
   max-width: 100%;
   overflow-x: auto;
 }
-.md th,
-.md td {
+.md table:not(.je-table) th,
+.md table:not(.je-table) td {
   border: 1px solid var(--border);
   padding: 0.3rem 0.6rem;
 }
