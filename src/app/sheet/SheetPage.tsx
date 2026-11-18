@@ -127,6 +127,7 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
         <input
           id={`${uid}-title`}
           className="sh-title"
+          size={Math.min(60, Math.max(14, (state.title ?? '').length + 1))}
           value={state.title ?? ''}
           placeholder="Untitled scenario"
           onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}

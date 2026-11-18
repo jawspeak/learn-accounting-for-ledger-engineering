@@ -64,6 +64,25 @@ test('multi-event problem starts with one labelled row per numbered event', asyn
   await expect(labels.first()).toHaveValue('Catering client pays invoice');
 });
 
+test('solution on demand: read-only grid, then open it (with the bank’s side) in the spreadsheet', async ({ page }) => {
+  const w = watchErrors(page);
+  const panel = page.locator('details.solution-reveal');
+  await expect(panel.getByRole('region', { name: 'T-account grid' })).toBeHidden();
+  await panel.locator('summary').click();
+  await expect(panel.getByText('Why this works')).toBeVisible();
+  await expect(panel.getByText('$100').first()).toBeVisible();
+  await expect(panel.getByRole('button', { name: /Add account/ })).toHaveCount(0);
+  // The learner's own builder is untouched by the reveal.
+  await expect(page.getByRole('button', { name: /Add your first account/ })).toBeVisible();
+
+  await panel.getByRole('link', { name: 'Open solution in Spreadsheet' }).click();
+  await expect(page).toHaveURL(/#\/sheet\?d=/);
+  await expect(page.locator('.sh-checks')).toContainText('Every row balances');
+  const books = await page.locator('.sh-books select option').allTextContents();
+  expect(books).toHaveLength(2);
+  w.assertClean();
+});
+
 test('hints reveal one at a time', async ({ page }) => {
   const list = page.locator('.fb-hint-list li');
   await expect(list).toHaveCount(0);

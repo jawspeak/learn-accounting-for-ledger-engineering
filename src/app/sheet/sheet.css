@@ -555,3 +555,10 @@ tbody tr:hover td:not(.sh-add-col) {
   padding: 0.75rem 1rem;
   color: var(--muted);
 }
+
+/* Placeholders read as hints, never as data. */
+.sh-grid ::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
+  font-style: italic;
+}

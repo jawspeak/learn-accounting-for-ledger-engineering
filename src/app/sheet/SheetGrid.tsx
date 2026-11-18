@@ -240,7 +240,7 @@ export function SheetGrid({
             <input
               className="sh-subtitle"
               aria-label={`${a.name} label`}
-              placeholder="e.g. Bank account"
+              placeholder="label"
               value={a.subtitle ?? ''}
               onChange={(ev) => onChange(updateAccount(e, a.id, { subtitle: ev.target.value }))}
             />
@@ -296,7 +296,7 @@ export function SheetGrid({
                   aria-invalid={!!err}
                   spellCheck={false}
                   rows={3}
-                  placeholder={'{ "type": "cash" }'}
+                  placeholder="optional JSON"
                   value={a.metadata ?? ''}
                   onChange={(ev) => onChange(updateAccount(e, a.id, { metadata: ev.target.value }))}
                 />

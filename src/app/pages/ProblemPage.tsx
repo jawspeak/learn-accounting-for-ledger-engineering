@@ -20,6 +20,7 @@ import { QuestionView, type NonBookingProblem } from '../../components/questions
 import { JournalTable } from '../../components/questions/JournalTable';
 import { Markdown } from '../Markdown';
 import { href, replaceHash } from '../router';
+import { boardFor, solvedRows, withTypes } from '../solutionBoard';
 import { DifficultyBadge, KindBadge, ROLE_LABEL } from '../badges';
 
 export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
@@ -213,39 +214,78 @@ function ProblemFrame({
   );
 }
 
-/** Fill chosenType on authored rows so the builder can show them. */
-function withTypes(rows: TransactionRow[], accounts: Account[]): TransactionRow[] {
-  return rows.map((r) => ({
-    ...r,
-    postings: r.postings.map((p) => ({
-      ...p,
-      chosenType: p.chosenType ?? accounts.find((a) => a.id === p.accountId)?.type,
-    })),
-  }));
+/** "Open in Sandbox" + "Open in Spreadsheet" for a board. */
+function BoardLinks({ board, prefix = '' }: { board: SandboxState; prefix?: string }) {
+  const enc = engine.encodeState(board);
+  return (
+    <>
+      <a className="btn" href={href.sandbox(enc)}>
+        Open {prefix}in Sandbox
+      </a>
+      <a className="btn" href={href.sheet(enc)} title="Wide grid view (desktop)">
+        Open {prefix}in Spreadsheet
+      </a>
+    </>
+  );
 }
 
-function sandboxHref(problem: BookingProblem, accounts: Account[], rows: TransactionRow[]): string {
-  const used = new Set<string>();
-  rows.forEach((r) => r.postings.forEach((p) => used.add(p.accountId)));
-  problem.opening?.lines.forEach((l) => used.add(l.accountId));
-  const entity = entities[problem.entityId];
-  const chosen = accounts.filter((a) => used.has(a.id));
-  const state: SandboxState = {
-    v: 1,
-    title: problem.title,
-    scenario: problem.prompt,
-    entities: [
-      {
-        id: problem.entityId,
-        name: entity?.name ?? problem.entityId,
-        accounts: chosen.length > 0 ? chosen : accounts,
-        rows,
-        opening: problem.opening,
-        showBalanceSheets: problem.showBalanceSheets,
-      },
-    ],
-  };
-  return href.sandbox(engine.encodeState(state));
+/**
+ * The full solution on demand (VISION-2: revealing the answer is always possible, as the last step).
+ * Collapsed by default so it never spoils the problem by accident.
+ */
+function SolutionPanel({ problem, accounts }: { problem: BookingProblem; accounts: Account[] }) {
+  // Rendered only once opened: no hidden second grid in the page (or in the accessibility tree) before then.
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="solution-reveal" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>
+        Show the solution <span className="note">(spoiler: try it first)</span>
+      </summary>
+      {open && <SolutionBody problem={problem} accounts={accounts} />}
+    </details>
+  );
+}
+
+function SolutionBody({ problem, accounts }: { problem: BookingProblem; accounts: Account[] }) {
+  const entity = entities[problem.entityId]!;
+  const rows = solvedRows(problem);
+  const pair = problem.perspectivePairId ? problems[problem.perspectivePairId] : undefined;
+  return (
+    <>
+      <TAccountBuilder
+        mode="problem"
+        readOnly
+        accounts={accounts}
+        coaOrder={entity.accounts.map((a) => a.id)}
+        rows={rows}
+        onRowsChange={() => {}}
+        lockedRowCount={rows.length}
+        showBalanceSheets={problem.showBalanceSheets}
+        opening={problem.opening}
+        journalView
+      />
+      {problem.walkthrough && problem.walkthrough.length > 0 && (
+        <>
+          <h3>Walkthrough</h3>
+          <ol className="steps">
+            {problem.walkthrough.map((s, i) => (
+              <li key={i}>
+                <Markdown text={s} />
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      <h3>Why this works</h3>
+      <Markdown text={problem.explanation} />
+      <div className="toolbar">
+        <BoardLinks board={boardFor(problem, accounts, rows, true)} prefix="solution " />
+        {pair?.kind === 'booking' && pair.entityId !== problem.entityId && (
+          <span className="note">Includes the other side’s books ({entities[pair.entityId]?.name}).</span>
+        )}
+      </div>
+    </>
+  );
 }
 
 function BookingView({ problem, initial }: { problem: BookingProblem; initial?: AttemptState }) {
@@ -287,11 +327,7 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
   return (
     <ProblemFrame
       problem={problem}
-      toolbarExtra={
-        <a className="btn" href={sandboxHref(problem, accounts, rows)}>
-          Open in Sandbox
-        </a>
-      }
+      toolbarExtra={<BoardLinks board={boardFor(problem, accounts, rows, worked)} />}
     >
       {ref && (
         <section className="reference" aria-label="Reference entry">
@@ -388,6 +424,7 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
               next={nextLink(problem)}
             />
           </div>
+          <SolutionPanel problem={problem} accounts={accounts} />
         </>
       )}
     </ProblemFrame>

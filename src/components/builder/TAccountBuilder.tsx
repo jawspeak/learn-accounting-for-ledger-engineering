@@ -46,6 +46,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     onRowsChange,
     onAccountsChange,
     lockedRowCount = 0,
+    readOnly = false,
     showBalanceSheets,
     opening,
     afterBalanceSheet,
@@ -413,7 +414,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                 {locked ? (
                   <>
                     {r.label && <span className="tab-rowlabel">{r.label}</span>}
-                    <span className="tab-lock-badge">Example</span>
+                    {!readOnly && <span className="tab-lock-badge">Example</span>}
                   </>
                 ) : (
                   <input
@@ -507,7 +508,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   return (
     <div className={`tab-builder${showBalanceSheets ? ' has-bs' : ''}${placed.length <= 2 ? ' bs-side' : ''}`}>
       <div className="tab-toolbar">
-        {!showJournal && (
+        {!showJournal && !readOnly && (
           <>
             <button type="button" ref={addBtnRef} aria-expanded={pickerOpen} onClick={() => setPickerOpen((o) => !o)}>
               <span aria-hidden="true">＋ </span>Add account

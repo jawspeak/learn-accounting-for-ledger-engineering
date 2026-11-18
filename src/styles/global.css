@@ -821,3 +821,21 @@ body:has(.layout.no-side) .menu-btn {
   color: var(--muted);
   font-size: 0.75rem;
 }
+
+/* Problem page: the on-demand solution. */
+.solution-reveal {
+  margin: var(--space-5) 0;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+}
+.solution-reveal > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--space-2) 0;
+}
+.solution-reveal[open] > summary {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-3);
+}

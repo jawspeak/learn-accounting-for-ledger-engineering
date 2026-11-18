@@ -18,6 +18,8 @@ export interface TAccountBuilderProps {
   onAccountsChange?(accounts: Account[]): void;
   /** First N rows are read-only (faded examples). */
   lockedRowCount?: number;
+  /** Display only (e.g. a revealed solution): no add/remove controls; pass lockedRowCount = rows.length too. */
+  readOnly?: boolean;
   showBalanceSheets: boolean;
   opening?: BalanceSheet;
   /** When provided, the after-BS is learner-editable (askAfterBalanceSheet); otherwise it's computed. */
