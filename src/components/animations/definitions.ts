@@ -59,7 +59,13 @@ function cashToChecking(): LedgerAnimationDef {
       ],
     },
   ];
-  return { id: 'cash-to-checking', title: 'Depositing cash into checking', ledgers: [you], steps: buildSteps([you], steps) };
+  return {
+    id: 'cash-to-checking',
+    title: 'Depositing cash into checking',
+    labelBalances: true, // the introductory one: name the total while the convention is new
+    ledgers: [you],
+    steps: buildSteps([you], steps),
+  };
 }
 
 // ---------------------------------------------------------------------------

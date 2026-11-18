@@ -57,6 +57,11 @@ export interface AnimStep {
 export interface LedgerAnimationDef {
   id: string;
   title: string;
+  /**
+   * Write the word "balance" beside each T's total. Only for the introductory animation (§3); after the basics
+   * the rule + bold total is enough (the textbook shorthand), and the word just crowds the T.
+   */
+  labelBalances?: boolean;
   ledgers: AnimLedger[];
   steps: AnimStep[];
 }

@@ -30,9 +30,18 @@ const TYPE_LABEL: Record<AccountType, string> = {
 const sideName = (s: Side) => (s === 'dr' ? 'Dr' : 'Cr');
 
 /** Show at most `max` items: the first `head`, an ellipsis, the last `tail`. */
-function collapse<T>(items: T[], max: number, head: number, tail: number): { items: T[]; hidden: number; at: number } {
+function collapse<T>(
+  items: T[],
+  max: number,
+  head: number,
+  tail: number,
+): { items: T[]; hidden: number; at: number } {
   if (items.length <= max) return { items, hidden: 0, at: -1 };
-  return { items: [...items.slice(0, head), ...items.slice(-tail)], hidden: items.length - head - tail, at: head };
+  return {
+    items: [...items.slice(0, head), ...items.slice(-tail)],
+    hidden: items.length - head - tail,
+    at: head,
+  };
 }
 
 type EntryState = 'opening' | 'posted' | 'new' | 'draft';
@@ -47,7 +56,8 @@ interface Entry {
 function rowNumbers(ledger: AnimLedger, step: AnimStep): Map<string, number> {
   const m = new Map<string, number>();
   (step.posted[ledger.id] ?? []).forEach((r, i) => m.set(r.id, i + 1));
-  if (step.draft?.ledger === ledger.id && !m.has(step.draft.row.id)) m.set(step.draft.row.id, m.size + 1);
+  if (step.draft?.ledger === ledger.id && !m.has(step.draft.row.id))
+    m.set(step.draft.row.id, m.size + 1);
   return m;
 }
 
@@ -58,6 +68,7 @@ function TAccount({
   seen,
   note,
   highlighted,
+  labelBalance,
 }: {
   ledger: AnimLedger;
   accountId: AccountId;
@@ -65,6 +76,8 @@ function TAccount({
   seen: Set<string>;
   note?: string;
   highlighted: boolean;
+  /** Write the word "balance" by the total (introductory animation only); otherwise rule + bold total. */
+  labelBalance: boolean;
 }) {
   const account = accountOf(ledger, accountId);
   if (!account) return null;
@@ -74,12 +87,24 @@ function TAccount({
   const entries: Entry[] = [];
   const opening = ledger.opening.find((l) => l.accountId === accountId)?.amount ?? 0;
   if (opening !== 0) {
-    entries.push({ key: 'open', ref: 'Bal', side: opening > 0 ? normal : normal === 'dr' ? 'cr' : 'dr', amount: Math.abs(opening), state: 'opening' });
+    entries.push({
+      key: 'open',
+      ref: 'Bal',
+      side: opening > 0 ? normal : normal === 'dr' ? 'cr' : 'dr',
+      amount: Math.abs(opening),
+      state: 'opening',
+    });
   }
   const addRow = (r: TransactionRow, state: EntryState) =>
     r.postings.forEach((p, i) => {
       if (p.accountId !== accountId) return;
-      entries.push({ key: `${r.id}-${i}`, ref: `(${nums.get(r.id) ?? '?'})`, side: p.side, amount: p.amount, state });
+      entries.push({
+        key: `${r.id}-${i}`,
+        ref: `(${nums.get(r.id) ?? '?'})`,
+        side: p.side,
+        amount: p.amount,
+        state,
+      });
     });
   for (const r of posted) addRow(r, seen.has(r.id) ? 'posted' : 'new');
   if (step.draft?.ledger === ledger.id) addRow(step.draft.row, 'draft');
@@ -121,47 +146,62 @@ function TAccount({
       {/* The T: one continuous stem from the top bar to the bottom, drawn by .tacct__t (not per row), so even an
           account with no entries reads as a T. */}
       <div className="tacct__t">
-      <div className="tacct__sides" aria-hidden="true">
-        <span>Dr</span>
-        <span>Cr</span>
-      </div>
-      <ul className="tacct__body">
-        {c.items.map((e, i) => (
-          <Fragment key={e.key}>
-            {i === c.at && c.hidden > 0 && (
-              <li className="tacct__row tacct__more-row">
-                <span className="tacct__cell tacct__dr tacct__more">⋯ {c.hidden} more</span>
-                <span className="tacct__cell tacct__cr" />
-              </li>
-            )}
-            <li className={`tacct__row is-${e.state}`}>
-              {cell(e, 'dr')}
-              {cell(e, 'cr')}
-            </li>
-          </Fragment>
-        ))}
-        {/* The total: extra space above it, a short rule only under the side that carries it. */}
-        <li className="tacct__row tacct__total">
-          {(['dr', 'cr'] as Side[]).map((s) => (
-            <span key={s} className={`tacct__cell tacct__${s}${s === balSide ? ' is-total' : ''}`}>
-              {s === balSide && (
-                <>
-                  <span className="tacct__ref">balance</span>
-                  <strong key={balance} className="tacct__balval">
-                    {formatMoney(Math.abs(balance))}
-                  </strong>
-                </>
+        <div className="tacct__sides" aria-hidden="true">
+          <span>Dr</span>
+          <span>Cr</span>
+        </div>
+        <ul className="tacct__body">
+          {c.items.map((e, i) => (
+            <Fragment key={e.key}>
+              {i === c.at && c.hidden > 0 && (
+                <li className="tacct__row tacct__more-row">
+                  <span className="tacct__cell tacct__dr tacct__more">⋯ {c.hidden} more</span>
+                  <span className="tacct__cell tacct__cr" />
+                </li>
               )}
-            </span>
+              <li className={`tacct__row is-${e.state}`}>
+                {cell(e, 'dr')}
+                {cell(e, 'cr')}
+              </li>
+            </Fragment>
           ))}
-        </li>
-      </ul>
+          {/* The total: extra space above it, a short rule only under the side that carries it. */}
+          <li className="tacct__row tacct__total">
+            {(['dr', 'cr'] as Side[]).map((s) => (
+              <span
+                key={s}
+                className={`tacct__cell tacct__${s}${s === balSide ? ' is-total' : ''}`}
+              >
+                {s === balSide && (
+                  <>
+                    {labelBalance ? (
+                      <span className="tacct__ref">balance</span>
+                    ) : (
+                      <span className="visually-hidden">balance </span>
+                    )}
+                    <strong key={balance} className="tacct__balval">
+                      {formatMoney(Math.abs(balance))}
+                    </strong>
+                  </>
+                )}
+              </span>
+            ))}
+          </li>
+        </ul>
       </div>
     </div>
   );
 }
 
-function Journal({ ledger, step, seen }: { ledger: AnimLedger; step: AnimStep; seen: Set<string> }) {
+function Journal({
+  ledger,
+  step,
+  seen,
+}: {
+  ledger: AnimLedger;
+  step: AnimStep;
+  seen: Set<string>;
+}) {
   const posted = step.posted[ledger.id] ?? [];
   const draft = step.draft?.ledger === ledger.id ? step.draft.row : undefined;
   const nums = rowNumbers(ledger, step);
@@ -182,8 +222,12 @@ function Journal({ ledger, step, seen }: { ledger: AnimLedger; step: AnimStep; s
         <tr>
           <th scope="col">#</th>
           <th scope="col">Account</th>
-          <th scope="col" className="num">Dr</th>
-          <th scope="col" className="num">Cr</th>
+          <th scope="col" className="num">
+            Dr
+          </th>
+          <th scope="col" className="num">
+            Cr
+          </th>
         </tr>
       </thead>
       {c.items.map(({ row, state }, i) => {
@@ -228,7 +272,15 @@ const GROUPS: { label: string; types: AccountType[] }[] = [
   { label: 'Equity', types: ['equity', 'contra-equity'] },
 ];
 
-function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; step: AnimStep; highlighted: Set<string> }) {
+function BalanceSheetPanel({
+  ledger,
+  step,
+  highlighted,
+}: {
+  ledger: AnimLedger;
+  step: AnimStep;
+  highlighted: Set<string>;
+}) {
   const posted = step.posted[ledger.id] ?? [];
   const before = balancesOf(ledger, []);
   const now = balancesOf(ledger, posted);
@@ -242,7 +294,9 @@ function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; 
     return t && (t.startsWith('contra') || t === 'expense' || t === 'dividend') ? -v : v;
   };
   const netIncome = (m: Map<string, Money>) =>
-    ledger.accounts.filter((a) => incomeTypes.includes(a.type)).reduce((s, a) => s + signed(m, a.id), 0);
+    ledger.accounts
+      .filter((a) => incomeTypes.includes(a.type))
+      .reduce((s, a) => s + signed(m, a.id), 0);
 
   const line = (key: string, label: string, b: Money, n: Money, hl: boolean) => {
     const delta = n - b;
@@ -252,7 +306,10 @@ function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; 
         <td className="num">{formatMoney(b)}</td>
         <td className="num">
           {formatMoney(n)}
-          <span className="bs__delta" aria-label={delta === 0 ? 'unchanged' : delta > 0 ? 'increased' : 'decreased'}>
+          <span
+            className="bs__delta"
+            aria-label={delta === 0 ? 'unchanged' : delta > 0 ? 'increased' : 'decreased'}
+          >
             {delta > 0 ? ' ▲' : delta < 0 ? ' ▼' : ''}
           </span>
         </td>
@@ -266,66 +323,87 @@ function BalanceSheetPanel({ ledger, step, highlighted }: { ledger: AnimLedger; 
   return (
     // Scrolls inside its own box on a narrow phone instead of widening the whole page.
     <div className="bs-scroll">
-    <table className="bs">
-      <caption>Balance sheet</caption>
-      <thead>
-        <tr>
-          <th scope="col" />
-          <th scope="col" className="num">Before</th>
-          <th scope="col" className="num">Now</th>
-        </tr>
-      </thead>
-      {GROUPS.map((g) => {
-        const accts = ledger.accounts.filter(
-          (a) => g.types.includes(a.type) && ((before.get(a.id) ?? 0) !== 0 || (now.get(a.id) ?? 0) !== 0),
-        );
-        const showIncome = g.label === 'Equity' && (netIncome(before) !== 0 || netIncome(now) !== 0);
-        return (
-          <tbody key={g.label}>
-            <tr className="bs__group">
-              <th scope="rowgroup" colSpan={3}>
-                {g.label}
-              </th>
-            </tr>
-            {accts.map((a) =>
-              line(a.id, a.name, signed(before, a.id), signed(now, a.id), highlighted.has(a.id)),
-            )}
-            {showIncome &&
-              line(
-                '__income',
-                'Net income (revenue − expenses)',
-                netIncome(before),
-                netIncome(now),
-                ledger.accounts.some((a) => incomeTypes.includes(a.type) && highlighted.has(a.id)),
-              )}
-            {accts.length === 0 && !showIncome && (
-              <tr className="bs__none">
-                <th scope="row">—</th>
-                <td className="num">{formatMoney(0)}</td>
-                <td className="num">{formatMoney(0)}</td>
+      <table className="bs">
+        <caption>Balance sheet</caption>
+        <thead>
+          <tr>
+            <th scope="col" />
+            <th scope="col" className="num">
+              Before
+            </th>
+            <th scope="col" className="num">
+              Now
+            </th>
+          </tr>
+        </thead>
+        {GROUPS.map((g) => {
+          const accts = ledger.accounts.filter(
+            (a) =>
+              g.types.includes(a.type) &&
+              ((before.get(a.id) ?? 0) !== 0 || (now.get(a.id) ?? 0) !== 0),
+          );
+          const showIncome =
+            g.label === 'Equity' && (netIncome(before) !== 0 || netIncome(now) !== 0);
+          return (
+            <tbody key={g.label}>
+              <tr className="bs__group">
+                <th scope="rowgroup" colSpan={3}>
+                  {g.label}
+                </th>
               </tr>
-            )}
-          </tbody>
-        );
-      })}
-      <tfoot>
-        <tr>
-          <th scope="row">A = L + E</th>
-          <td className={`num ${eqBefore.balanced ? 'is-ok' : 'is-err'}`}>
-            {eqText(eqBefore)} {eqBefore.balanced ? '✓' : '✗'}
-          </td>
-          <td className={`num ${eqNow.balanced ? 'is-ok' : 'is-err'}`}>
-            {eqText(eqNow)} {eqNow.balanced ? '✓' : '✗'}
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+              {accts.map((a) =>
+                line(a.id, a.name, signed(before, a.id), signed(now, a.id), highlighted.has(a.id)),
+              )}
+              {showIncome &&
+                line(
+                  '__income',
+                  'Net income (revenue − expenses)',
+                  netIncome(before),
+                  netIncome(now),
+                  ledger.accounts.some(
+                    (a) => incomeTypes.includes(a.type) && highlighted.has(a.id),
+                  ),
+                )}
+              {accts.length === 0 && !showIncome && (
+                <tr className="bs__none">
+                  <th scope="row">—</th>
+                  <td className="num">{formatMoney(0)}</td>
+                  <td className="num">{formatMoney(0)}</td>
+                </tr>
+              )}
+            </tbody>
+          );
+        })}
+        <tfoot>
+          <tr>
+            <th scope="row">A = L + E</th>
+            <td className={`num ${eqBefore.balanced ? 'is-ok' : 'is-err'}`}>
+              {eqText(eqBefore)} {eqBefore.balanced ? '✓' : '✗'}
+            </td>
+            <td className={`num ${eqNow.balanced ? 'is-ok' : 'is-err'}`}>
+              {eqText(eqNow)} {eqNow.balanced ? '✓' : '✗'}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }
 
-function LedgerPanel({ ledger, step, seen }: { ledger: AnimLedger; step: AnimStep; seen: Set<string> }) {
-  const hl = new Map((step.highlight ?? []).filter((h) => h.ledger === ledger.id).map((h) => [h.account, h.note]));
+function LedgerPanel({
+  ledger,
+  step,
+  seen,
+  labelBalances,
+}: {
+  ledger: AnimLedger;
+  step: AnimStep;
+  seen: Set<string>;
+  labelBalances: boolean;
+}) {
+  const hl = new Map(
+    (step.highlight ?? []).filter((h) => h.ledger === ledger.id).map((h) => [h.account, h.note]),
+  );
   return (
     <section className="ledger" aria-label={ledger.title}>
       <h4 className="ledger__title">{ledger.title}</h4>
@@ -339,13 +417,16 @@ function LedgerPanel({ ledger, step, seen }: { ledger: AnimLedger; step: AnimSte
             seen={seen}
             note={hl.get(id)}
             highlighted={hl.has(id)}
+            labelBalance={labelBalances}
           />
         ))}
       </div>
       <div className="ledger__journal">
         <Journal ledger={ledger} step={step} seen={seen} />
       </div>
-      {ledger.showBalanceSheet && <BalanceSheetPanel ledger={ledger} step={step} highlighted={new Set(hl.keys())} />}
+      {ledger.showBalanceSheet && (
+        <BalanceSheetPanel ledger={ledger} step={step} highlighted={new Set(hl.keys())} />
+      )}
     </section>
   );
 }
@@ -410,7 +491,13 @@ function LedgerStage({ def, ctx }: { def: LedgerAnimationDef; ctx: StageContext 
   return (
     <div className={`ledger-stage ledger-stage--n${def.ledgers.length}`} ref={stageRef}>
       {def.ledgers.map((l) => (
-        <LedgerPanel key={l.id} ledger={l} step={step} seen={seen} />
+        <LedgerPanel
+          key={l.id}
+          ledger={l}
+          step={step}
+          seen={seen}
+          labelBalances={!!def.labelBalances}
+        />
       ))}
       {showTokens &&
         (step.flows ?? []).map((f, i) => (

@@ -24,8 +24,14 @@ describe('taccount', () => {
   it('renders the balance on its side, the increasing side shaded, and effect marks', () => {
     const html = tAccountsHtml(primer);
     expect(html).toContain('class="tacct tledger inc-dr tone-asset"');
+    // Plain `Balance`: the shorthand — rule + bold total; the word is for screen readers only.
     expect(html).toMatch(
-      /tl-balance is-total"><span class="tl-entry"><span class="tl-label">balance<\/span><strong class="tl-amt">\$940/,
+      /tl-balance is-total"><span class="tl-entry"><span class="sr-only">balance <\/span><strong class="tl-amt">\$940/,
+    );
+    expect(html).not.toContain('class="tl-label">balance');
+    // `Balance: labelled` (introductory examples) writes the word.
+    expect(tAccountsHtml(primer.replace(/Balance$/, 'Balance: labelled'))).toContain(
+      '<span class="tl-label">balance</span><strong class="tl-amt">$940',
     );
     expect(html).toContain('tacct-effect is-down'); // the $60 credit lowers an asset
     // Only the side carrying the total gets the rule (is-total); the other half of the balance row stays open.

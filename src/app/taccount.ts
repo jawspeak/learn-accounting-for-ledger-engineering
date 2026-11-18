@@ -13,7 +13,8 @@
  * One posting per line (opening first), each on its own side. A blank line starts the next account; accounts are
  * shown side by side in Assets → Liabilities → Equity order.
  * Each posting line is `[label:] Dr|Cr amount` ("Opening" is shown as the starting balance); a line that says
- * just `Balance` adds the computed balance (on the side it falls, flagged if abnormal).
+ * just `Balance` adds the computed balance (on the side it falls, flagged if abnormal) as a rule + bold total;
+ * `Balance: labelled` also writes the word "balance" (for introductory examples).
  */
 import type { AccountType, Side } from '@contracts';
 import { engine } from '@engine';
@@ -31,6 +32,8 @@ export interface Ledger {
   type: AccountType;
   postings: LedgerPosting[];
   showBalance: boolean;
+  /** `Balance: labelled` writes the word by the total (introductory examples); plain `Balance` doesn't. */
+  labelBalance?: boolean;
 }
 
 const HEAD_RE = /^(.+?)\s*\(\s*([a-z -]+?)\s*\)\s*$/i;
@@ -55,8 +58,10 @@ export function parseTAccounts(src: string): Ledger[] {
       out.push(cur);
       return;
     }
-    if (/^balance$/i.test(line)) {
+    const bal = /^balance(?:\s*:\s*(labell?ed))?$/i.exec(line);
+    if (bal) {
       (cur as Ledger).showBalance = true;
+      if (bal[1]) (cur as Ledger).labelBalance = true;
       return;
     }
     const m = POST_RE.exec(line);
@@ -123,11 +128,15 @@ function ledgerHtml(l: Ledger): string {
     .join('');
   let balance = '';
   if (l.showBalance) {
+    // After the basics the rule + bold total is the shorthand; screen readers still hear "balance".
+    const word = l.labelBalance
+      ? '<span class="tl-label">balance</span>'
+      : '<span class="sr-only">balance </span>';
     const b = ledgerBalance(l);
     const shown: Side = b < 0 ? (inc === 'dr' ? 'cr' : 'dr') : inc;
     const cell = (s: Side) =>
       s === shown
-        ? `<span class="tacct-cell tacct-${s} tl-cell tl-balance is-total"><span class="tl-entry">${s === 'dr' ? '<span class="tl-label">balance</span>' : ''}<strong class="tl-amt">${usd(Math.abs(b))}</strong>${s === 'cr' ? '<span class="tl-label">balance</span>' : ''}</span>${b < 0 ? '<span class="tl-abnormal">(abnormal)</span>' : ''}</span>`
+        ? `<span class="tacct-cell tacct-${s} tl-cell tl-balance is-total"><span class="tl-entry">${s === 'dr' ? word : ''}<strong class="tl-amt">${usd(Math.abs(b))}</strong>${s === 'cr' ? word : ''}</span>${b < 0 ? '<span class="tl-abnormal">(abnormal)</span>' : ''}</span>`
         : `<span class="tacct-cell tacct-${s} tl-cell tl-balance"></span>`;
     balance = cell('dr') + cell('cr');
   }

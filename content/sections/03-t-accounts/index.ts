@@ -28,7 +28,7 @@ A **[[T-account]]** is one account drawn as a big "T": debits on the left, credi
 Checking Account (asset)
 Opening: Dr 1,000
 ATM withdrawal: Cr 60
-Balance
+Balance: labelled
 \`\`\`
 
 **[[Double entry]]** means every transaction touches **at least two accounts**, and the debits equal the credits. That's what keeps \`A = L + E\` true after every single transaction.
