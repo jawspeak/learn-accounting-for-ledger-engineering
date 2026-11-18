@@ -839,3 +839,18 @@ body:has(.layout.no-side) .menu-btn {
   border-bottom: 1px solid var(--border);
   margin-bottom: var(--space-3);
 }
+
+/* A figure placed inside a primer (see FIGURES in SectionPage). */
+.primer-figure {
+  margin: var(--space-4) 0 var(--space-5);
+  max-width: 44rem;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.primer-figure figcaption {
+  margin-top: var(--space-2);
+  font-size: 0.9rem;
+  color: var(--muted);
+}

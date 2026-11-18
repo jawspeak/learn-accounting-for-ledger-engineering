@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 /** Draws one T-account. `inc` = which half increases the account (shaded and marked "+"). */
 function T({
@@ -58,23 +58,26 @@ function Arrow({ d, id }: { d: string; id?: string }) {
 }
 
 export function CheatSheetSvg() {
+  // Unique per instance: the diagram can be on a section page and in the cheat-sheet drawer at the same time.
+  const uid = useId().replace(/:/g, '');
+  const head = `${uid}-head`;
   return (
     <svg
       className="cheat-svg"
       viewBox="0 0 640 560"
       role="img"
-      aria-labelledby="cs-title cs-desc"
+      aria-labelledby={`${uid}-title ${uid}-desc`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title id="cs-title">Accounting equation cheat sheet</title>
-      <desc id="cs-desc">
+      <title id={`${uid}-title`}>Accounting equation cheat sheet</title>
+      <desc id={`${uid}-desc`}>
         Assets equal Liabilities plus Equity. Assets increase with debits; Liabilities and Equity
         increase with credits. Equity is Paid-in Capital plus Retained Earnings. Revenue increases
         Retained Earnings with credits; Expenses and Dividends reduce it and increase with debits.
       </desc>
       <defs>
         <marker
-          id="cs-head"
+          id={head}
           viewBox="0 0 10 10"
           refX="8"
           refY="5"
@@ -102,8 +105,8 @@ export function CheatSheetSvg() {
       <T x={440} y={56} title="Equity" inc="cr" />
 
       {/* Equity splits */}
-      <Arrow d="M535,140 L535,176" id="cs-head" />
-      <Arrow d="M535,158 L320,158 L320,176" id="cs-head" />
+      <Arrow d="M535,140 L535,176" id={head} />
+      <Arrow d="M535,158 L320,158 L320,176" id={head} />
       <text className="small muted" x="428" y="153" textAnchor="middle">
         Equity =
       </text>
@@ -121,7 +124,7 @@ export function CheatSheetSvg() {
       {/* Feeders */}
       <path className="arrow" d="M100,330 L100,306 L535,306" />
       <path className="arrow" d="M320,330 L320,306" />
-      <Arrow d="M535,330 L535,282" id="cs-head" />
+      <Arrow d="M535,330 L535,282" id={head} />
       <text className="small muted" x="320" y="299" textAnchor="middle">
         feed Retained Earnings
       </text>

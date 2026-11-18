@@ -1,4 +1,6 @@
+import { Fragment, type ReactNode } from 'react';
 import { sections, sectionProblems } from '@content';
+import { CheatSheetSvg } from '../CheatSheet';
 import { Markdown } from '../Markdown';
 import { href } from '../router';
 import { animations } from '../../components/animations';
@@ -14,6 +16,40 @@ const SECTION_ANIMATIONS: Record<string, string[]> = {
 };
 
 const isStub = (md: string) => /^\s*_?coming soon\.?_?\s*$/i.test(md);
+
+/**
+ * Figures a primer can place inline with a marker on its own line: `<!-- figure:cheat-sheet -->`.
+ * Unknown names render nothing (the marker is an HTML comment, so it's invisible either way).
+ */
+const FIGURES: Record<string, () => ReactNode> = {
+  'cheat-sheet': () => (
+    <figure className="primer-figure">
+      <CheatSheetSvg />
+      <figcaption>
+        Each T shades the side that <strong>increases</strong> it: assets on the left (debit), liabilities and
+        equity on the right (credit). Revenue feeds equity, so it’s credit-normal; expenses and dividends reduce
+        it, so they’re debit-normal. Open it any time from <strong>Cheat sheet</strong> in the header, or see the{' '}
+        <a href={href.cheatsheet()}>full cheat sheet</a>.
+      </figcaption>
+    </figure>
+  ),
+};
+const FIGURE_MARKER = /^\s*<!--\s*figure:([a-z0-9-]+)\s*-->\s*$/m;
+
+/** Primer markdown with any figure markers replaced by their figures. */
+function Primer({ md }: { md: string }) {
+  const parts: ReactNode[] = [];
+  let rest = md;
+  for (let m = FIGURE_MARKER.exec(rest); m; m = FIGURE_MARKER.exec(rest)) {
+    const before = rest.slice(0, m.index);
+    if (before.trim()) parts.push(<Markdown key={parts.length} text={before} />);
+    const fig = FIGURES[m[1]!];
+    if (fig) parts.push(<Fragment key={parts.length}>{fig()}</Fragment>);
+    rest = rest.slice(m.index + m[0].length);
+  }
+  if (rest.trim()) parts.push(<Markdown key={parts.length} text={rest} />);
+  return <>{parts}</>;
+}
 
 export function SectionPage({ id }: { id: string }) {
   const idx = sections.findIndex((s) => s.id === id);
@@ -71,7 +107,7 @@ export function SectionPage({ id }: { id: string }) {
             <>
               {!noPrimer && (
                 <section className="primer" aria-label="Primer">
-                  <Markdown text={section.primer} />
+                  <Primer md={section.primer} />
                 </section>
               )}
               {(section.callouts ?? []).map((c, i) => (

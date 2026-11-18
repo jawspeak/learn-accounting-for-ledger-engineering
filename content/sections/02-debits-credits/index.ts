@@ -26,6 +26,8 @@ Mnemonic: **DEALER** — Dividends, Expenses, Assets are debit-normal; Liabiliti
 
 Why this layout? \`A = L + E\`: assets are on the left, so they grow on the left (debit); liabilities and equity are on the right, so they grow on the right (credit). Revenue grows equity → credit. Expenses and dividends shrink equity → debit.
 
+<!-- figure:cheat-sheet -->
+
 **The rule that makes it all work:** in every transaction, total debits = total credits. That keeps the equation balanced automatically.
 
 **To decide Dr or Cr:** (1) What type is the account? (2) Did it go up or down? (3) Up → normal side; down → the other side.
