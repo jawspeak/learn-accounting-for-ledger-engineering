@@ -211,17 +211,18 @@ function Journal({
   }));
   if (draft) rows.push({ row: draft, state: 'draft' });
   if (rows.length === 0) {
-    return <p className="journal__empty">No entries yet.</p>;
+    return <p className="sa-journal__empty">No entries yet.</p>;
   }
-  const c = collapse(rows, 6, 2, 3);
+  // Repeated entries (e.g. 30 daily accruals) collapse hard: the first, "… N more like it", the last two.
+  const c = collapse(rows, 4, 1, 2);
   const name = (id: AccountId) => accountOf(ledger, id)?.name ?? id;
   return (
-    <table className="journal">
+    // The same postings as the T-accounts above, as journal entries: (n) here is (n) in the T's.
+    <table className="sa-journal">
       <caption className="visually-hidden">{ledger.title}: journal</caption>
       <thead>
         <tr>
-          <th scope="col">#</th>
-          <th scope="col">Account</th>
+          <th scope="col">Journal</th>
           <th scope="col" className="num">
             Dr
           </th>
@@ -232,33 +233,44 @@ function Journal({
       </thead>
       {c.items.map(({ row, state }, i) => {
         const t = rowTotals(row);
-        const status = t.balanced
-          ? state === 'draft'
-            ? `Dr ${formatMoney(t.dr)} = Cr ${formatMoney(t.cr)} ✓ ready to post`
-            : `✓ balanced`
-          : `Dr ${formatMoney(t.dr)} ≠ Cr ${formatMoney(t.cr)} — not balanced yet`;
+        // Only the entry being added at this step says whether it balances; posted ones already did.
+        const status =
+          state === 'posted'
+            ? null
+            : t.balanced
+              ? state === 'draft'
+                ? `✓ Dr ${formatMoney(t.dr)} = Cr ${formatMoney(t.cr)}, ready to post`
+                : '✓ balanced'
+              : `Dr ${formatMoney(t.dr)} ≠ Cr ${formatMoney(t.cr)}, not balanced yet`;
+        const lines = [
+          ...row.postings.filter((p) => p.side === 'dr'),
+          ...row.postings.filter((p) => p.side === 'cr'),
+        ];
         return (
-          <tbody key={row.id} className={`journal__row is-${state}`}>
+          <tbody key={row.id} className={`sa-journal__entry is-${state}`}>
             {i === c.at && c.hidden > 0 && (
-              <tr className="journal__more">
-                <td colSpan={4}>⋯ {c.hidden} more identical rows ⋯</td>
+              <tr className="sa-journal__more">
+                <td colSpan={3}>⋯ {c.hidden} more like it ⋯</td>
               </tr>
             )}
-            {row.postings.map((p, j) => (
-              <tr key={j}>
-                <td className="journal__num">{j === 0 ? `(${nums.get(row.id)})` : ''}</td>
-                <td className={p.side === 'cr' ? 'journal__cr' : undefined}>{name(p.accountId)}</td>
+            <tr className="sa-journal__head">
+              <th scope="rowgroup" colSpan={3}>
+                <span className="sa-journal__ref">({nums.get(row.id)})</span> {row.label ?? ''}
+                {status && (
+                  <span className={`sa-journal__status ${t.balanced ? 'is-ok' : 'is-pending'}`}>
+                    {' '}
+                    · {status}
+                  </span>
+                )}
+              </th>
+            </tr>
+            {lines.map((p, j) => (
+              <tr key={j} className={`sa-journal__line is-${p.side}`}>
+                <td className="sa-journal__acct">{name(p.accountId)}</td>
                 <td className="num">{p.side === 'dr' ? formatMoney(p.amount) : ''}</td>
                 <td className="num">{p.side === 'cr' ? formatMoney(p.amount) : ''}</td>
               </tr>
             ))}
-            <tr className={`journal__status ${t.balanced ? 'is-ok' : 'is-pending'}`}>
-              <td />
-              <td colSpan={3}>
-                {row.label ? <span className="journal__label">{row.label} · </span> : null}
-                {status}
-              </td>
-            </tr>
           </tbody>
         );
       })}

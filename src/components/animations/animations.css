@@ -270,58 +270,65 @@
   margin-top: 0.5rem;
   overflow-x: auto;
 }
-.journal {
+/* Journal under the T's: the same postings as entries, in the app's journal look (sans, tabular figures),
+   compact — it repeats what the T's show, so it should never be the tallest thing on the stage. */
+.sa-journal {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.75rem;
+  line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
-.journal th {
+.sa-journal th,
+.sa-journal td {
+  padding: 0 0.3rem;
   text-align: left;
-  color: var(--sa-muted);
-  font-weight: 500;
-  border-bottom: 1px solid var(--sa-border);
+  font-weight: normal;
 }
-.journal .num {
+.sa-journal thead th {
+  color: var(--sa-muted);
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--sa-fg);
+}
+.sa-journal .num {
   text-align: right;
   white-space: nowrap;
+  width: 4.5em;
 }
-.journal td {
-  padding: 0.05rem 0.25rem;
-}
-.journal__num {
+.sa-journal__head th {
+  padding-top: 0.3rem;
   color: var(--sa-muted);
-  width: 2.2em;
 }
-.journal__cr {
-  padding-left: 1.4em !important;
+.sa-journal__entry + .sa-journal__entry .sa-journal__head th {
+  border-top: 1px solid color-mix(in srgb, var(--sa-border) 70%, transparent);
 }
-.journal__row.is-new {
-  animation: sa-slide-in calc(var(--sa-dur) * 1.6) ease-out;
+.sa-journal__ref {
+  color: var(--sa-fg);
+  font-weight: 600;
 }
-.journal__row.is-draft td {
-  color: var(--sa-accent);
+.sa-journal__line.is-cr .sa-journal__acct {
+  padding-left: 1.4em;
 }
-.journal__status td {
-  font-size: 0.72rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px dotted var(--sa-border);
-}
-.journal__status.is-ok td:last-child {
+.sa-journal__status.is-ok {
   color: var(--sa-ok);
 }
-.journal__status.is-pending td:last-child {
-  color: var(--sa-muted);
+.sa-journal__status.is-pending {
   font-style: italic;
 }
-.journal__label {
-  color: var(--sa-muted);
+.sa-journal__entry.is-new {
+  animation: sa-slide-in calc(var(--sa-dur) * 1.6) ease-out;
 }
-.journal__more td,
-.journal__empty {
+.sa-journal__entry.is-draft td,
+.sa-journal__entry.is-draft .sa-journal__ref {
+  color: var(--sa-accent);
+}
+.sa-journal__more td,
+.sa-journal__empty {
   color: var(--sa-muted);
   font-style: italic;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.3rem;
   margin: 0.25rem 0;
 }
 

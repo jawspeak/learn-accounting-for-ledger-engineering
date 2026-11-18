@@ -1,5 +1,5 @@
 import { AnimationGallery } from '../components/animations';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { sections } from '@content';
 import { href, useRoute } from './router';
 import { HomePage } from './pages/HomePage';
@@ -25,12 +25,62 @@ function mainClass(route: ReturnType<typeof useRoute>): string {
   return 'content';
 }
 
+const NARROW = '(max-width: 860px)';
+const NAV_KEY = 'nav:sections-hidden';
+
+/** Whether the screen is phone/tablet narrow (the section list then opens over the page). */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(
+    () => typeof window.matchMedia === 'function' && window.matchMedia(NARROW).matches,
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(NARROW);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  return narrow;
+}
+
+/** "Hide the section list" on wider screens, remembered per browser (a convenience; works without storage). */
+function useNavHidden(): [boolean, (v: boolean) => void] {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem(NAV_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const set = (v: boolean) => {
+    setHidden(v);
+    try {
+      localStorage.setItem(NAV_KEY, v ? '1' : '0');
+    } catch {
+      /* private mode etc.: still works for this visit */
+    }
+  };
+  return [hidden, set];
+}
+
 export function App() {
   const route = useRoute();
   const [navOpen, setNavOpen] = useState(false);
+  const [navHidden, setNavHidden] = useNavHidden();
+  const narrow = useNarrow();
   const [drawer, setDrawer] = useState(false);
   const [theme, toggleTheme] = useTheme();
   const closeDrawer = useCallback(() => setDrawer(false), []);
+
+  // The section list: ☰ shows/hides it on every page. Phones open it over the page; on wider screens the
+  // choice is remembered; workspaces (sandbox, spreadsheet) always start with it hidden.
+  const workspace = route.name === 'sheet' || route.name === 'sandbox';
+  const collapsed = workspace || navHidden;
+  const navShown = narrow || collapsed ? navOpen : true;
+  const toggleNav = () => {
+    if (narrow || workspace) setNavOpen((o) => !o);
+    else setNavHidden(!navHidden);
+  };
 
   const currentSectionId =
     route.name === 'section'
@@ -55,9 +105,10 @@ export function App() {
         <button
           type="button"
           className="menu-btn"
-          aria-expanded={navOpen}
+          aria-expanded={navShown}
           aria-controls="site-nav"
-          onClick={() => setNavOpen((o) => !o)}
+          title={navShown ? 'Hide the section list' : 'Show the section list'}
+          onClick={toggleNav}
         >
           ☰ Sections
         </button>
@@ -84,9 +135,7 @@ export function App() {
           {theme === 'dark' ? '☾ Dark' : '☀ Light'}
         </button>
       </header>
-      {/* The spreadsheet view takes the whole width; the section list stays reachable via ☰ Sections. */}
-      {/* Workspaces (sandbox, spreadsheet) start with the lesson nav collapsed; ☰ Sections still opens it. */}
-      <div className={route.name === 'sheet' || route.name === 'sandbox' ? 'layout no-side' : 'layout'}>
+      <div className={collapsed ? 'layout no-side' : 'layout'}>
         <nav id="site-nav" className={`sidebar ${navOpen ? 'open' : ''}`} aria-label="Sections">
           <ol>
             <li>

@@ -149,7 +149,8 @@ textarea {
   text-overflow: ellipsis;
 }
 .menu-btn {
-  display: none;
+  /* Always available: shows/hides the section list on every page. */
+  display: inline-flex;
 }
 .layout {
   display: grid;
@@ -436,31 +437,6 @@ textarea {
   background: var(--surface-2);
   max-width: 44rem;
 }
-.journal {
-  border-collapse: collapse;
-  width: 100%;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-.journal caption {
-  text-align: left;
-  font-family: var(--font-sans);
-  color: var(--muted);
-  padding-bottom: var(--space-2);
-}
-.journal td,
-.journal th {
-  padding: 0.15rem 0.5rem;
-  text-align: left;
-}
-.journal td.num,
-.journal th.num {
-  text-align: right;
-}
-.journal td.cr-acct {
-  padding-left: 2rem;
-}
-
 /* Question components */
 .q-items {
   list-style: none;
@@ -784,9 +760,6 @@ textarea {
   height: auto;
   border-right: 0;
   border-bottom: 1px solid var(--border);
-}
-body:has(.layout.no-side) .menu-btn {
-  display: inline-flex;
 }
 .content.sheet-full {
   max-width: none;
