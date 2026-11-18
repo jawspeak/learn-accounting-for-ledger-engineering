@@ -1,4 +1,5 @@
 import type { AccountType, AttemptState } from '@contracts';
+import { Markdown } from '../../app/Markdown';
 
 /** Controlled-component props shared by all non-booking question inputs. */
 export interface QuestionInputProps<P> {
@@ -50,6 +51,40 @@ export function Mark({ i, correct, wrong }: { i: number; correct?: number[]; wro
       </span>
     );
   return <span className="q-mark" aria-hidden="true" />;
+}
+
+/**
+ * Instant feedback for one choice (multiple choice, Dr/Cr): ✓/✗ plus the "why", right under the choice.
+ * Text + icon, never colour alone; announced politely so screen-reader users hear the verdict too.
+ */
+export function Verdict({ ok, lead, why: raw }: { ok: boolean; lead?: string; why: string }) {
+  // Authored explanations often open with their own "Yes —" / "No." / "Exactly." — the label already says it.
+  const why = raw.replace(/^\s*(yes|no|right|correct|exactly|true|false|nope)\b[\s.,!:;—–-]*/i, '');
+  return (
+    <div className={`q-verdict ${ok ? 'is-ok' : 'is-bad'}`} role="status" aria-live="polite">
+      <span className="q-verdict-head">
+        <span aria-hidden="true">{ok ? '✓' : '✗'}</span> {lead ?? (ok ? 'Right.' : 'Not quite.')}
+      </span>{' '}
+      <Markdown text={why} inline />
+    </div>
+  );
+}
+
+/** The problem's key concept, shown once the whole question is answered correctly. */
+export function KeyConcept({ text, next }: { text: string; next?: { href: string; title: string } }) {
+  return (
+    <aside className="q-key" aria-label="Key concept">
+      <h3 className="q-key-head">
+        <span aria-hidden="true">✓</span> Key concept
+      </h3>
+      <Markdown text={text} />
+      {next && (
+        <a className="btn" href={next.href}>
+          Next: {next.title} <span aria-hidden="true">→</span>
+        </a>
+      )}
+    </aside>
+  );
 }
 
 /** Copy items array to a fixed length. */

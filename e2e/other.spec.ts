@@ -23,23 +23,25 @@ test('faded example: prefilled postings are locked, learner can still add', asyn
   await expect(check(page)).toBeVisible();
 });
 
-test('multiple choice: wrong then right', async ({ page }) => {
+test('multiple choice: graded on each pick, explains why, key concept when right (no Check button)', async ({ page }) => {
   const w = watchErrors(page);
   await page.goto('/#/p/00-dealer');
+  await expect(check(page)).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Liabilities' }).check();
-  await check(page).click();
-  await expect(headline(page)).toContainText(/issues? found/);
+  await expect(page.locator('.q-verdict.is-bad')).toContainText('No — this one isn’t true.');
   await page.getByRole('checkbox', { name: 'Liabilities' }).uncheck();
+  await expect(page.locator('.q-verdict')).toHaveCount(0);
   for (const n of ['Assets', 'Expenses', 'Dividends / owner draws']) await page.getByRole('checkbox', { name: n }).check();
-  await check(page).click();
-  await expect(headline(page)).toContainText('Correct!');
+  await expect(page.locator('.q-verdict.is-ok')).toHaveCount(3);
+  await expect(page.getByRole('complementary', { name: 'Key concept' })).toBeVisible();
   w.assertClean();
 });
 
-test('dr-cr-predict: wrong then right', async ({ page }) => {
+test('dr-cr-predict: each row graded as picked; key concept once all are right', async ({ page }) => {
   await page.goto('/#/p/03-review-predict');
-  await check(page).click();
-  await expect(headline(page)).toContainText(/issues? found/);
+  await expect(check(page)).toHaveCount(0);
+  await page.getByRole('group', { name: 'increase Loan to a Friend' }).getByRole('radio', { name: 'Credit' }).check();
+  await expect(page.locator('.q-verdict.is-bad')).toContainText('Not quite — it’s a debit.');
   const answers: Array<[string, string]> = [
     ['increase Loan to a Friend', 'Debit'],
     ['increase Car Loan Payable', 'Credit'],
@@ -48,8 +50,8 @@ test('dr-cr-predict: wrong then right', async ({ page }) => {
     ['increase Bank Fees Expense', 'Debit'],
   ];
   for (const [g, side] of answers) await page.getByRole('group', { name: g }).getByRole('radio', { name: side }).check();
-  await check(page).click();
-  await expect(headline(page)).toContainText('Correct!');
+  await expect(page.locator('.q-verdict.is-ok')).toHaveCount(5);
+  await expect(page.getByRole('complementary', { name: 'Key concept' })).toBeVisible();
 });
 
 test('equation-fill: wrong then right', async ({ page }) => {

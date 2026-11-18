@@ -9,8 +9,12 @@ import { EquationFill } from './EquationFill';
 import { StatementFill } from './StatementFill';
 import { MultipleChoice } from './MultipleChoice';
 import { CoaDesign } from './CoaDesign';
+import { KeyConcept } from './types';
 
 export type NonBookingProblem = Exclude<Problem, { kind: 'booking' }>;
+
+/** Kinds graded the moment a choice is made: no Check button, feedback under each choice. */
+const INSTANT = new Set<Problem['kind']>(['multiple-choice', 'dr-cr-predict']);
 
 /** Which item indices to show as correct / wrong given the reveal level. */
 export function marksFor(result: CheckResult | null, level: RevealLevel) {
@@ -84,6 +88,24 @@ export function QuestionView({
     onAttemptChange?.(next);
   };
   const { correctItems, wrongItems } = marksFor(result, level);
+
+  if (INSTANT.has(problem.kind)) {
+    // Graded as you choose (one question, one verdict) — the components show ✓/✗ and the "why" inline.
+    const done = engine.checkProblem(problem, value, entities).correct;
+    return (
+      <div>
+        <QuestionInput problem={problem} value={value} onChange={change} />
+        {done && <KeyConcept text={problem.explanation} next={next} />}
+        <FeedbackPanel
+          result={null}
+          level={0}
+          onEscalate={() => {}}
+          hints={problem.hints}
+          explanation={problem.explanation}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>

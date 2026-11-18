@@ -1,47 +1,124 @@
+import { useState } from 'react';
 import type { MultipleChoiceAnswer, MultipleChoiceProblem } from '@contracts';
 import { Markdown } from '../../app/Markdown';
-import { itemClass, Mark, type QuestionInputProps } from './types';
+import { type QuestionInputProps, Verdict } from './types';
 
-/** Single or multi select. Writes `items = [selectedIndices]`. Marks use the option index as itemIndex. */
+/**
+ * Single or multi select, graded the moment an option is picked (no Check button): the picked option shows
+ * ✓/✗ and its own explanation right under it. Writes `items = [selectedIndices]`.
+ *
+ * - Single select: a wrong pick stays marked "tried" (with its "why" one click away) so the learner can try
+ *   another option without losing what they learned.
+ * - Multi select: every ticked option is judged on its own; a status line says how many right ones are found.
+ */
 export function MultipleChoice({
   problem,
   value,
   onChange,
-  correctItems,
-  wrongItems,
 }: QuestionInputProps<MultipleChoiceProblem>) {
   const selected = ((value.items as MultipleChoiceAnswer | undefined)?.[0] ?? []) as number[];
+  const [tried, setTried] = useState<number[]>([]);
+
   const toggle = (i: number) => {
     let next: number[];
     if (problem.multi)
       next = selected.includes(i)
         ? selected.filter((x) => x !== i)
         : [...selected, i].sort((a, b) => a - b);
-    else next = [i];
+    else {
+      next = [i];
+      // Remember earlier wrong picks (single select) so they stay visibly "tried".
+      const prev = selected[0];
+      if (
+        prev !== undefined &&
+        prev !== i &&
+        !problem.options[prev]!.correct &&
+        !tried.includes(prev)
+      )
+        setTried([...tried, prev]);
+    }
     onChange({ ...value, items: [next] });
   };
+
+  const rightCount = problem.options.filter((o) => o.correct).length;
+  const foundRight = selected.filter((i) => problem.options[i]?.correct).length;
+  const pickedWrong = selected.filter(
+    (i) => problem.options[i] && !problem.options[i]!.correct,
+  ).length;
+
   return (
-    <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-      <legend className="note">{problem.multi ? 'Select all that apply.' : 'Select one.'}</legend>
+    <fieldset className="mc" style={{ border: 0, padding: 0, margin: 0 }}>
+      <legend className="note">
+        {problem.multi
+          ? 'Select all that apply — each choice is checked as you make it.'
+          : 'Select one — you’ll see right away whether it’s right, and why.'}
+      </legend>
       <ul className="mc-options">
-        {problem.options.map((o, i) => (
-          <li key={i} className={`q-item ${itemClass(i, correctItems, wrongItems)}`}>
-            <Mark i={i} correct={correctItems} wrong={wrongItems} />
-            <label
-              className="q-label"
-              style={{ display: 'flex', gap: '0.6rem', alignItems: 'baseline', cursor: 'pointer' }}
-            >
-              <input
-                type={problem.multi ? 'checkbox' : 'radio'}
-                name={problem.id}
-                checked={selected.includes(i)}
-                onChange={() => toggle(i)}
-              />
-              <Markdown text={o.text} inline />
-            </label>
-          </li>
-        ))}
+        {problem.options.map((o, i) => {
+          const isSel = selected.includes(i);
+          const wasTried = !isSel && tried.includes(i);
+          const cls = isSel ? (o.correct ? 'is-correct' : 'is-wrong') : wasTried ? 'is-tried' : '';
+          return (
+            <li key={i} className={`q-item ${cls}`}>
+              <span
+                className={`q-mark ${isSel ? (o.correct ? 'ok' : 'err') : wasTried ? 'err' : ''}`}
+              >
+                <span aria-hidden="true">
+                  {isSel ? (o.correct ? '✓' : '✗') : wasTried ? '✗' : ''}
+                </span>
+                {(isSel || wasTried) && (
+                  <span className="sr-only">
+                    {isSel && o.correct ? 'Correct' : wasTried ? 'Tried, incorrect' : 'Incorrect'}
+                  </span>
+                )}
+              </span>
+              <div className="mc-body">
+                <label className="q-label mc-label">
+                  <input
+                    type={problem.multi ? 'checkbox' : 'radio'}
+                    name={problem.id}
+                    checked={isSel}
+                    onChange={() => toggle(i)}
+                  />
+                  <Markdown text={o.text} inline />
+                </label>
+                {isSel && (
+                  <Verdict
+                    ok={o.correct}
+                    lead={
+                      problem.multi
+                        ? o.correct
+                          ? 'Yes — this one is true.'
+                          : 'No — this one isn’t true.'
+                        : o.correct
+                          ? 'Right.'
+                          : 'Not quite.'
+                    }
+                    why={
+                      o.explanation + (!o.correct && !problem.multi ? ' Try another option.' : '')
+                    }
+                  />
+                )}
+                {wasTried && (
+                  <details className="mc-tried">
+                    <summary>Why not this one?</summary>
+                    <Markdown text={o.explanation} inline />
+                  </details>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
+      {problem.multi && selected.length > 0 && (
+        <p className="note mc-progress" role="status">
+          {foundRight === rightCount && pickedWrong === 0
+            ? rightCount === 1
+              ? 'That’s the true statement.'
+              : `All ${rightCount} true statements found.`
+            : `${foundRight} of ${rightCount} true ${rightCount === 1 ? 'statement' : 'statements'} found${pickedWrong ? ` · untick the ${pickedWrong === 1 ? 'one' : pickedWrong} marked ✗` : ''}.`}
+        </p>
+      )}
     </fieldset>
   );
 }

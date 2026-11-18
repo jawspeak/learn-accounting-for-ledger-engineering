@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AttemptState } from '@contracts';
-import { QuestionInput, marksFor, type NonBookingProblem } from './QuestionView';
+import { QuestionInput, QuestionView, marksFor, type NonBookingProblem } from './QuestionView';
 import {
   classifyFx,
   coaFx,
@@ -151,6 +151,49 @@ describe('MultipleChoice', () => {
     expect(spy.v.items).toEqual([[0, 1]]);
     fireEvent.click(screen.getAllByRole('checkbox')[0]!);
     expect(spy.v.items).toEqual([[1]]);
+  });
+});
+
+describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Check button', () => {
+  it('single select: wrong pick explains why, stays "tried"; right pick shows the key concept + next', () => {
+    render(<QuestionView problem={mcFx} next={{ href: '#/p/x', title: 'Next one' }} />);
+    expect(screen.queryByRole('button', { name: 'Check answer' })).toBeNull();
+    fireEvent.click(screen.getAllByRole('radio')[1]!);
+    expect(screen.getByText(/Not quite\./)).toBeTruthy();
+    expect(screen.getByText(/Try another option/)).toBeTruthy();
+    expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('radio')[0]!);
+    expect(screen.getByText(/Right\./)).toBeTruthy();
+    expect(screen.getByText('Why not this one?')).toBeTruthy(); // the earlier wrong pick, kept
+    const key = screen.getByRole('complementary', { name: 'Key concept' });
+    expect(key.textContent).toContain('Because.');
+    expect(screen.getByRole('link', { name: /Next: Next one/ }).getAttribute('href')).toBe('#/p/x');
+  });
+
+  it('multi select: each ticked option judged on its own, progress shown, done only with exactly the right set', () => {
+    render(<QuestionView problem={mcMultiFx} />);
+    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
+    expect(screen.getByText(/No — this one isn’t true/)).toBeTruthy();
+    expect(screen.getByText(/0 of 1 true statement found · untick the one marked ✗/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
+    expect(screen.getByText(/Yes — this one is true/)).toBeTruthy();
+    expect(screen.queryByRole('complementary', { name: 'Key concept' })).toBeNull(); // a wrong one is still ticked
+    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
+    expect(screen.getByText('That’s the true statement.')).toBeTruthy();
+    expect(screen.getByRole('complementary', { name: 'Key concept' })).toBeTruthy();
+  });
+
+  it('Dr/Cr: each row graded as picked, naming the right side and why', () => {
+    render(<QuestionView problem={drCrFx} />);
+    expect(screen.queryByRole('button', { name: 'Check answer' })).toBeNull();
+    fireEvent.click(screen.getAllByLabelText('Credit')[0]!);
+    expect(screen.getByText(/Not quite — it’s a debit\./)).toBeTruthy();
+    expect(screen.getByText(/Assets are debit-normal\./)).toBeTruthy();
+    fireEvent.click(screen.getAllByLabelText('Debit')[0]!);
+    fireEvent.click(screen.getAllByLabelText('Credit')[1]!);
+    expect(screen.getAllByText(/Right —/)).toHaveLength(2);
+    expect(screen.getByRole('complementary', { name: 'Key concept' })).toBeTruthy();
   });
 });
 

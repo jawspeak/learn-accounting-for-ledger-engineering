@@ -854,3 +854,84 @@ body:has(.layout.no-side) .menu-btn {
   font-size: 0.9rem;
   color: var(--muted);
 }
+
+/* Instant-feedback questions (multiple choice, Dr/Cr): the verdict sits right under the choice. */
+.mc-options .q-item,
+.q-items .q-item:has(.mc-body) {
+  align-items: flex-start;
+}
+.mc-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.mc-label {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  cursor: pointer;
+}
+.drcr-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.q-verdict {
+  font-size: 0.95rem;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid currentColor;
+  border-radius: 0 6px 6px 0;
+  background: var(--surface);
+  color: var(--fg);
+}
+.q-verdict.is-ok {
+  border-left-color: var(--ok);
+}
+.q-verdict.is-bad {
+  border-left-color: var(--err);
+}
+.q-verdict-head {
+  font-weight: 700;
+}
+.q-verdict.is-ok .q-verdict-head {
+  color: var(--ok);
+}
+.q-verdict.is-bad .q-verdict-head {
+  color: var(--err);
+}
+.q-item.is-tried {
+  border-style: dashed;
+  border-color: var(--err);
+}
+.q-item.is-tried .mc-label {
+  color: var(--muted);
+}
+.mc-tried summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.mc-tried[open] {
+  font-size: 0.92rem;
+}
+.mc-progress {
+  margin: 0;
+}
+.q-key {
+  max-width: 44rem;
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--ok);
+  border-radius: var(--radius);
+  background: var(--ok-soft);
+}
+.q-key-head {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+  color: var(--ok);
+}
+.q-key .btn {
+  margin-top: var(--space-2);
+}
