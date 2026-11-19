@@ -15,6 +15,11 @@
   --err-soft: #fde7e5;
   --warn: #8a5a00;
   --warn-soft: #fff1d0;
+  /* "Changed in this step" (animations): a highlighter amber, kept apart from blue (= increasing side). */
+  --change: #b06a00;
+  --change-soft: #ffe39a;
+  --change-pill: #f2b200;
+  --change-pill-fg: #1c1c1f;
   --shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 4px 16px rgb(0 0 0 / 6%);
   color-scheme: light;
 }
@@ -35,6 +40,10 @@
     --err-soft: #3a1b19;
     --warn: #f2c35c;
     --warn-soft: #35290c;
+    --change: #f5c04a;
+    --change-soft: #4d3b0a;
+    --change-pill: #f5c04a;
+    --change-pill-fg: #1c1400;
     --shadow: 0 1px 2px rgb(0 0 0 / 50%), 0 4px 16px rgb(0 0 0 / 40%);
     color-scheme: dark;
   }
@@ -55,6 +64,10 @@
   --err-soft: #3a1b19;
   --warn: #f2c35c;
   --warn-soft: #35290c;
+  --change: #f5c04a;
+  --change-soft: #4d3b0a;
+  --change-pill: #f5c04a;
+  --change-pill-fg: #1c1400;
   --shadow: 0 1px 2px rgb(0 0 0 / 50%), 0 4px 16px rgb(0 0 0 / 40%);
   color-scheme: dark;
 }

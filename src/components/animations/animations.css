@@ -9,6 +9,11 @@
   --sa-ok: var(--ok, #2e7d32);
   --sa-err: var(--err, #c62828);
   --sa-hl: var(--accent-soft, color-mix(in srgb, var(--sa-accent) 14%, transparent));
+  /* What changed in this step: amber, never blue (blue = the increasing side of a T). */
+  --sa-chg: var(--change, #b06a00);
+  --sa-chg-soft: var(--change-soft, #ffe39a);
+  --sa-chg-pill: var(--change-pill, #f2b200);
+  --sa-chg-pill-fg: var(--change-pill-fg, #1c1c1f);
   --sa-dur: 350ms;
   margin: 1.25rem 0;
   padding: 0.75rem;
@@ -94,7 +99,9 @@
   height: 0.5rem;
   border-radius: 50%;
   border: 1px solid var(--sa-muted);
-  transition: background var(--sa-dur), transform var(--sa-dur);
+  transition:
+    background var(--sa-dur),
+    transform var(--sa-dur);
 }
 .step-anim__dots li.is-done {
   background: var(--sa-muted);
@@ -134,7 +141,9 @@
   border: 1px solid var(--sa-border);
   border-radius: 0.35rem;
   padding: 0.35rem 0.4rem;
-  transition: box-shadow var(--sa-dur), background var(--sa-dur);
+  transition:
+    box-shadow var(--sa-dur),
+    background var(--sa-dur);
   min-width: 0;
 }
 /* Line the T's in one set of books up with each other: every T is two rows (header, T) of its ledger's grid
@@ -180,9 +189,9 @@
 .tacct__total {
   margin-top: auto;
 }
-/* The account this step is about: an outline, not a fill — the fill is reserved for the increasing side. */
+/* An account this step changes (or is about): an amber outline — blue fill is reserved for the increasing side. */
 .ledger__taccts .tacct.is-highlighted {
-  box-shadow: 0 0 0 2px var(--sa-accent);
+  box-shadow: 0 0 0 2px var(--sa-chg);
 }
 .tacct__head {
   /* Name centred over the T with its type beneath — the same header as the lesson T-accounts. */
@@ -207,9 +216,10 @@
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0 0.3rem;
-  border: 1px solid var(--sa-accent);
+  border: 1px solid var(--sa-chg);
   border-radius: 0.25rem;
-  color: var(--sa-accent);
+  background: var(--sa-chg-soft);
+  color: var(--sa-fg);
   animation: sa-pop var(--sa-dur) ease-out;
 }
 .tacct__sides {
@@ -279,11 +289,20 @@
 .tacct__row.is-new {
   animation: sa-slide-in calc(var(--sa-dur) * 1.6) ease-out;
 }
+/* Lines this step adds: highlighter amber behind the amount (solid once posted, dashed outline while drafted). */
+.tacct__row.is-changed .tacct__cell:not(:empty) {
+  background: var(--sa-chg-soft);
+  border-radius: 0.2rem;
+}
 .tacct__row.is-draft .tacct__cell:not(:empty) {
-  outline: 1px dashed var(--sa-accent);
+  outline: 1px dashed var(--sa-chg);
   outline-offset: -1px;
-  color: var(--sa-accent);
   animation: sa-pop var(--sa-dur) ease-out;
+}
+.tacct__total .tacct__cell.is-changed .tacct__balval {
+  background: var(--sa-chg-soft);
+  border-radius: 0.2rem;
+  padding: 0 0.2rem;
 }
 /* The total: extra space above, a short rule only under the side that carries the balance. */
 .tacct__total .tacct__cell {
@@ -364,9 +383,13 @@
 .sa-journal__entry.is-new {
   animation: sa-slide-in calc(var(--sa-dur) * 1.6) ease-out;
 }
-.sa-journal__entry.is-draft td,
-.sa-journal__entry.is-draft .sa-journal__ref {
-  color: var(--sa-accent);
+/* The entry this step adds or drafts: highlighter amber, the same as its lines in the T's. */
+.sa-journal__entry.is-changed th,
+.sa-journal__entry.is-changed td {
+  background: var(--sa-chg-soft);
+}
+.sa-journal__entry.is-draft .sa-journal__head th {
+  font-style: italic;
 }
 .sa-journal__more td,
 .sa-journal__empty {
@@ -412,13 +435,14 @@
 .bs tbody tr:not(.bs__group) th {
   padding-left: 0.9em;
 }
-.bs tr.is-highlighted {
-  background: var(--sa-hl);
+.bs tr.is-highlighted th,
+.bs tr.is-highlighted td {
+  background: var(--sa-chg-soft);
 }
 .bs__delta {
   display: inline-block;
   width: 1.1em;
-  color: var(--sa-accent);
+  color: var(--sa-chg);
 }
 .bs tfoot th,
 .bs tfoot td {
@@ -443,8 +467,8 @@
   opacity: 0;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  background: var(--sa-accent);
-  color: var(--sa-surface);
+  background: var(--sa-chg-pill);
+  color: var(--sa-chg-pill-fg);
   font-weight: 700;
   font-size: 0.8rem;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);

@@ -63,14 +63,19 @@ function rowNumbers(ledger: AnimLedger, step: AnimStep): Map<string, number> {
 
 type LedgerLine =
   | { kind: 'opening'; key: string }
-  | { kind: 'tx'; key: string; row: TransactionRow; n: number; state: EntryState }
+  | { kind: 'tx'; key: string; row: TransactionRow; n: number; state: EntryState; changed: boolean }
   | { kind: 'more'; key: string; hidden: number };
 
 /**
  * The line structure shared by every T in a ledger at this step: opening (if any account has one), one line per
  * transaction in order (posted, then the draft), with a long run collapsed to first 3 · "⋯ N more" · last 3.
  */
-function ledgerLines(ledger: AnimLedger, step: AnimStep, seen: Set<string>): LedgerLine[] {
+function ledgerLines(
+  ledger: AnimLedger,
+  step: AnimStep,
+  seen: Set<string>,
+  changed: Set<string>,
+): LedgerLine[] {
   const nums = rowNumbers(ledger, step);
   const out: LedgerLine[] = [];
   if (
@@ -89,7 +94,14 @@ function ledgerLines(ledger: AnimLedger, step: AnimStep, seen: Set<string>): Led
   const c = collapse(tx, 7, 3, 3);
   c.items.forEach(({ row, state }, i) => {
     if (i === c.at && c.hidden > 0) out.push({ kind: 'more', key: 'more', hidden: c.hidden });
-    out.push({ kind: 'tx', key: row.id, row, n: nums.get(row.id) ?? 0, state });
+    out.push({
+      kind: 'tx',
+      key: row.id,
+      row,
+      n: nums.get(row.id) ?? 0,
+      state,
+      changed: state === 'draft' || changed.has(row.id),
+    });
   });
   return out;
 }
@@ -99,6 +111,8 @@ function TAccount({
   accountId,
   step,
   seen,
+  changed,
+  prevPosted,
   note,
   highlighted,
   labelBalance,
@@ -107,6 +121,10 @@ function TAccount({
   accountId: AccountId;
   step: AnimStep;
   seen: Set<string>;
+  /** Rows this step added (vs the previous step) — marked amber. */
+  changed: Set<string>;
+  /** What was posted on the previous step, to tell whether this account's total changed. */
+  prevPosted: TransactionRow[] | undefined;
   note?: string;
   highlighted: boolean;
   /** Write the word "balance" by the total (introductory animation only); otherwise rule + bold total. */
@@ -118,11 +136,13 @@ function TAccount({
   const posted = step.posted[ledger.id] ?? [];
   const balance = balancesOf(ledger, posted).get(accountId) ?? 0;
   const balSide: Side = balance >= 0 ? normal : normal === 'dr' ? 'cr' : 'dr';
+  const totalChanged =
+    prevPosted !== undefined && (balancesOf(ledger, prevPosted).get(accountId) ?? 0) !== balance;
 
   // The same lines in every T of this set of books, so line n is transaction n everywhere (even when the T's
   // wrap onto several rows): an opening line if ANY T has an opening balance, then one line per transaction
   // (empty where this account isn't touched), then the total. Long runs collapse the same way in every T.
-  const lines = ledgerLines(ledger, step, seen);
+  const lines = ledgerLines(ledger, step, seen, changed);
   const ownOpening = ledger.opening.find((l) => l.accountId === accountId)?.amount ?? 0;
   const cellsFor = (line: LedgerLine): Partial<Record<Side, Entry>> => {
     if (line.kind === 'opening') {
@@ -150,6 +170,13 @@ function TAccount({
     return out;
   };
 
+  // This step touches the account (a new or drafted line, or its total moved): outline it, like a hand-picked one.
+  const touched =
+    totalChanged ||
+    lines.some(
+      (l) => l.kind === 'tx' && l.changed && l.row.postings.some((q) => q.accountId === accountId),
+    );
+
   const cell = (e: Entry | undefined, side: Side) =>
     e ? (
       <span className={`tacct__cell tacct__${side}`}>
@@ -167,7 +194,7 @@ function TAccount({
 
   return (
     <div
-      className={`tacct inc-${normal}${highlighted ? ' is-highlighted' : ''}`}
+      className={`tacct inc-${normal}${highlighted || touched ? ' is-highlighted' : ''}`}
       // Rows on the ledger's shared grid: header, Dr/Cr labels, one per line, the total. Every T in the ledger
       // has the same count, so each line is as tall as its tallest version across the row (see animations.css).
       style={{ ['--tacct-rows' as string]: lines.length + 3 }}
@@ -201,10 +228,11 @@ function TAccount({
               );
             const c = cellsFor(line);
             const state = line.kind === 'opening' ? 'opening' : line.state;
+            const chg = line.kind === 'tx' && line.changed;
             return (
               <li
                 key={line.key}
-                className={`tacct__row is-${state}${c.dr || c.cr ? '' : ' is-blank'}`}
+                className={`tacct__row is-${state}${c.dr || c.cr ? '' : ' is-blank'}${chg ? ' is-changed' : ''}`}
               >
                 {cell(c.dr, 'dr')}
                 {cell(c.cr, 'cr')}
@@ -216,7 +244,7 @@ function TAccount({
             {(['dr', 'cr'] as Side[]).map((s) => (
               <span
                 key={s}
-                className={`tacct__cell tacct__${s}${s === balSide ? ' is-total' : ''}`}
+                className={`tacct__cell tacct__${s}${s === balSide ? ` is-total${totalChanged ? ' is-changed' : ''}` : ''}`}
               >
                 {s === balSide && (
                   <>
@@ -243,10 +271,12 @@ function Journal({
   ledger,
   step,
   seen,
+  changed,
 }: {
   ledger: AnimLedger;
   step: AnimStep;
   seen: Set<string>;
+  changed: Set<string>;
 }) {
   const posted = step.posted[ledger.id] ?? [];
   const draft = step.draft?.ledger === ledger.id ? step.draft.row : undefined;
@@ -293,7 +323,10 @@ function Journal({
           ...row.postings.filter((p) => p.side === 'cr'),
         ];
         return (
-          <tbody key={row.id} className={`sa-journal__entry is-${state}`}>
+          <tbody
+            key={row.id}
+            className={`sa-journal__entry is-${state}${state === 'draft' || changed.has(row.id) ? ' is-changed' : ''}`}
+          >
             {i === c.at && c.hidden > 0 && (
               <tr className="sa-journal__more">
                 <td colSpan={3}>⋯ {c.hidden} more like it ⋯</td>
@@ -333,15 +366,18 @@ const GROUPS: { label: string; types: AccountType[] }[] = [
 function BalanceSheetPanel({
   ledger,
   step,
-  highlighted,
+  prevPosted,
 }: {
   ledger: AnimLedger;
   step: AnimStep;
-  highlighted: Set<string>;
+  prevPosted: TransactionRow[] | undefined;
 }) {
   const posted = step.posted[ledger.id] ?? [];
   const before = balancesOf(ledger, []);
   const now = balancesOf(ledger, posted);
+  // A line is marked (amber) only when this step moved it.
+  const prevBal = prevPosted ? balancesOf(ledger, prevPosted) : now;
+  const moved = (id: string) => (prevBal.get(id) ?? 0) !== (now.get(id) ?? 0);
   const typeOf = typeLookup(ledger);
   const eqBefore = equationOf(ledger, []);
   const eqNow = equationOf(ledger, posted);
@@ -410,7 +446,7 @@ function BalanceSheetPanel({
                 </th>
               </tr>
               {accts.map((a) =>
-                line(a.id, a.name, signed(before, a.id), signed(now, a.id), highlighted.has(a.id)),
+                line(a.id, a.name, signed(before, a.id), signed(now, a.id), moved(a.id)),
               )}
               {showIncome &&
                 line(
@@ -418,9 +454,7 @@ function BalanceSheetPanel({
                   'Net income (revenue − expenses)',
                   netIncome(before),
                   netIncome(now),
-                  ledger.accounts.some(
-                    (a) => incomeTypes.includes(a.type) && highlighted.has(a.id),
-                  ),
+                  ledger.accounts.some((a) => incomeTypes.includes(a.type) && moved(a.id)),
                 )}
               {accts.length === 0 && !showIncome && (
                 <tr className="bs__none">
@@ -452,13 +486,21 @@ function LedgerPanel({
   ledger,
   step,
   seen,
+  prev,
   labelBalances,
 }: {
   ledger: AnimLedger;
   step: AnimStep;
   seen: Set<string>;
+  /** The previous step (either direction): what this screen changed is computed against it. */
+  prev: AnimStep | undefined;
   labelBalances: boolean;
 }) {
+  const prevPosted = prev ? (prev.posted[ledger.id] ?? []) : undefined;
+  const before = new Set((prevPosted ?? step.posted[ledger.id] ?? []).map((r) => r.id));
+  const changed = new Set(
+    (step.posted[ledger.id] ?? []).filter((r) => !before.has(r.id)).map((r) => r.id),
+  );
   const hl = new Map(
     (step.highlight ?? []).filter((h) => h.ledger === ledger.id).map((h) => [h.account, h.note]),
   );
@@ -473,6 +515,8 @@ function LedgerPanel({
             accountId={id}
             step={step}
             seen={seen}
+            changed={changed}
+            prevPosted={prevPosted}
             note={hl.get(id)}
             highlighted={hl.has(id)}
             labelBalance={labelBalances}
@@ -480,10 +524,10 @@ function LedgerPanel({
         ))}
       </div>
       <div className="ledger__journal">
-        <Journal ledger={ledger} step={step} seen={seen} />
+        <Journal ledger={ledger} step={step} seen={seen} changed={changed} />
       </div>
       {ledger.showBalanceSheet && (
-        <BalanceSheetPanel ledger={ledger} step={step} highlighted={new Set(hl.keys())} />
+        <BalanceSheetPanel ledger={ledger} step={step} prevPosted={prevPosted} />
       )}
     </section>
   );
@@ -554,6 +598,7 @@ function LedgerStage({ def, ctx }: { def: LedgerAnimationDef; ctx: StageContext 
           ledger={l}
           step={step}
           seen={seen}
+          prev={ctx.index > 0 ? def.steps[ctx.index - 1] : undefined}
           labelBalances={!!def.labelBalances}
         />
       ))}
