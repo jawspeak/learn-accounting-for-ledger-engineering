@@ -134,8 +134,10 @@ export function buildIndex(): SearchEntry[] {
 
   const pages: [string, string, string, string?][] = [
     ['home', 'Home', href.home(), 'How to use this course and all sections'],
-    ['sandbox', 'Sandbox', href.sandbox(), 'Ungraded scenario board: books for several entities'],
-    ['sheet', 'Spreadsheet view', href.sheet(), 'The sandbox as a wide grid'],
+    ['sandbox', 'Sandbox', href.sandbox(), 'Ungraded books for several parties: Journal, T-accounts, Grid'],
+    ['journal', 'Sandbox: Journal', href.sandbox(), 'Write entries: debits then credits'],
+    ['taccounts', 'Sandbox: T-accounts', href.taccounts(), 'Every party’s ledger as T-accounts'],
+    ['sheet', 'Sandbox: Grid', href.sheet(), 'Entries down, accounts across, as a wide grid'],
     ['cheatsheet', 'Cheat sheet', href.cheatsheet(), 'A = L + E, normal sides, DEALER'],
     ['definitions', 'Definitions', href.definitions(), 'Every term the course defines'],
   ];

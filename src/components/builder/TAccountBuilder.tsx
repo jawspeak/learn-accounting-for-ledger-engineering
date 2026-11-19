@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Account, AccountId, AccountType, Side, TAccountBuilderProps, TransactionRow } from '@contracts';
+import type {
+  AccountId,
+  AccountType,
+  Side,
+  TAccountBuilderProps,
+  TransactionRow,
+} from '@contracts';
 import { engine } from '@engine';
 import { AccountPicker } from './AccountPicker';
 import { AmountInput } from './AmountInput';
@@ -22,7 +28,6 @@ import {
   resolveHighlight,
   runs,
   setCell,
-  slugId,
   typeLabel,
   type Column,
   type PlacedColumn,
@@ -39,12 +44,10 @@ const FLASH_MS = 1200;
  */
 export function TAccountBuilder(props: TAccountBuilderProps) {
   const {
-    mode,
     accounts,
     coaOrder,
     rows,
     onRowsChange,
-    onAccountsChange,
     lockedRowCount = 0,
     lockedPostings,
     readOnly = false,
@@ -55,8 +58,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     journalView,
     correctParts,
     highlights,
-    columnOrder,
-    onColumnOrderChange,
     pickerTypes,
   } = props;
 
@@ -64,30 +65,34 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
   const [flash, setFlash] = useState<AccountId | null>(null);
-  const [dragging, setDragging] = useState<AccountId | null>(null);
-  /** Sandbox accounts created here, shown by name until the parent passes them back in `accounts`. */
-  const [created, setCreated] = useState<Account[]>([]);
   const gridRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
   /** The account added most recently through the picker (for "Enter amounts"). */
   const lastAdded = useRef<AccountId | null>(null);
 
-  const allAccounts = [...accounts, ...created.filter((c) => !accounts.some((a) => a.id === c.id))];
-  const accountById = new Map(allAccounts.map((a) => [a.id, a]));
+  const accountById = new Map(accounts.map((a) => [a.id, a]));
   const nameOf = (id: AccountId) => accountById.get(id)?.name ?? id;
 
-  const columns = deriveColumns(cols, rows, allAccounts);
+  const columns = deriveColumns(cols, rows, accounts);
   const colType = new Map(columns.map((c) => [c.accountId, c.type]));
-  const typeOf = (id: AccountId): AccountType | undefined => colType.get(id) ?? accountById.get(id)?.type;
-  const sandbox = mode === 'sandbox';
-  const canReorder = sandbox && !!onColumnOrderChange;
-  const placed = placeColumns(columns, allAccounts, coaOrder, canReorder ? columnOrder : undefined);
+  const typeOf = (id: AccountId): AccountType | undefined =>
+    colType.get(id) ?? accountById.get(id)?.type;
+  const placed = placeColumns(columns, accounts, coaOrder);
   const eqIdx = equalsIndex(placed);
-  const dividerAt = placed.length === 0 ? -1 : eqIdx >= 0 ? eqIdx : placed.every((c) => c.group === 'assets') ? placed.length : -1;
+  const dividerAt =
+    placed.length === 0
+      ? -1
+      : eqIdx >= 0
+        ? eqIdx
+        : placed.every((c) => c.group === 'assets')
+          ? placed.length
+          : -1;
 
   const isLocked = (ri: number) => ri < lockedRowCount;
   /** Faded examples lock only the prefilled cells; otherwise a locked row is locked completely. */
-  const lockedCells = lockedPostings ? new Set(lockedPostings.map((l) => `${l.rowId}|${l.accountId}|${l.side}`)) : null;
+  const lockedCells = lockedPostings
+    ? new Set(lockedPostings.map((l) => `${l.rowId}|${l.accountId}|${l.side}`))
+    : null;
   const isCellLocked = (ri: number, rowId: string, acct: AccountId, side: Side) =>
     isLocked(ri) && (!lockedCells || lockedCells.has(`${rowId}|${acct}|${side}`));
   const lockedAccounts = new Set(
@@ -98,7 +103,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
 
   // ---- feedback overlays ----
   const columnIds = new Set(columns.map((c) => c.accountId));
-  const hl = { cell: new Set<string>(), filled: new Set<string>(), col: new Set<string>(), type: new Set<string>(), row: new Set<string>(), bs: new Set<string>() };
+  const hl = {
+    cell: new Set<string>(),
+    filled: new Set<string>(),
+    col: new Set<string>(),
+    type: new Set<string>(),
+    row: new Set<string>(),
+    bs: new Set<string>(),
+  };
   for (const loc of highlights ?? []) {
     const h = resolveHighlight(loc, columnIds);
     if (!h) continue;
@@ -123,9 +135,17 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   // ---- column flash + scroll-into-view when a column snaps into place ----
   useEffect(() => {
     if (!flash) return;
-    const el = gridRef.current?.querySelector<HTMLElement>(`[data-col-head="${CSS.escape(flash)}"]`);
-    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    const el = gridRef.current?.querySelector<HTMLElement>(
+      `[data-col-head="${CSS.escape(flash)}"]`,
+    );
+    const reduce =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el?.scrollIntoView?.({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: reduce ? 'auto' : 'smooth',
+    });
     const t = setTimeout(() => setFlash(null), FLASH_MS);
     return () => clearTimeout(t);
   }, [flash]);
@@ -138,18 +158,21 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         p.accountId === id && p.chosenType !== type && !isCellLocked(ri, r.id, p.accountId, p.side);
       if (!r.postings.some(editable)) return r;
       changed = true;
-      return { ...r, postings: r.postings.map((p) => (editable(p) ? { ...p, chosenType: type } : p)) };
+      return {
+        ...r,
+        postings: r.postings.map((p) => (editable(p) ? { ...p, chosenType: type } : p)),
+      };
     });
     if (changed) onRowsChange(next);
   };
 
   const setColumnType = (id: AccountId, type: AccountType) => {
-    setCols((cs) => (cs.some((c) => c.accountId === id) ? cs.map((c) => (c.accountId === id ? { ...c, type } : c)) : [...cs, { accountId: id, type }]));
+    setCols((cs) =>
+      cs.some((c) => c.accountId === id)
+        ? cs.map((c) => (c.accountId === id ? { ...c, type } : c))
+        : [...cs, { accountId: id, type }],
+    );
     retypeRows(id, type);
-    // Sandbox: there is no "right answer" to protect, so the column's type is the account's type — the
-    // Accounts list and the Spreadsheet show the same thing. (Problems keep the learner's choice separate.)
-    const acct = accounts.find((a) => a.id === id);
-    if (sandbox && acct && acct.type !== type) onAccountsChange?.(accounts.map((a) => (a.id === id ? retyped(a, type, accounts) : a)));
     setFlash(id);
   };
 
@@ -165,17 +188,12 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     const id = lastAdded.current;
     queueMicrotask(() => {
       const cell = id
-        ? gridRef.current?.querySelector<HTMLInputElement>(`td[data-account="${CSS.escape(id)}"] input.tab-amount`)
+        ? gridRef.current?.querySelector<HTMLInputElement>(
+            `td[data-account="${CSS.escape(id)}"] input.tab-amount`,
+          )
         : null;
       (cell ?? addBtnRef.current)?.focus();
     });
-  };
-
-  const createAccount = (name: string, type: AccountType) => {
-    const account: Account = { id: slugId(name, allAccounts.map((a) => a.id)), name, type };
-    setCreated((c) => [...c, account]);
-    onAccountsChange?.([...accounts, account]);
-    addColumn(account.id, type);
   };
 
   const removeColumn = (id: AccountId) => {
@@ -183,31 +201,16 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     const removable = (ri: number, r: TransactionRow, p: TransactionRow['postings'][number]) =>
       p.accountId === id && !isCellLocked(ri, r.id, p.accountId, p.side);
     if (rows.some((r, ri) => r.postings.some((p) => removable(ri, r, p))))
-      onRowsChange(rows.map((r, ri) => ({ ...r, postings: r.postings.filter((p) => !removable(ri, r, p)) })));
-    if (canReorder && columnOrder?.includes(id)) onColumnOrderChange!(columnOrder.filter((x) => x !== id));
+      onRowsChange(
+        rows.map((r, ri) => ({ ...r, postings: r.postings.filter((p) => !removable(ri, r, p)) })),
+      );
     queueMicrotask(() => addBtnRef.current?.focus());
   };
 
-  const updateRow = (ri: number, f: (r: TransactionRow) => TransactionRow) => onRowsChange(rows.map((r, i) => (i === ri ? f(r) : r)));
+  const updateRow = (ri: number, f: (r: TransactionRow) => TransactionRow) =>
+    onRowsChange(rows.map((r, i) => (i === ri ? f(r) : r)));
   const addRow = () => onRowsChange([...rows, { id: nextRowId(rows), postings: [] }]);
   const removeRow = (ri: number) => onRowsChange(rows.filter((_, i) => i !== ri));
-  const moveRow = (ri: number, delta: -1 | 1) => {
-    const to = ri + delta;
-    if (to < lockedRowCount || to >= rows.length) return;
-    const next = [...rows];
-    [next[ri], next[to]] = [next[to]!, next[ri]!];
-    onRowsChange(next);
-  };
-
-  const moveColumn = (id: AccountId, to: number) => {
-    const order = placed.map((c) => c.accountId);
-    const from = order.indexOf(id);
-    if (from === -1 || to < 0 || to >= order.length || to === from) return;
-    order.splice(from, 1);
-    order.splice(to, 0, id);
-    onColumnOrderChange?.(order);
-    setFlash(id);
-  };
 
   // ---- balances ----
   const balances = engine.computeBalances(rows, typeOf, opening);
@@ -222,7 +225,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     const normal = engine.normalSide(t);
     const shownSide: Side = (amount ?? 0) < 0 ? (normal === 'dr' ? 'cr' : 'dr') : normal;
     return SIDES.map((s) => (
-      <td key={`${key}-${s}`} className={`tab-cell tab-num tab-${s}${total && s === shownSide ? ' is-total' : ''}`}>
+      <td
+        key={`${key}-${s}`}
+        className={`tab-cell tab-num tab-${s}${total && s === shownSide ? ' is-total' : ''}`}
+      >
         {amount !== undefined && amount !== 0 && s === shownSide ? (
           <>
             {formatDollars(Math.abs(amount))}
@@ -236,7 +242,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   };
 
   // Accounts in play for the balance sheets: anything in the opening BS or on the grid, in column order.
-  const bsIds = [...placed.map((c) => c.accountId), ...(opening?.lines ?? []).map((l) => l.accountId).filter((id) => !columnIds.has(id))];
+  const bsIds = [
+    ...placed.map((c) => c.accountId),
+    ...(opening?.lines ?? []).map((l) => l.accountId).filter((id) => !columnIds.has(id)),
+  ];
   const editableAfter = !!afterBalanceSheet && !!onAfterBalanceSheetChange;
 
   /**
@@ -244,45 +253,71 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
    * added shows the learner's chosen type — otherwise the Before panel would leak a trap account's real type.
    */
   const beforeTypeOf = (id: AccountId): AccountType | undefined =>
-    openingOf.has(id) ? (accountById.get(id)?.type ?? colType.get(id)) : (colType.get(id) ?? accountById.get(id)?.type);
+    openingOf.has(id)
+      ? (accountById.get(id)?.type ?? colType.get(id))
+      : (colType.get(id) ?? accountById.get(id)?.type);
 
   /** One fragment per column, with the `=` divider cell spliced in at the assets | right-hand boundary. */
-  const eachCol = (render: (c: PlacedColumn, i: number) => ReactNode, divider: (() => ReactNode) | null): ReactNode[] => {
+  const eachCol = (
+    render: (c: PlacedColumn, i: number) => ReactNode,
+    divider: (() => ReactNode) | null,
+  ): ReactNode[] => {
     const parts = placed.map((c, i) => <Fragment key={c.accountId}>{render(c, i)}</Fragment>);
-    if (divider && dividerAt >= 0) parts.splice(dividerAt, 0, <Fragment key="__eq">{divider()}</Fragment>);
+    if (divider && dividerAt >= 0)
+      parts.splice(dividerAt, 0, <Fragment key="__eq">{divider()}</Fragment>);
     return parts;
   };
   const eqCell = () => <td className="tab-eq-col" aria-hidden="true" />;
 
-  const topBand = (g: PlacedColumn['group']) => (g === 'assets' ? 'Assets' : g === 'liabilities' ? 'Liabilities' : 'Equity');
+  const topBand = (g: PlacedColumn['group']) =>
+    g === 'assets' ? 'Assets' : g === 'liabilities' ? 'Liabilities' : 'Equity';
   const colCls = (c: PlacedColumn, ...extra: (string | false | undefined)[]) =>
-    ['tab-col', `tab-g-${c.group}`, flash === c.accountId && 'tab-flash', ...extra].filter(Boolean).join(' ');
+    ['tab-col', `tab-g-${c.group}`, flash === c.accountId && 'tab-flash', ...extra]
+      .filter(Boolean)
+      .join(' ');
 
   const HEAD_ROWS = 4;
   const bandCells: ReactNode[] = [];
   for (const r of runs(placed, (c) => topBand(c.group))) {
     if (dividerAt === r.start) bandCells.push(<DividerHead key="eq" rowSpan={HEAD_ROWS} />);
     bandCells.push(
-      <th key={`b-${r.start}`} scope="colgroup" colSpan={r.length * 2} className={`tab-band tab-band-${r.key.toLowerCase()}`}>
+      <th
+        key={`b-${r.start}`}
+        scope="colgroup"
+        colSpan={r.length * 2}
+        className={`tab-band tab-band-${r.key.toLowerCase()}`}
+      >
         {r.key}
       </th>,
     );
   }
-  if (placed.length > 0 && dividerAt === placed.length) bandCells.push(<DividerHead key="eq" rowSpan={HEAD_ROWS} />);
+  if (placed.length > 0 && dividerAt === placed.length)
+    bandCells.push(<DividerHead key="eq" rowSpan={HEAD_ROWS} />);
 
-  const subBandCells = runs(placed, (c) => (isEquityGroup(c.group) ? c.group : `-${c.group}`)).map((r) => {
-    const g = placed[r.start]!.group;
-    return (
-      <th key={`sb-${r.start}`} scope="colgroup" colSpan={r.length * 2} className={`tab-subband${isEquityGroup(g) ? ' is-equity' : ''}`}>
-        {isEquityGroup(g) ? GROUP_LABEL[g] : ''}
-      </th>
-    );
-  });
+  const subBandCells = runs(placed, (c) => (isEquityGroup(c.group) ? c.group : `-${c.group}`)).map(
+    (r) => {
+      const g = placed[r.start]!.group;
+      return (
+        <th
+          key={`sb-${r.start}`}
+          scope="colgroup"
+          colSpan={r.length * 2}
+          className={`tab-subband${isEquityGroup(g) ? ' is-equity' : ''}`}
+        >
+          {isEquityGroup(g) ? GROUP_LABEL[g] : ''}
+        </th>
+      );
+    },
+  );
 
-  const offered = pickerTypes ? PICKER_TYPES.filter((t) => pickerTypes.includes(t.type)) : PICKER_TYPES;
+  const offered = pickerTypes
+    ? PICKER_TYPES.filter((t) => pickerTypes.includes(t.type))
+    : PICKER_TYPES;
   const typeOptions = (current: AccountType) => [
     ...offered,
-    ...(offered.some((t) => t.type === current) ? [] : [{ type: current, label: typeLabel(current) }]),
+    ...(offered.some((t) => t.type === current)
+      ? []
+      : [{ type: current, label: typeLabel(current) }]),
   ];
 
   // Dr = Cr per row, summarised in ONE bar above the grid (instead of a column on every row): quiet when every
@@ -304,7 +339,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         <>
           <span aria-hidden="true">✗</span>{' '}
           {unbalanced
-            .map(({ ri, t }) => `Row ${ri + 1} doesn’t balance: Dr ${formatDollars(t.dr)} ≠ Cr ${formatDollars(t.cr)}`)
+            .map(
+              ({ ri, t }) =>
+                `Row ${ri + 1} doesn’t balance: Dr ${formatDollars(t.dr)} ≠ Cr ${formatDollars(t.cr)}`,
+            )
             .join(' · ')}
         </>
       )}
@@ -340,7 +378,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         </tr>
         <tr>{subBandCells}</tr>
         <tr>
-          {placed.map((c, i) => {
+          {placed.map((c) => {
             const id = c.accountId;
             const name = nameOf(id);
             const locked = lockedAccounts.has(id);
@@ -350,28 +388,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                 scope="colgroup"
                 colSpan={2}
                 data-col-head={id}
-                className={colCls(c, 'tab-head', hl.col.has(id) && 'tab-hl', dragging === id && 'is-dragging')}
-                draggable={canReorder}
-                onDragStart={
-                  canReorder
-                    ? (e) => {
-                        e.dataTransfer.setData('text/plain', id);
-                        e.dataTransfer.effectAllowed = 'move';
-                        setDragging(id);
-                      }
-                    : undefined
-                }
-                onDragOver={canReorder && dragging ? (e) => e.preventDefault() : undefined}
-                onDrop={
-                  canReorder
-                    ? (e) => {
-                        e.preventDefault();
-                        if (dragging) moveColumn(dragging, i);
-                        setDragging(null);
-                      }
-                    : undefined
-                }
-                onDragEnd={canReorder ? () => setDragging(null) : undefined}
+                className={colCls(c, 'tab-head', hl.col.has(id) && 'tab-hl')}
               >
                 <div className="tab-head-name">
                   {name}
@@ -393,28 +410,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                     ))}
                   </select>
                   {hl.type.has(id) && <span className="sr-only"> (type flagged)</span>}
-                  {canReorder && (
-                    <>
-                      <button
-                        type="button"
-                        className="tab-icon-btn"
-                        aria-label={`Move ${name} left`}
-                        disabled={i === 0}
-                        onClick={() => moveColumn(id, i - 1)}
-                      >
-                        <span aria-hidden="true">◀</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="tab-icon-btn"
-                        aria-label={`Move ${name} right`}
-                        disabled={i === placed.length - 1}
-                        onClick={() => moveColumn(id, i + 1)}
-                      >
-                        <span aria-hidden="true">▶</span>
-                      </button>
-                    </>
-                  )}
                   {!locked && (
                     <button
                       type="button"
@@ -433,26 +428,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         </tr>
         <tr className="tab-sides">
           {placed.map((c) =>
-            SIDES.map((s) => {
-              // Sandbox: no Dr / Cr labels (the T's left/right already says it) — just ▲ on the side that
-              // increases the account. Problems keep Dr / Cr: learning that vocabulary is part of the exercise.
-              const up = sandbox && s === engine.normalSide(c.type);
-              const word = s === 'dr' ? 'debit' : 'credit';
-              return (
-                <th
-                  key={`${c.accountId}-${s}`}
-                  scope="col"
-                  className={colCls(c, `tab-${s}`, sandbox && 'tab-side-up')}
-                  title={up ? `Increases with a ${word}` : sandbox ? `Decreases with a ${word}` : undefined}
-                >
-                  <span aria-hidden="true">{sandbox ? (up ? '▲' : '') : SIDE_LABEL[s]}</span>
-                  <span className="sr-only">
-                    {nameOf(c.accountId)} {word}
-                    {up ? ' (increases)' : ''}
-                  </span>
-                </th>
-              );
-            }),
+            SIDES.map((s) => (
+              <th key={`${c.accountId}-${s}`} scope="col" className={colCls(c, `tab-${s}`)}>
+                <span aria-hidden="true">{SIDE_LABEL[s]}</span>
+                <span className="sr-only">
+                  {nameOf(c.accountId)} {s === 'dr' ? 'debit' : 'credit'}
+                </span>
+              </th>
+            )),
           )}
         </tr>
       </thead>
@@ -472,7 +455,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             <tr
               key={r.id}
               data-row={r.id}
-              className={[locked && 'is-locked', rowHl && 'tab-hl-row'].filter(Boolean).join(' ') || undefined}
+              className={
+                [locked && 'is-locked', rowHl && 'tab-hl-row'].filter(Boolean).join(' ') ||
+                undefined
+              }
             >
               <th scope="row" className="tab-rowhead">
                 <span className="tab-rownum">{ri + 1}</span>
@@ -505,28 +491,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                     }
                   />
                 )}
-                {sandbox && !locked && (
-                  <>
-                    <button
-                      type="button"
-                      className="tab-icon-btn tab-row-move"
-                      aria-label={`Move row ${ri + 1} up`}
-                      disabled={ri === 0}
-                      onClick={() => moveRow(ri, -1)}
-                    >
-                      <span aria-hidden="true">▲</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="tab-icon-btn tab-row-move"
-                      aria-label={`Move row ${ri + 1} down`}
-                      disabled={ri === rows.length - 1}
-                      onClick={() => moveRow(ri, 1)}
-                    >
-                      <span aria-hidden="true">▼</span>
-                    </button>
-                  </>
-                )}
                 {!locked && (
                   <button
                     type="button"
@@ -545,15 +509,16 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                   {pickerOpen ? (
                     'Choose a type, then a name, above.'
                   ) : (
-                    <button type="button" className="tab-empty-add" onClick={() => setPickerOpen(true)}>
-                      <span aria-hidden="true">＋ </span>
-                      {sandbox && accounts.length > 0 ? 'Add an account column' : 'Add your first account'}
+                    <button
+                      type="button"
+                      className="tab-empty-add"
+                      onClick={() => setPickerOpen(true)}
+                    >
+                      <span aria-hidden="true">＋ </span>Add your first account
                     </button>
                   )}
                   <span className="tab-empty-hint">
-                    {sandbox && accounts.length > 0
-                      ? `This party already has ${accounts.length} account${accounts.length === 1 ? '' : 's'} (see Accounts below); a column appears once you pick one or post to it.`
-                      : 'Start with the account you’re sure changes.'}
+                    Start with the account you’re sure changes.
                   </span>
                 </td>
               )}
@@ -569,7 +534,13 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                     <td
                       key={side}
                       data-account={id}
-                      className={colCls(c, 'tab-cell', `tab-${side}`, flagged && 'tab-hl', cellLocked && 'is-locked-cell')}
+                      className={colCls(
+                        c,
+                        'tab-cell',
+                        `tab-${side}`,
+                        flagged && 'tab-hl',
+                        cellLocked && 'is-locked-cell',
+                      )}
                     >
                       {cellLocked ? (
                         <span className="tab-num">{amt ? formatDollars(amt) : ''}</span>
@@ -578,8 +549,9 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                           className="tab-amount"
                           aria-label={`Row ${ri + 1} ${name} ${SIDE_LABEL[side]}`}
                           cents={amt}
-                          allowCents={sandbox}
-                          onCentsChange={(cents) => updateRow(ri, (row) => setCell(row, id, side, cents, typeOf(id)!))}
+                          onCentsChange={(cents) =>
+                            updateRow(ri, (row) => setCell(row, id, side, cents, typeOf(id)!))
+                          }
                         />
                       )}
                       {ok && <OkMark />}
@@ -598,7 +570,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             <th scope="row" className="tab-rowhead">
               Balance
             </th>
-            {eachCol((c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal', true), eqCell)}
+            {eachCol(
+              (c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal', true),
+              eqCell,
+            )}
           </tr>
           <tr className="tab-check-row">
             <td />
@@ -614,30 +589,38 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   );
 
   return (
-    <div className={`tab-builder${showBalanceSheets ? ' has-bs' : ''}${placed.length <= 2 ? ' bs-side' : ''}`}>
+    <div
+      className={`tab-builder${showBalanceSheets ? ' has-bs' : ''}${placed.length <= 2 ? ' bs-side' : ''}`}
+    >
       <div className="tab-toolbar">
         {!showJournal && !readOnly && (
           <>
-            <button type="button" ref={addBtnRef} aria-expanded={pickerOpen} onClick={() => setPickerOpen((o) => !o)}>
+            <button
+              type="button"
+              ref={addBtnRef}
+              aria-expanded={pickerOpen}
+              onClick={() => setPickerOpen((o) => !o)}
+            >
               <span aria-hidden="true">＋ </span>Add account
             </button>
           </>
         )}
         {journalView && (
-          <button type="button" aria-pressed={showJournal} onClick={() => setShowJournal((j) => !j)}>
+          <button
+            type="button"
+            aria-pressed={showJournal}
+            onClick={() => setShowJournal((j) => !j)}
+          >
             Journal view
           </button>
         )}
       </div>
       {pickerOpen && !showJournal && (
         <AccountPicker
-          accounts={sandbox ? [...allAccounts].sort((a, b) => a.name.localeCompare(b.name)) : allAccounts}
+          accounts={accounts}
           existing={columnIds}
           types={pickerTypes ? offered.map((t) => t.type) : undefined}
-          filterByType={sandbox}
-          allowCreate={sandbox && !!onAccountsChange}
           onPick={addColumn}
-          onCreate={createAccount}
           onCancel={() => {
             setPickerOpen(false);
             addBtnRef.current?.focus();
@@ -658,21 +641,21 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           </div>
         )}
         <div className="tab-grid-area">
-        <div
-          className="tab-scroll"
-          ref={gridRef}
-          role="region"
-          aria-label={showJournal ? 'Journal entries' : 'T-account grid'}
-          tabIndex={0}
-        >
-          {showJournal ? <JournalView rows={rows} nameOf={nameOf} /> : grid}
-        </div>
-        {!showJournal && !readOnly && (
-          <button type="button" className="tab-add-row" onClick={addRow}>
-            <span aria-hidden="true">＋ </span>Add row
-          </button>
-        )}
-        {!inGrid && balanceBar}
+          <div
+            className="tab-scroll"
+            ref={gridRef}
+            role="region"
+            aria-label={showJournal ? 'Journal entries' : 'T-account grid'}
+            tabIndex={0}
+          >
+            {showJournal ? <JournalView rows={rows} nameOf={nameOf} /> : grid}
+          </div>
+          {!showJournal && !readOnly && (
+            <button type="button" className="tab-add-row" onClick={addRow}>
+              <span aria-hidden="true">＋ </span>Add row
+            </button>
+          )}
+          {!inGrid && balanceBar}
         </div>
         {showBalanceSheets && (
           <div className="tab-bs-after">
@@ -706,31 +689,9 @@ function DividerHead({ rowSpan }: { rowSpan: number }) {
   return (
     <th rowSpan={rowSpan} className="tab-eq-col tab-eq-sign" scope="col">
       <span aria-hidden="true">=</span>
-      <span className="sr-only">equals: assets on the left, liabilities and equity on the right</span>
+      <span className="sr-only">
+        equals: assets on the left, liabilities and equity on the right
+      </span>
     </th>
   );
-}
-
-const CONTRA_BASE: Partial<Record<AccountType, AccountType>> = {
-  'contra-asset': 'asset',
-  'contra-liability': 'liability',
-  'contra-equity': 'equity',
-  'contra-revenue': 'revenue',
-};
-
-/** Sandbox: an account retyped from its column. A contra needs a parent of its base type (the link schema
- *  requires one), so it takes the first candidate; non-contras drop contraOf, non-equity drops equityGroup. */
-function retyped(a: Account, type: AccountType, all: Account[]): Account {
-  const next: Account = { ...a, type };
-  const base = CONTRA_BASE[type];
-  if (base) {
-    if (!all.some((x) => x.id === next.contraOf && x.type === base)) {
-      const parent = all.find((x) => x.type === base && x.id !== a.id);
-      if (parent) next.contraOf = parent.id;
-      else delete next.contraOf;
-    }
-  } else delete next.contraOf;
-  if (type !== 'equity') delete next.equityGroup;
-  else next.equityGroup ??= 'paid-in';
-  return next;
 }

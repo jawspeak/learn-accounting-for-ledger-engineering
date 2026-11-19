@@ -274,12 +274,6 @@
   min-width: 7rem;
   vertical-align: bottom !important;
 }
-.tab-head[draggable='true'] {
-  cursor: grab;
-}
-.tab-head.is-dragging {
-  opacity: 0.5;
-}
 .tab-head-name {
   font-weight: 650;
   max-width: 9.5rem;
@@ -317,12 +311,6 @@
   color: var(--muted, #6b6b70);
   border-bottom: 2px solid var(--tab-line);
   font-weight: 600;
-}
-/* Sandbox: the ▲ on the side that increases the account (no Dr / Cr words). */
-.tab-sides th.tab-side-up {
-  color: var(--accent);
-  font-size: 0.85rem;
-  line-height: 1;
 }
 .tab-grid .tab-dr {
   border-right: 2px solid var(--tab-line);
@@ -657,11 +645,6 @@ tr.tab-hl-row > * {
 
 .tab-row-remove {
   margin-left: 0.25rem;
-}
-/* Sandbox: ▲ ▼ move a row (the same rows as the Spreadsheet view). */
-.tab-row-move {
-  margin-left: 0.15rem;
-  font-size: 0.6rem;
 }
 /* "+ Add row" sits under the grid, where the next row goes. */
 .tab-add-row {

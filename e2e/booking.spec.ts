@@ -81,9 +81,9 @@ test('solution on demand: read-only grid, then open it (with the bank’s side) 
   // The learner's own builder is untouched by the reveal.
   await expect(page.getByRole('button', { name: /Add your first account/ })).toBeVisible();
 
-  await panel.getByRole('link', { name: 'Open solution in Spreadsheet' }).click();
+  await panel.getByRole('link', { name: 'Open solution in Grid' }).click();
   await expect(page).toHaveURL(/#\/sheet\?d=/);
-  await expect(page.locator('.sh-checks')).toContainText('Every row balances');
+  await expect(page.locator('.sbx-summary')).toContainText('Rows balanced');
   // Both parties' books, one tab each.
   await expect(page.getByRole('tablist', { name: 'Whose books' }).getByRole('tab')).toHaveCount(2);
   w.assertClean();
@@ -137,10 +137,11 @@ test('Open in Sandbox carries the problem accounts', async ({ page }) => {
   await enterCorrectCashToChecking(page);
   await page.getByRole('link', { name: 'Open in Sandbox' }).click();
   await expect(page).toHaveURL(/#\/sandbox\?d=/);
-  await expect(
-    page.locator('[data-col-head]').filter({ hasText: 'Checking Account' }),
-  ).toBeVisible();
-  await expect(page.locator('[data-col-head]').filter({ hasText: 'Cash' })).toBeVisible();
+  // It opens in the Journal: the learner's entry, line by line.
+  await expect(page.getByLabel('Entry 1 line 1 account')).toHaveValue('checking');
+  await expect(page.getByLabel('Entry 1 line 1 debit')).toHaveValue('100');
+  await expect(page.getByLabel('Entry 1 line 2 account')).toHaveValue('cash');
+  await expect(page.locator('#entry-1 .jx-status')).toContainText('Debits = credits');
 });
 
 test('prev/next navigation resets the answer', async ({ page }) => {

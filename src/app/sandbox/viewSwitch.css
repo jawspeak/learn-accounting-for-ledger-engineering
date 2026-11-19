@@ -1,4 +1,4 @@
-/* The Sandbox's shared header: "Sandbox · [T-accounts | Spreadsheet]" on both views. */
+/* The Sandbox's shared header: "Sandbox · [Journal | T-accounts | Grid]" on every view. */
 .vs {
   display: flex;
   flex-wrap: wrap;

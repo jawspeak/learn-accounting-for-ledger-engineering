@@ -6,8 +6,12 @@ import type {
   BalanceSheet,
   EntityCoA,
   EquationCheck,
+  Money,
+  Posting,
   SandboxEntity,
   SandboxState,
+  Side,
+  TransactionRow,
 } from '@contracts';
 import { engine } from '@engine';
 
@@ -54,7 +58,11 @@ export function uniqueId(name: string, taken: Iterable<string>, fallback?: strin
 
 export function newEntity(existing: SandboxEntity[], name = 'New entity'): SandboxEntity {
   return {
-    id: uniqueId(name, existing.map((e) => e.id), 'entity'),
+    id: uniqueId(
+      name,
+      existing.map((e) => e.id),
+      'entity',
+    ),
     name,
     accounts: [],
     rows: [{ id: 'r1', postings: [] }],
@@ -64,7 +72,15 @@ export function newEntity(existing: SandboxEntity[], name = 'New entity'): Sandb
 
 export function duplicateEntity(existing: SandboxEntity[], src: SandboxEntity): SandboxEntity {
   const name = `${src.name} (copy)`;
-  return { ...structuredClone(src), id: uniqueId(name, existing.map((e) => e.id), 'entity'), name };
+  return {
+    ...structuredClone(src),
+    id: uniqueId(
+      name,
+      existing.map((e) => e.id),
+      'entity',
+    ),
+    name,
+  };
 }
 
 /**
@@ -90,12 +106,17 @@ export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity 
     return out;
   });
   const ids = new Set(accounts.map((a) => a.id));
-  const openingLines = e.opening?.lines.map((l) => ({ ...l, accountId: sw(l.accountId) })).filter((l) => ids.has(l.accountId));
+  const openingLines = e.opening?.lines
+    .map((l) => ({ ...l, accountId: sw(l.accountId) }))
+    .filter((l) => ids.has(l.accountId));
   const out: SandboxEntity = {
     ...e,
     accounts,
     rows: rename.size
-      ? e.rows.map((r) => ({ ...r, postings: r.postings.map((p) => ({ ...p, accountId: sw(p.accountId) })) }))
+      ? e.rows.map((r) => ({
+          ...r,
+          postings: r.postings.map((p) => ({ ...p, accountId: sw(p.accountId) })),
+        }))
       : e.rows,
     opening: openingLines && openingLines.length ? { lines: openingLines } : undefined,
   };
@@ -119,7 +140,8 @@ export function applyTemplate(e: SandboxEntity, coa: EntityCoA): SandboxEntity {
 export function typeResolver(e: SandboxEntity): (id: AccountId) => AccountType | undefined {
   const byId = new Map(e.accounts.map((a) => [a.id, a.type]));
   const chosen = new Map<string, AccountType>();
-  for (const r of e.rows) for (const p of r.postings) if (p.chosenType) chosen.set(p.accountId, p.chosenType);
+  for (const r of e.rows)
+    for (const p of r.postings) if (p.chosenType) chosen.set(p.accountId, p.chosenType);
   return (id) => byId.get(id) ?? chosen.get(id);
 }
 
@@ -134,7 +156,9 @@ export interface EntitySummary {
 export function summarize(e: SandboxEntity): EntitySummary {
   const typeOf = typeResolver(e);
   // An empty row isn't an error yet — it's just a row waiting to be filled in.
-  const unbalancedRows = e.rows.flatMap((r, i) => (r.postings.length === 0 || engine.rowTotals(r).balanced ? [] : [i + 1]));
+  const unbalancedRows = e.rows.flatMap((r, i) =>
+    r.postings.length === 0 || engine.rowTotals(r).balanced ? [] : [i + 1],
+  );
   const closing = engine.computeBalances(e.rows, typeOf, e.opening);
   return {
     rowsBalanced: unbalancedRows.length === 0,
@@ -146,9 +170,14 @@ export function summarize(e: SandboxEntity): EntitySummary {
 }
 
 /** Set (or clear, when `cents` is null) one opening balance line, in cents. */
-export function setOpening(e: SandboxEntity, accountId: AccountId, cents: number | null): SandboxEntity {
+export function setOpening(
+  e: SandboxEntity,
+  accountId: AccountId,
+  cents: number | null,
+): SandboxEntity {
   const lines = (e.opening?.lines ?? []).filter((l) => l.accountId !== accountId);
-  if (cents !== null && Number.isFinite(cents)) lines.push({ accountId, amount: Math.round(cents) });
+  if (cents !== null && Number.isFinite(cents))
+    lines.push({ accountId, amount: Math.round(cents) });
   const order = new Map(e.accounts.map((a, i) => [a.id, i]));
   lines.sort((a, b) => (order.get(a.accountId) ?? 1e9) - (order.get(b.accountId) ?? 1e9));
   return { ...e, opening: lines.length ? { lines } : undefined };
@@ -158,7 +187,12 @@ export function setOpening(e: SandboxEntity, accountId: AccountId, cents: number
 export function canonicalOrder(e: SandboxEntity): AccountId[] {
   return engine
     .orderColumns(
-      e.accounts.map((a) => ({ accountId: a.id, type: a.type, contraOf: a.contraOf, equityGroup: a.equityGroup })),
+      e.accounts.map((a) => ({
+        accountId: a.id,
+        type: a.type,
+        contraOf: a.contraOf,
+        equityGroup: a.equityGroup,
+      })),
       e.accounts.map((a) => a.id),
     )
     .map((c) => c.accountId);
@@ -239,4 +273,89 @@ export function moveRow(e: SandboxEntity, i: number, delta: -1 | 1): SandboxEnti
 
 export function removeRow(e: SandboxEntity, i: number): SandboxEntity {
   return { ...e, rows: e.rows.filter((_, j) => j !== i) };
+}
+
+// ---- Journal editing: an entry is a row; each line is one posting ----
+// A line can be half-written (no account yet, or no amount yet). It lives in the state so the editor keeps it,
+// but `persistable` drops it before the state goes into a link (the link format needs real ids, amounts > 0).
+
+export const blankLine = (side: Side): Posting => ({ accountId: '', side, amount: 0 });
+
+/** A new journal entry: one debit line and one credit line, ready to fill in. */
+export function addEntry(e: SandboxEntity): SandboxEntity {
+  return {
+    ...e,
+    rows: [...e.rows, { id: nextRowId(e.rows), postings: [blankLine('dr'), blankLine('cr')] }],
+  };
+}
+
+function updateLines(e: SandboxEntity, ri: number, f: (ps: Posting[]) => Posting[]): SandboxEntity {
+  return { ...e, rows: e.rows.map((r, i) => (i === ri ? { ...r, postings: f(r.postings) } : r)) };
+}
+
+export const addLine = (e: SandboxEntity, ri: number, side: Side) =>
+  updateLines(e, ri, (ps) => [...ps, blankLine(side)]);
+
+export const removeLine = (e: SandboxEntity, ri: number, li: number) =>
+  updateLines(e, ri, (ps) => ps.filter((_, j) => j !== li));
+
+/** Choose a line's account; the posting carries the account's type (as everywhere in the sandbox). */
+export function setLineAccount(
+  e: SandboxEntity,
+  ri: number,
+  li: number,
+  accountId: AccountId,
+): SandboxEntity {
+  const type = e.accounts.find((a) => a.id === accountId)?.type;
+  return updateLines(e, ri, (ps) =>
+    ps.map((p, j) => {
+      if (j !== li) return p;
+      const next: Posting = { ...p, accountId };
+      if (type) next.chosenType = type;
+      else delete next.chosenType;
+      return next;
+    }),
+  );
+}
+
+/** Type an amount into a line's debit or credit column. A line is one posting, so typing on the other side
+ *  moves it there; clearing the side it's on leaves an empty line (kept while editing, not saved in links). */
+export function setLineAmount(
+  e: SandboxEntity,
+  ri: number,
+  li: number,
+  side: Side,
+  cents: Money,
+): SandboxEntity {
+  return updateLines(e, ri, (ps) =>
+    ps.map((p, j) => {
+      if (j !== li) return p;
+      if (cents > 0) return { ...p, side, amount: cents };
+      return p.side === side ? { ...p, amount: 0 } : p;
+    }),
+  );
+}
+
+/** Totals of an entry's lines (half-written lines count as 0). */
+export function entryTotals(r: TransactionRow): { dr: Money; cr: Money } {
+  let dr = 0;
+  let cr = 0;
+  for (const p of r.postings)
+    if (p.side === 'dr') dr += p.amount;
+    else cr += p.amount;
+  return { dr, cr };
+}
+
+/** The state as it can be saved in a link: half-written lines (no account, or no amount) are left out. */
+export function persistable(s: SandboxState): SandboxState {
+  return {
+    ...s,
+    entities: s.entities.map((e) => ({
+      ...e,
+      rows: e.rows.map((r) => ({
+        ...r,
+        postings: r.postings.filter((p) => p.accountId && p.amount > 0),
+      })),
+    })),
+  };
 }

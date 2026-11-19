@@ -5,8 +5,7 @@ import { href, useRoute } from './router';
 import { HomePage } from './pages/HomePage';
 import { SectionPage } from './pages/SectionPage';
 import { ProblemPage } from './pages/ProblemPage';
-import { SandboxPage } from './sandbox/SandboxPage';
-import { SheetPage } from './sheet/SheetPage';
+import { SandboxApp } from './sandbox/SandboxApp';
 import { CheatSheetPage } from './pages/CheatSheetPage';
 import { DefinitionsPage } from './pages/DefinitionsPage';
 import { GlossaryPopover } from './GlossaryPopover';
@@ -22,8 +21,7 @@ import { statusOf, useProgress } from './progress';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
-  if (route.name === 'sandbox') return 'content wide';
-  if (route.name === 'sheet') return 'content sheet-full';
+  if (route.name === 'sandbox') return route.view === 'grid' ? 'content sheet-full' : 'content wide';
   if (route.name === 'problem') {
     const p = problems[route.id];
     if (p?.kind === 'booking') return 'content wide-problem';
@@ -115,8 +113,8 @@ export function App() {
   }, []);
 
   // The section list: ☰ shows/hides it on every page. Phones open it over the page; on wider screens the
-  // choice is remembered; workspaces (sandbox, spreadsheet) always start with it hidden.
-  const workspace = route.name === 'sheet' || route.name === 'sandbox';
+  // choice is remembered; the Sandbox (a workspace) always starts with it hidden.
+  const workspace = route.name === 'sandbox';
   const collapsed = workspace || navHidden;
   const navShown = narrow || collapsed ? navOpen : true;
   const toggleNav = () => {
@@ -183,7 +181,7 @@ export function App() {
         <a
           className="btn"
           href={href.sandbox()}
-          aria-current={route.name === 'sandbox' || route.name === 'sheet' ? 'page' : undefined}
+          aria-current={route.name === 'sandbox' ? 'page' : undefined}
         >
           Sandbox
         </a>
@@ -340,8 +338,9 @@ export function App() {
           {route.name === 'problem' && (
             <ProblemPage key={route.id} id={route.id} attempt={route.attempt} />
           )}
-          {route.name === 'sandbox' && <SandboxPage data={route.data} />}
-          {route.name === 'sheet' && <SheetPage data={route.data} entity={route.entity} />}
+          {route.name === 'sandbox' && (
+            <SandboxApp view={route.view} data={route.data} entity={route.entity} at={route.at} />
+          )}
           {route.name === 'cheatsheet' && <CheatSheetPage at={route.at} />}
           {route.name === 'definitions' && <DefinitionsPage id={route.id} />}
           {route.name === 'animations' && <AnimationGallery />}

@@ -41,7 +41,12 @@ describe('applyAccounts', () => {
   it('re-ids new accounts as slugs and rewrites references', () => {
     const withRow: SandboxEntity = {
       ...base,
-      rows: [{ id: 'r1', postings: [{ accountId: 'tmp-1', side: 'dr', amount: 100, chosenType: 'asset' }] }],
+      rows: [
+        {
+          id: 'r1',
+          postings: [{ accountId: 'tmp-1', side: 'dr', amount: 100, chosenType: 'asset' }],
+        },
+      ],
       columnOrder: ['tmp-1', 'cash'],
     };
     const out = applyAccounts(withRow, [
@@ -95,38 +100,53 @@ describe('URL round-trip', () => {
 });
 
 describe('examples', () => {
-  it.each(EXAMPLES.map((x) => [x.label, x] as const))('%s: rows balance and A = L + E holds', (_, ex) => {
-    const s = ex.build();
-    expect(s.entities.length).toBeGreaterThanOrEqual(2);
-    for (const e of s.entities) {
-      const ids = new Set(e.accounts.map((a) => a.id));
-      for (const r of e.rows) {
-        expect(engine.rowTotals(r).balanced).toBe(true);
-        expect(r.postings.length).toBeGreaterThan(0);
-        for (const p of r.postings) expect(ids.has(p.accountId)).toBe(true);
+  it.each(EXAMPLES.map((x) => [x.label, x] as const))(
+    '%s: rows balance and A = L + E holds',
+    (_, ex) => {
+      const s = ex.build();
+      expect(s.entities.length).toBeGreaterThanOrEqual(2);
+      for (const e of s.entities) {
+        const ids = new Set(e.accounts.map((a) => a.id));
+        for (const r of e.rows) {
+          expect(engine.rowTotals(r).balanced).toBe(true);
+          expect(r.postings.length).toBeGreaterThan(0);
+          for (const p of r.postings) expect(ids.has(p.accountId)).toBe(true);
+        }
+        for (const l of e.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
+        const sum = summarize(e);
+        expect(sum.rowsBalanced).toBe(true);
+        expect(sum.opening?.balanced ?? true).toBe(true);
+        expect(sum.equation.balanced).toBe(true);
+        expect(sum.equation.assets).toBeGreaterThan(0);
       }
-      for (const l of e.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
-      const sum = summarize(e);
-      expect(sum.rowsBalanced).toBe(true);
-      expect(sum.opening?.balanced ?? true).toBe(true);
-      expect(sum.equation.balanced).toBe(true);
-      expect(sum.equation.assets).toBeGreaterThan(0);
-    }
-  });
+    },
+  );
 });
 
 describe('summarize', () => {
   it('does not report an empty row as unbalanced', () => {
-    const e: SandboxEntity = { id: 'x', name: 'X', accounts: [], rows: [{ id: 'r1', postings: [] }], showBalanceSheets: false };
+    const e: SandboxEntity = {
+      id: 'x',
+      name: 'X',
+      accounts: [],
+      rows: [{ id: 'r1', postings: [] }],
+      showBalanceSheets: false,
+    };
     expect(summarize(e).unbalancedRows).toEqual([]);
-    const half: SandboxEntity = { ...e, accounts: [{ id: 'cash', name: 'Cash', type: 'asset' }], rows: [{ id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 100 }] }] };
+    const half: SandboxEntity = {
+      ...e,
+      accounts: [{ id: 'cash', name: 'Cash', type: 'asset' }],
+      rows: [{ id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 100 }] }],
+    };
     expect(summarize(half).unbalancedRows).toEqual([1]);
   });
 });
 
 describe('untrusted markdown', () => {
   it('does not render raw HTML', () => {
-    const html = renderUntrustedMarkdown('Hi <img src=x onerror=alert(1)> there\n\n<script>alert(1)</script>');
+    const html = renderUntrustedMarkdown(
+      'Hi <img src=x onerror=alert(1)> there\n\n<script>alert(1)</script>',
+    );
     const div = parse(html);
     expect(div.querySelector('img')).toBeNull();
     expect(div.querySelector('script')).toBeNull();
@@ -144,9 +164,11 @@ describe('untrusted markdown', () => {
       '![i](javascript:alert(1))',
     ]) {
       const div = parse(renderUntrustedMarkdown(src));
-      for (const a of div.querySelectorAll('a')) expect(isSafeHref(a.getAttribute('href') ?? '')).toBe(true);
+      for (const a of div.querySelectorAll('a'))
+        expect(isSafeHref(a.getAttribute('href') ?? '')).toBe(true);
       for (const el of div.querySelectorAll('*'))
-        for (const attr of el.attributes) expect(attr.value.toLowerCase()).not.toMatch(/javascript:|^data:/);
+        for (const attr of el.attributes)
+          expect(attr.value.toLowerCase()).not.toMatch(/javascript:|^data:/);
       expect(div.querySelector('img')).toBeNull();
     }
   });

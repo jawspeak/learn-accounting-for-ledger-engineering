@@ -5,17 +5,14 @@ import type { Account, AccountId, AccountType, BalanceSheet, TransactionRow } fr
 import type { CheckResult, CorrectPart, DiagnosticLocation, RevealLevel } from './diagnostics';
 import type { Markdown } from './problem';
 
+/** The T-account builder used by booking problems (the Sandbox has its own Journal / T-accounts / Grid views). */
 export interface TAccountBuilderProps {
-  /** 'problem': pick from `accounts` only. 'sandbox': learner may also create accounts (name + type). */
-  mode: 'problem' | 'sandbox';
-  /** Picker choices (already alphabetical/deterministic for problems — see engine.pickerAccounts). */
+  /** Picker choices (already alphabetical/deterministic — see engine.pickerAccounts). */
   accounts: Account[];
   /** Entity CoA order, for canonical column ordering within groups. */
   coaOrder: AccountId[];
   rows: TransactionRow[];
   onRowsChange(rows: TransactionRow[]): void;
-  /** Sandbox only: account list edits (create/rename). */
-  onAccountsChange?(accounts: Account[]): void;
   /** First N rows are read-only (faded examples). */
   lockedRowCount?: number;
   /**
@@ -37,9 +34,6 @@ export interface TAccountBuilderProps {
   /** Feedback overlays (reveal level ≥1 marks correct parts, ≥2 highlights locations). */
   correctParts?: CorrectPart[];
   highlights?: DiagnosticLocation[];
-  /** Sandbox: manual column order override. */
-  columnOrder?: AccountId[];
-  onColumnOrderChange?(order: AccountId[]): void;
 }
 
 export interface FeedbackPanelProps {

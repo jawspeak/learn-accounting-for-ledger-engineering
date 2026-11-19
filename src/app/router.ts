@@ -1,16 +1,25 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Hash routes: #/  #/s/<sectionId>?at=<element id>  #/p/<problemId>?a=<attempt>  #/sandbox?d=<state>
+ * Hash routes: #/  #/s/<sectionId>?at=<element id>  #/p/<problemId>?a=<attempt>
  * #/cheatsheet?at=<element id> — `at` scrolls to a block on the page (search results deep-link with it).
- * #/sheet?d=<state>&e=<entity index> — the full-screen spreadsheet view of the same sandbox state.
+ * The Sandbox: three views of the same state (`d`); `e` = which party; `at` = an element to scroll to.
+ *   #/sandbox?d=&e=&at=   Journal — the editor, and the default
+ *   #/taccounts?d=&at=    T-accounts — every party's ledger, read-only
+ *   #/sheet?d=&e=         Grid — one party as a wide spreadsheet
  */
+export type SandboxView = 'journal' | 'taccounts' | 'grid';
+const VIEW_PATH: Record<SandboxView, string> = {
+  journal: 'sandbox',
+  taccounts: 'taccounts',
+  grid: 'sheet',
+};
+
 export type Route =
   | { name: 'home' }
   | { name: 'section'; id: string; at?: string }
   | { name: 'problem'; id: string; attempt?: string }
-  | { name: 'sandbox'; data?: string }
-  | { name: 'sheet'; data?: string; entity: number }
+  | { name: 'sandbox'; view: SandboxView; data?: string; entity: number; at?: string }
   | { name: 'definitions'; id?: string }
   | { name: 'cheatsheet'; at?: string }
   | { name: 'animations' }
@@ -25,10 +34,16 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 's' && parts[1]) return { name: 'section', id: parts[1], ...(at ? { at } : {}) };
   if (parts[0] === 'p' && parts[1])
     return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
-  if (parts[0] === 'sandbox') return { name: 'sandbox', data: params.get('d') ?? undefined };
-  if (parts[0] === 'sheet') {
+  const view = (Object.keys(VIEW_PATH) as SandboxView[]).find((v) => VIEW_PATH[v] === parts[0]);
+  if (view) {
     const e = Number(params.get('e') ?? 0);
-    return { name: 'sheet', data: params.get('d') ?? undefined, entity: Number.isInteger(e) && e > 0 ? e : 0 };
+    return {
+      name: 'sandbox',
+      view,
+      data: params.get('d') ?? undefined,
+      entity: Number.isInteger(e) && e > 0 ? e : 0,
+      ...(at ? { at } : {}),
+    };
   }
   if (parts[0] === 'definitions') return { name: 'definitions', id: parts[1] };
   if (parts[0] === 'cheatsheet') return { name: 'cheatsheet', ...(at ? { at } : {}) };
@@ -36,15 +51,23 @@ export function parseHash(hash: string): Route {
   return { name: 'not-found' };
 }
 
+/** Any Sandbox view of the same state. */
+function sandboxView(view: SandboxView, data?: string, entity = 0, at?: string): string {
+  const q = [data && `d=${data}`, entity > 0 && `e=${entity}`, at && `at=${encodeURIComponent(at)}`]
+    .filter(Boolean)
+    .join('&');
+  return `#/${VIEW_PATH[view]}${q ? `?${q}` : ''}`;
+}
+
 export const href = {
   home: () => '#/',
   section: (id: string, at?: string) => `#/s/${id}${at ? `?at=${encodeURIComponent(at)}` : ''}`,
   problem: (id: string, attempt?: string) => `#/p/${id}${attempt ? `?a=${attempt}` : ''}`,
-  sandbox: (data?: string) => `#/sandbox${data ? `?d=${data}` : ''}`,
-  sheet: (data?: string, entity = 0) => {
-    const q = [data && `d=${data}`, entity > 0 && `e=${entity}`].filter(Boolean).join('&');
-    return `#/sheet${q ? `?${q}` : ''}`;
-  },
+  sandboxView,
+  /** The Journal view — the Sandbox's default. */
+  sandbox: (data?: string, entity = 0, at?: string) => sandboxView('journal', data, entity, at),
+  taccounts: (data?: string, at?: string) => sandboxView('taccounts', data, 0, at),
+  sheet: (data?: string, entity = 0) => sandboxView('grid', data, entity),
   definitions: (id?: string) => `#/definitions${id ? `/${id}` : ''}`,
   cheatsheet: (at?: string) => `#/cheatsheet${at ? `?at=${encodeURIComponent(at)}` : ''}`,
   animations: () => '#/animations',

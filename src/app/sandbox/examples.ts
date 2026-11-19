@@ -62,7 +62,12 @@ function cashDeposit(): SandboxState {
         id: 'you',
         name: youName(),
         accounts: you,
-        opening: { lines: [{ accountId: 'cash', amount: $(100) }, { accountId: 'net-worth', amount: $(100) }] },
+        opening: {
+          lines: [
+            { accountId: 'cash', amount: $(100) },
+            { accountId: 'net-worth', amount: $(100) },
+          ],
+        },
         rows: [
           {
             id: 'r1',
@@ -86,7 +91,10 @@ function cashDeposit(): SandboxState {
           {
             id: 'r1',
             label: 'Customer deposits cash',
-            postings: [post(bank, 'vault-cash', 'dr', 100), post(bank, 'deposits-checking', 'cr', 100)],
+            postings: [
+              post(bank, 'vault-cash', 'dr', 100),
+              post(bank, 'deposits-checking', 'cr', 100),
+            ],
           },
         ],
         showBalanceSheets: true,
@@ -101,7 +109,13 @@ function loan(): SandboxState {
     { id: 'loan-payable', name: 'Loan Payable', type: 'liability' },
     { id: 'interest-expense', name: 'Interest Expense', type: 'expense' },
   ]);
-  const bank = bankAccounts(['reserves-fed', 'loans-receivable', 'deposits-checking', 'paid-in-capital', 'interest-income']);
+  const bank = bankAccounts([
+    'reserves-fed',
+    'loans-receivable',
+    'deposits-checking',
+    'paid-in-capital',
+    'interest-income',
+  ]);
   return {
     v: 1,
     title: 'Loan — both sides',
@@ -142,12 +156,18 @@ function loan(): SandboxState {
           {
             id: 'r1',
             label: 'Make the loan',
-            postings: [post(bank, 'loans-receivable', 'dr', 500), post(bank, 'deposits-checking', 'cr', 500)],
+            postings: [
+              post(bank, 'loans-receivable', 'dr', 500),
+              post(bank, 'deposits-checking', 'cr', 500),
+            ],
           },
           {
             id: 'r2',
             label: 'Collect interest from checking',
-            postings: [post(bank, 'deposits-checking', 'dr', 5), post(bank, 'interest-income', 'cr', 5)],
+            postings: [
+              post(bank, 'deposits-checking', 'dr', 5),
+              post(bank, 'interest-income', 'cr', 5),
+            ],
           },
         ],
         showBalanceSheets: true,
@@ -159,12 +179,32 @@ function loan(): SandboxState {
 // ---------- 3. FBO top-up ----------
 function fboTopUp(): SandboxState {
   const zap: Account[] = [
-    { id: 'operating-cash', name: 'Cash: Operating', type: 'asset', description: 'Zap’s own money at the bank.' },
-    { id: 'fbo-cash', name: 'Cash: FBO Account', type: 'asset', description: 'Customer money held at the bank for the benefit of Zap users.' },
-    { id: 'customer-balances', name: 'Customer Balances Payable', type: 'liability', description: 'What Zap owes its users (their wallet balances).' },
+    {
+      id: 'operating-cash',
+      name: 'Cash: Operating',
+      type: 'asset',
+      description: 'Zap’s own money at the bank.',
+    },
+    {
+      id: 'fbo-cash',
+      name: 'Cash: FBO Account',
+      type: 'asset',
+      description: 'Customer money held at the bank for the benefit of Zap users.',
+    },
+    {
+      id: 'customer-balances',
+      name: 'Customer Balances Payable',
+      type: 'liability',
+      description: 'What Zap owes its users (their wallet balances).',
+    },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   ];
-  const bank = bankAccounts(['reserves-fed', 'deposits-checking', 'deposits-fbo', 'paid-in-capital']);
+  const bank = bankAccounts([
+    'reserves-fed',
+    'deposits-checking',
+    'deposits-fbo',
+    'paid-in-capital',
+  ]);
   return {
     v: 1,
     title: 'FBO top-up — Zap and the bank',
@@ -207,7 +247,10 @@ function fboTopUp(): SandboxState {
           {
             id: 'r1',
             label: 'Move $50 from Alice’s checking to Zap’s FBO',
-            postings: [post(bank, 'deposits-checking', 'dr', 50), post(bank, 'deposits-fbo', 'cr', 50)],
+            postings: [
+              post(bank, 'deposits-checking', 'dr', 50),
+              post(bank, 'deposits-fbo', 'cr', 50),
+            ],
           },
         ],
         showBalanceSheets: true,
@@ -216,7 +259,7 @@ function fboTopUp(): SandboxState {
   };
 }
 
-// ---------- 4. Payroll — a payroll provider's ledger (best in the Spreadsheet view) ----------
+// ---------- 4. Payroll — a payroll provider's ledger (best in the Grid view) ----------
 function payroll(): SandboxState {
   const accounts: Account[] = [
     { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Bank account' },
@@ -242,7 +285,12 @@ function payroll(): SandboxState {
   ];
   const fooAccounts: Account[] = [
     { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Operating bank account' },
-    { id: 'payroll-payable', name: 'Payroll Payable', type: 'liability', subtitle: 'Owed to the payroll provider' },
+    {
+      id: 'payroll-payable',
+      name: 'Payroll Payable',
+      type: 'liability',
+      subtitle: 'Owed to the payroll provider',
+    },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
     { id: 'wages-expense', name: 'Wages Expense', type: 'expense' },
     { id: 'payroll-fees', name: 'Payroll Fees', type: 'expense', subtitle: 'Provider fee' },
@@ -255,7 +303,7 @@ function payroll(): SandboxState {
       '1. Running payroll: Foo now owes us $2,020; we owe each employee their pay; we earned the fee.\n' +
       '2. We pull $2,020 from Foo’s bank account.\n' +
       '3–4. We pay each employee; Cash ends at the $20 fee we kept.\n\n' +
-      '**Employer Foo**’s books (the second tab in the Spreadsheet view) show the same events from the employer’s side: an expense and a payable, then the cash leaves.',
+      '**Employer Foo**’s books (the second tab in the Journal and the Grid) show the same events from the employer’s side: an expense and a payable, then the cash leaves.',
     entities: [
       {
         id: 'payroll-provider',
@@ -275,17 +323,26 @@ function payroll(): SandboxState {
           {
             id: 'r2',
             label: 'Debit Employer Foo',
-            postings: [post(accounts, 'cash', 'dr', 2020), post(accounts, 'employer-foo-receivable', 'cr', 2020)],
+            postings: [
+              post(accounts, 'cash', 'dr', 2020),
+              post(accounts, 'employer-foo-receivable', 'cr', 2020),
+            ],
           },
           {
             id: 'r3',
             label: 'Credit Foo Employee 1',
-            postings: [post(accounts, 'foo-employee-1-payable', 'dr', 1200), post(accounts, 'cash', 'cr', 1200)],
+            postings: [
+              post(accounts, 'foo-employee-1-payable', 'dr', 1200),
+              post(accounts, 'cash', 'cr', 1200),
+            ],
           },
           {
             id: 'r4',
             label: 'Credit Foo Employee 2',
-            postings: [post(accounts, 'foo-employee-2-payable', 'dr', 800), post(accounts, 'cash', 'cr', 800)],
+            postings: [
+              post(accounts, 'foo-employee-2-payable', 'dr', 800),
+              post(accounts, 'cash', 'cr', 800),
+            ],
           },
         ],
         showBalanceSheets: false,
@@ -294,7 +351,12 @@ function payroll(): SandboxState {
         id: 'employer-foo',
         name: 'Employer Foo',
         accounts: fooAccounts,
-        opening: { lines: [{ accountId: 'cash', amount: $(10000) }, { accountId: 'paid-in-capital', amount: $(10000) }] },
+        opening: {
+          lines: [
+            { accountId: 'cash', amount: $(10000) },
+            { accountId: 'paid-in-capital', amount: $(10000) },
+          ],
+        },
         rows: [
           {
             id: 'r1',
@@ -308,7 +370,10 @@ function payroll(): SandboxState {
           {
             id: 'r2',
             label: 'Provider debits our bank account',
-            postings: [post(fooAccounts, 'payroll-payable', 'dr', 2020), post(fooAccounts, 'cash', 'cr', 2020)],
+            postings: [
+              post(fooAccounts, 'payroll-payable', 'dr', 2020),
+              post(fooAccounts, 'cash', 'cr', 2020),
+            ],
           },
         ],
         showBalanceSheets: false,

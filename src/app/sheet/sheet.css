@@ -1,4 +1,4 @@
-/* Spreadsheet view (#/sheet). Desktop-first: one wide grid that scrolls in both directions inside its frame,
+/* Grid view (#/sheet). Desktop-first: one wide grid that scrolls in both directions inside its frame,
    with the header rows and the left "event" block frozen. Colours come from the design tokens. */
 .sh {
   --sh-line: color-mix(in srgb, var(--border) 85%, transparent);

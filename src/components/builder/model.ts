@@ -37,7 +37,12 @@ export const PICKER_TYPES: { type: AccountType; label: string }[] = [
   { type: 'contra-revenue', label: 'Contra-revenue' },
 ];
 
-const CONTRA_TYPES = new Set<AccountType>(['contra-asset', 'contra-liability', 'contra-equity', 'contra-revenue']);
+const CONTRA_TYPES = new Set<AccountType>([
+  'contra-asset',
+  'contra-liability',
+  'contra-equity',
+  'contra-revenue',
+]);
 export const isContraType = (t: AccountType) => CONTRA_TYPES.has(t);
 
 /**
@@ -176,7 +181,11 @@ export function slugId(name: string, taken: Iterable<string>): string {
  * in the rows but isn't a column yet (type = the posting's chosenType, else the account's real type — only
  * prefilled/authored rows lack a chosen type).
  */
-export function deriveColumns(cols: Column[], rows: TransactionRow[], accounts: Account[]): Column[] {
+export function deriveColumns(
+  cols: Column[],
+  rows: TransactionRow[],
+  accounts: Account[],
+): Column[] {
   const out = new Map<AccountId, AccountType>(cols.map((c) => [c.accountId, c.type]));
   for (const r of rows)
     for (const p of r.postings) {
@@ -190,16 +199,17 @@ export function deriveColumns(cols: Column[], rows: TransactionRow[], accounts: 
 /** Initial column state from the rows' chosen types. */
 export function columnsFromRows(rows: TransactionRow[]): Column[] {
   const seen = new Map<AccountId, AccountType>();
-  for (const r of rows) for (const p of r.postings) if (p.chosenType && !seen.has(p.accountId)) seen.set(p.accountId, p.chosenType);
+  for (const r of rows)
+    for (const p of r.postings)
+      if (p.chosenType && !seen.has(p.accountId)) seen.set(p.accountId, p.chosenType);
   return [...seen].map(([accountId, type]) => ({ accountId, type }));
 }
 
-/** Canonical placement (VISION-2 §5) by the learner's chosen type; a manual order (sandbox) wins when given. */
+/** Canonical placement (VISION-2 §5) by the learner's chosen type. */
 export function placeColumns(
   cols: Column[],
   accounts: Account[],
   coaOrder: AccountId[],
-  manualOrder?: AccountId[],
 ): PlacedColumn[] {
   const byId = new Map(accounts.map((a) => [a.id, a]));
   const typeById = new Map(cols.map((c) => [c.accountId, c.type]));
@@ -211,22 +221,14 @@ export function placeColumns(
           accountId: c.accountId,
           type: c.type,
           contraOf: c.type.startsWith('contra-') ? a?.contraOf : undefined,
-          equityGroup: c.type === 'equity' || c.type === 'contra-equity' ? a?.equityGroup : undefined,
+          equityGroup:
+            c.type === 'equity' || c.type === 'contra-equity' ? a?.equityGroup : undefined,
         };
       }),
       coaOrder,
     )
     .map((o) => ({ ...o, type: typeById.get(o.accountId)! }));
-  if (!manualOrder || manualOrder.length === 0) return canonical;
-  const rank = (id: AccountId) => {
-    const i = manualOrder.indexOf(id);
-    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
-  };
-  // Stable sort: manual positions first; unknown columns keep their canonical relative order at the end.
-  return canonical
-    .map((c, i) => ({ c, i }))
-    .sort((a, b) => rank(a.c.accountId) - rank(b.c.accountId) || a.i - b.i)
-    .map((x) => x.c);
+  return canonical;
 }
 
 /** Index in `placed` where the `=` divider goes (first non-asset column), or -1 if the order isn't grouped. */
@@ -238,7 +240,10 @@ export function equalsIndex(placed: PlacedColumn[]): number {
 }
 
 /** Consecutive runs of the same key — used for header bands. */
-export function runs<T, K>(items: T[], key: (t: T) => K): { key: K; start: number; length: number }[] {
+export function runs<T, K>(
+  items: T[],
+  key: (t: T) => K,
+): { key: K; start: number; length: number }[] {
   const out: { key: K; start: number; length: number }[] = [];
   items.forEach((it, i) => {
     const k = key(it);
@@ -251,7 +256,11 @@ export function runs<T, K>(items: T[], key: (t: T) => K): { key: K; start: numbe
 
 // ---- feedback overlays ----
 
-export function isCorrectCell(parts: CorrectPart[] | undefined, rowId: string, accountId: AccountId): boolean {
+export function isCorrectCell(
+  parts: CorrectPart[] | undefined,
+  rowId: string,
+  accountId: AccountId,
+): boolean {
   return !!parts?.some((p) => p.rowId === rowId && p.accountId === accountId);
 }
 export function isCorrectColumn(parts: CorrectPart[] | undefined, accountId: AccountId): boolean {
@@ -272,9 +281,11 @@ export function resolveHighlight(
   columnIds: Set<AccountId>,
 ): { rowId?: string; accountId?: AccountId; target: HighlightTarget } | null {
   const accountId = loc.accountId && columnIds.has(loc.accountId) ? loc.accountId : undefined;
-  if (loc.field === 'bs-line') return loc.accountId ? { accountId: loc.accountId, target: 'bs-line' } : null;
+  if (loc.field === 'bs-line')
+    return loc.accountId ? { accountId: loc.accountId, target: 'bs-line' } : null;
   if (loc.field === 'type' && accountId) return { rowId: loc.rowId, accountId, target: 'type' };
-  if (loc.rowId && accountId) return { rowId: loc.rowId, accountId, target: loc.field === 'amount' ? 'cell-filled' : 'cell' };
+  if (loc.rowId && accountId)
+    return { rowId: loc.rowId, accountId, target: loc.field === 'amount' ? 'cell-filled' : 'cell' };
   if (accountId) return { accountId, target: 'column' };
   if (loc.rowId) return { rowId: loc.rowId, target: 'row' };
   return null;

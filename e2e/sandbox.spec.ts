@@ -23,7 +23,7 @@ test('malicious scenario is inert', async ({ page }) => {
     await d.dismiss();
   });
   await page.goto('/#/sandbox');
-  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
   const payload = '<img src=x onerror=alert(1)> <script>alert(2)</script> [x](javascript:alert(3))';
   await page.getByRole('textbox', { name: 'Scenario (markdown)' }).fill(payload);
   await page.getByRole('button', { name: 'Preview' }).click();

@@ -275,7 +275,7 @@ function ProblemFrame({
   );
 }
 
-/** "Open in Sandbox" + "Open in Spreadsheet" for a board. */
+/** "Open in Sandbox" (the Journal) + "Open in Grid" for a board. */
 function BoardLinks({ board, prefix = '' }: { board: SandboxState; prefix?: string }) {
   const enc = engine.encodeState(board);
   return (
@@ -284,7 +284,7 @@ function BoardLinks({ board, prefix = '' }: { board: SandboxState; prefix?: stri
         Open {prefix}in Sandbox
       </a>
       <a className="btn" href={href.sheet(enc)} title="Wide grid view (desktop)">
-        Open {prefix}in Spreadsheet
+        Open {prefix}in Grid
       </a>
     </>
   );
@@ -314,7 +314,6 @@ function SolutionBody({ problem, accounts }: { problem: BookingProblem; accounts
   return (
     <>
       <TAccountBuilder
-        mode="problem"
         readOnly
         accounts={accounts}
         coaOrder={entity.accounts.map((a) => a.id)}
@@ -404,7 +403,6 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
       )}
       <div ref={builderRef}>
         <TAccountBuilder
-          mode="problem"
           accounts={accounts}
           coaOrder={entity.accounts.map((a) => a.id)}
           rows={rows}

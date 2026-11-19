@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Account, BalanceSheet, TAccountBuilderProps, TransactionRow } from '@contracts';
 import { TAccountBuilder } from './TAccountBuilder';
-import { parseDollars, placeColumns, rankAccounts } from './model';
+import { parseDollars, rankAccounts } from './model';
 
 afterEach(cleanup);
 
@@ -27,7 +27,6 @@ function Harness(
   const [rows, setRows] = useState<TransactionRow[]>(initialRows ?? [{ id: 'r1', postings: [] }]);
   return (
     <TAccountBuilder
-      mode="problem"
       accounts={accounts}
       coaOrder={coaOrder}
       showBalanceSheets={false}
@@ -79,24 +78,6 @@ describe('TAccountBuilder — columns', () => {
     ];
     const { container } = render(<Harness initialRows={rows} />);
     expect(headOrder(container)).toEqual(['checking', '=', 'cash']);
-  });
-
-  it('honours a manual sandbox order, and the canonical helper ignores an empty override', () => {
-    const cols = [
-      { accountId: 'net-worth', type: 'equity' as const },
-      { accountId: 'cash', type: 'asset' as const },
-    ];
-    expect(placeColumns(cols, accounts, coaOrder).map((c) => c.accountId)).toEqual([
-      'cash',
-      'net-worth',
-    ]);
-    expect(placeColumns(cols, accounts, coaOrder, []).map((c) => c.accountId)).toEqual([
-      'cash',
-      'net-worth',
-    ]);
-    expect(
-      placeColumns(cols, accounts, coaOrder, ['net-worth', 'cash']).map((c) => c.accountId),
-    ).toEqual(['net-worth', 'cash']);
   });
 });
 
@@ -331,86 +312,15 @@ describe('TAccountBuilder — account picker', () => {
     expect(headOrder(container)).toEqual(['checking', '=']);
   });
 
-  it('sandbox: creates a new account via onAccountsChange', async () => {
-    const onAccountsChange = vi.fn();
-    const { container } = render(<Harness mode="sandbox" onAccountsChange={onAccountsChange} />);
-    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
-    fireEvent.click(screen.getByLabelText('Expense'));
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Coffee Beans' } });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('option', { name: /Create account/ }));
-    });
-    expect(onAccountsChange).toHaveBeenCalledWith([
-      ...accounts,
-      { id: 'coffee-beans', name: 'Coffee Beans', type: 'expense' },
-    ]);
-    expect(headOrder(container)).toEqual(['=', 'coffee-beans']);
-    expect(container.querySelector('[data-col-head="coffee-beans"]')!.textContent).toContain(
-      'Coffee Beans',
-    );
-  });
-
-  it('sandbox: ◀ ▶ only in manual order (when the parent passes onColumnOrderChange)', () => {
-    const onColumnOrderChange = vi.fn();
-    const rows: TransactionRow[] = [
-      {
-        id: 'r1',
-        postings: [
-          { accountId: 'cash', side: 'dr', amount: 100, chosenType: 'asset' },
-          { accountId: 'checking', side: 'dr', amount: 100, chosenType: 'asset' },
-        ],
-      },
-    ];
-    const { rerender } = render(<Harness mode="sandbox" initialRows={rows} />);
-    expect(screen.queryByRole('button', { name: 'Move Cash right' })).toBeNull(); // auto order
-    rerender(<Harness mode="sandbox" initialRows={rows} onColumnOrderChange={onColumnOrderChange} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Move Cash right' }));
-    expect(onColumnOrderChange).toHaveBeenCalledWith(['checking', 'cash']);
-    expect(screen.queryByRole('button', { name: /Reset to canonical/ })).toBeNull();
-  });
-
-  it('sandbox: the picker lists only accounts of the chosen type', () => {
-    render(<Harness mode="sandbox" onAccountsChange={() => {}} />);
-    fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
-    fireEvent.click(screen.getByLabelText('Asset'));
-    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cash', 'Checking Account']);
-    fireEvent.click(screen.getByLabelText('Expense'));
-    expect(screen.queryAllByRole('option')).toHaveLength(0);
-    expect(screen.getByText(/No expense accounts yet — type a name to create one/)).toBeTruthy();
-  });
-
-  it('sandbox: changing a column’s type changes the account’s type (one truth for both views)', () => {
-    const onAccountsChange = vi.fn();
-    const rows: TransactionRow[] = [
-      { id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 100, chosenType: 'asset' }] },
-    ];
-    render(<Harness mode="sandbox" initialRows={rows} onAccountsChange={onAccountsChange} />);
-    fireEvent.change(screen.getByLabelText('Type of Cash'), { target: { value: 'liability' } });
-    expect(onAccountsChange.mock.calls.at(-1)![0].find((a: Account) => a.id === 'cash').type).toBe('liability');
-  });
-
-  it('sandbox: rows move up / down; Add row is under the grid', () => {
-    const spy = vi.fn();
-    const rows: TransactionRow[] = [
-      { id: 'r1', label: 'first', postings: [] },
-      { id: 'r2', label: 'second', postings: [] },
-    ];
-    const { container } = render(<Harness mode="sandbox" initialRows={rows} spy={spy} />);
-    expect(screen.getByRole('button', { name: 'Move row 1 up' })).toHaveProperty('disabled', true);
-    fireEvent.click(screen.getByRole('button', { name: 'Move row 2 up' }));
-    expect(spy.mock.calls.at(-1)![0].map((r: TransactionRow) => r.label)).toEqual(['second', 'first']);
-    const addRow = screen.getByRole('button', { name: /Add row/ });
-    expect(container.querySelector('.tab-toolbar')!.contains(addRow)).toBe(false);
-  });
-
-  it('sandbox: with accounts but no columns yet, it says so instead of "add your first account"', () => {
-    render(<Harness mode="sandbox" />);
-    expect(screen.getByRole('button', { name: /Add an account column/ })).toBeTruthy();
-    expect(screen.getByText(/already has 5 accounts/)).toBeTruthy();
-  });
-
   it('problems: no row arrows and the picker list is not filtered by type', () => {
-    render(<Harness initialRows={[{ id: 'r1', postings: [] }, { id: 'r2', postings: [] }]} />);
+    render(
+      <Harness
+        initialRows={[
+          { id: 'r1', postings: [] },
+          { id: 'r2', postings: [] },
+        ]}
+      />,
+    );
     expect(screen.queryByRole('button', { name: /Move row/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Add account/ }));
     fireEvent.click(screen.getByLabelText('Expense'));

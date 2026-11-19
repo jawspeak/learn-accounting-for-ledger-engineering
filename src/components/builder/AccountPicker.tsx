@@ -3,28 +3,18 @@ import type { Account, AccountId, AccountType } from '@contracts';
 import { PICKER_TYPES, rankAccounts, typeLabel } from './model';
 
 export interface AccountPickerProps {
-  /** All choices, already in deterministic (alphabetical) order. */
+  /** All choices, already in deterministic (alphabetical) order. Never filtered by type. */
   accounts: Account[];
-  /**
-   * Sandbox: list only accounts of the type chosen in step 1. Problems leave this off — there the list is the
-   * full, unfiltered CoA, so picking a name of the wrong type stays a diagnosable choice.
-   */
-  filterByType?: boolean;
   /** Accounts that already have a column (picking one again just changes its type). */
   existing: Set<AccountId>;
   /** Types offered in step 1 (defaults to every picker type). */
   types?: AccountType[];
-  /** Sandbox: allow creating a new account from the search text. */
-  allowCreate?: boolean;
   onPick(accountId: AccountId, type: AccountType): void;
-  onCreate?(name: string, type: AccountType): void;
   /** Close the picker (Escape / Cancel). */
   onCancel(): void;
   /** "Enter amounts" after adding: close and move on to typing the new account's amount. */
   onFinish?(): void;
 }
-
-type Option = { kind: 'account'; account: Account } | { kind: 'create'; name: string };
 
 const withArticle = (label: string) => `${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label}`;
 
@@ -38,12 +28,9 @@ const withArticle = (label: string) => `${/^[aeiou]/i.test(label) ? 'an' : 'a'} 
  */
 export function AccountPicker({
   accounts,
-  filterByType,
   existing,
   types,
-  allowCreate,
   onPick,
-  onCreate,
   onCancel,
   onFinish,
 }: AccountPickerProps) {
@@ -60,24 +47,15 @@ export function AccountPicker({
     ? types.map((t) => PICKER_TYPES.find((p) => p.type === t) ?? { type: t, label: typeLabel(t) })
     : PICKER_TYPES;
 
-  const q = query.trim().toLowerCase();
-  const pool = filterByType && type ? accounts.filter((a) => a.type === type) : accounts;
-  const options: Option[] = rankAccounts(pool, query).map((account) => ({
-    kind: 'account',
-    account,
-  }));
-  if (allowCreate && q !== '' && !accounts.some((a) => a.name.toLowerCase() === q))
-    options.push({ kind: 'create', name: query.trim() });
+  const options: Account[] = rankAccounts(accounts, query);
   const activeIdx = Math.min(active, Math.max(0, options.length - 1));
   const listId = `${uid}-list`;
   const optId = (i: number) => `${uid}-opt-${i}`;
 
-  const choose = (opt: Option | undefined) => {
+  const choose = (opt: Account | undefined) => {
     if (!opt || !type) return;
-    const name = opt.kind === 'account' ? opt.account.name : opt.name;
-    if (opt.kind === 'account') onPick(opt.account.id, type);
-    else onCreate?.(opt.name, type);
-    setAdded({ name, type });
+    onPick(opt.id, type);
+    setAdded({ name: opt.name, type });
     setType(null);
     setQuery('');
     setActive(0);
@@ -203,7 +181,7 @@ export function AccountPicker({
               aria-expanded
               aria-controls={listId}
               aria-activedescendant={options.length ? optId(activeIdx) : undefined}
-              placeholder={allowCreate ? 'Filter, or type a new account name…' : 'Filter the list…'}
+              placeholder="Filter the list…"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -214,14 +192,12 @@ export function AccountPicker({
             <ul id={listId} role="listbox" aria-label="Accounts" className="tab-picker-list">
               {options.length === 0 && (
                 <li className="tab-picker-empty" role="presentation">
-                  {filterByType && type && pool.length === 0
-                    ? `No ${typeChoices.find((t) => t.type === type)?.label.toLowerCase() ?? type} accounts yet${allowCreate ? ' — type a name to create one.' : '.'}`
-                    : 'No matching accounts.'}
+                  No matching accounts.
                 </li>
               )}
               {options.map((opt, i) => (
                 <li
-                  key={opt.kind === 'account' ? opt.account.id : '__create'}
+                  key={opt.id}
                   id={optId(i)}
                   role="option"
                   aria-selected={i === activeIdx}
@@ -230,19 +206,9 @@ export function AccountPicker({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(opt)}
                 >
-                  {opt.kind === 'account' ? (
-                    <>
-                      {opt.account.name}
-                      {existing.has(opt.account.id) && (
-                        <span className="tab-picker-tag">
-                          {filterByType ? ' (already a column)' : ' (already added — sets its type)'}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span aria-hidden="true">＋ </span>Create account “{opt.name}”
-                    </>
+                  {opt.name}
+                  {existing.has(opt.id) && (
+                    <span className="tab-picker-tag"> (already added — sets its type)</span>
                   )}
                 </li>
               ))}

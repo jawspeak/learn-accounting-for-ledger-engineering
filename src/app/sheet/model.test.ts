@@ -12,7 +12,6 @@ import {
   removeRow,
   setManualOrder,
 } from '../sandbox/model';
-import { parseHash, href } from '../router';
 import {
   addAccount,
   ensureRows,
@@ -165,11 +164,5 @@ describe('URL state', () => {
     const back = engine.decodeSandbox(engine.encodeState(s));
     expect(back).toEqual(s);
     expect(back!.entities[0]!.accounts[0]!.subtitle).toBe('Bank account');
-  });
-
-  it('routes #/sheet with data and entity index', () => {
-    expect(parseHash(href.sheet('abc', 1))).toEqual({ name: 'sheet', data: 'abc', entity: 1 });
-    expect(parseHash('#/sheet')).toEqual({ name: 'sheet', data: undefined, entity: 0 });
-    expect(parseHash('#/sheet?e=-3')).toEqual({ name: 'sheet', data: undefined, entity: 0 });
   });
 });

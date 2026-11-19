@@ -1,0 +1,288 @@
+/* Sandbox: party bar, Journal view (.jx) and T-accounts view (.lv). Tokens from src/styles/tokens.css. */
+
+/* ---------- party bar (Journal and Grid) ---------- */
+.sbx-partybar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sbx-partybar .sh-tabbar {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+.sbx-party-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.sbx-party-tools .sh-rename {
+  margin-left: 0;
+  padding-bottom: 0;
+}
+.sbx-partybar .sbx-summary {
+  margin: 0;
+}
+
+/* ---------- Journal ---------- */
+.jx {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+.jx-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.jx-entry {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: var(--space-2) var(--space-3);
+  max-width: 46rem;
+  scroll-margin-top: calc(var(--header-h) + var(--space-3));
+}
+.jx-entry.is-target {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.jx-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.jx-num {
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 1.5rem;
+}
+.jx-desc {
+  flex: 1 1 14rem;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+}
+.jx-desc:hover,
+.jx-desc:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+.jx-status {
+  font-size: var(--text-sm);
+}
+.jx-status.is-ok {
+  color: var(--ok);
+}
+.jx-status.is-bad {
+  color: var(--err);
+  font-weight: 600;
+}
+.jx-tools {
+  display: inline-flex;
+  gap: 0.15rem;
+  margin-left: auto;
+}
+.jx-tools button,
+.jx-remove-line {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  padding: 0.1rem 0.4rem;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.jx-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.jx-lines {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+.jx-lines th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 0.25rem 0.2rem;
+}
+.jx-lines td {
+  padding: 0.15rem 0.25rem;
+  vertical-align: top;
+}
+.jx-amt {
+  text-align: right !important;
+  width: 8rem;
+}
+.jx-amount {
+  width: 7.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.jx-acct select {
+  max-width: 100%;
+  min-width: 12rem;
+}
+/* Journal convention: credit lines are indented under the debits. */
+.jx-lines tr.is-cr .jx-acct {
+  padding-left: 1.75rem;
+}
+.jx-line-tools {
+  display: flex;
+  gap: var(--space-2);
+}
+.jx-line-tools button,
+.jx-add-entry {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0.1rem 0;
+  cursor: pointer;
+}
+.jx-add-entry {
+  align-self: flex-start;
+  font-weight: 600;
+}
+/* Phones: the account list shrinks and the amount columns narrow, so an entry fits without sideways scroll. */
+@media (max-width: 560px) {
+  .jx-entry {
+    padding: var(--space-2);
+  }
+  .jx-lines {
+    table-layout: fixed;
+  }
+  .jx-acct select {
+    min-width: 0;
+    width: 100%;
+  }
+  .jx-amt {
+    width: 5.25rem;
+  }
+  .jx-amount {
+    width: 100%;
+    min-width: 0;
+  }
+  .jx-lines th:last-child,
+  .jx-lines td:last-child {
+    width: 1.6rem;
+  }
+  .jx-lines tr.is-cr .jx-acct {
+    padding-left: 0.9rem;
+  }
+}
+.jx-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.35rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
+/* ---------- T-accounts (general ledger) ---------- */
+.lv {
+  --sa-fg: var(--fg);
+  --sa-muted: var(--muted);
+  --sa-border: var(--border);
+  --sa-accent: var(--accent);
+  --sa-hl: var(--accent-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-3);
+}
+.lv-party {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+}
+.lv-party-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+.lv-party-head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+.lv-edit {
+  margin-left: auto;
+  font-size: var(--text-sm);
+}
+.lv-ledger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.lv-side {
+  flex: 1 1 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.lv-eq {
+  align-self: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.lv-band-label {
+  margin: 0 0 var(--space-1);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lv-taccts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-2);
+}
+.lv .tacct {
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.4rem;
+  min-width: 0;
+  background: var(--surface);
+}
+/* The increasing (normal) side is shaded, with ▲ on its label — as in the lessons and animations. */
+.lv .tacct.inc-dr .tacct__t {
+  background: linear-gradient(to right, var(--sa-hl) 50%, transparent 50%);
+}
+.lv .tacct.inc-cr .tacct__t {
+  background: linear-gradient(to right, transparent 50%, var(--sa-hl) 50%);
+}
+.lv-ref {
+  text-decoration: none;
+}
+.lv-ref:hover,
+.lv-ref:focus-visible {
+  text-decoration: underline;
+  color: var(--accent);
+}
+.lv-bs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
