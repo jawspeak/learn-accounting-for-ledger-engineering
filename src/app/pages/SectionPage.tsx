@@ -2,6 +2,7 @@ import { sections, sectionProblems } from '@content';
 import { RichMarkdown } from '../RichMarkdown';
 import { Markdown } from '../Markdown';
 import { href } from '../router';
+import { problemNumber } from '../problemNumber';
 import { animations } from '../../components/animations';
 import { DifficultyBadge, KindBadge, ROLE_BLURB, ROLE_LABEL, ROLE_ORDER } from '../badges';
 
@@ -50,7 +51,7 @@ export function SectionPage({ id }: { id: string }) {
               return (
                 <li key={pid}>
                   <a href={href.problem(pid)}>
-                    <span className="num">{i + 1}.</span> {p.title}
+                    <span className="num">{problemNumber(pid) ?? `${i + 1}.`}</span> {p.title}
                     {p.role !== 'practice' && <span className="role">{ROLE_LABEL[p.role]}</span>}
                   </a>
                 </li>
@@ -114,7 +115,9 @@ export function SectionPage({ id }: { id: string }) {
                   {group.map((p) => (
                     <li key={p.id}>
                       <a className="row" href={href.problem(p.id)}>
-                        <span className="title">{p.title}</span>
+                        <span className="title">
+                          <span className="num">{problemNumber(p.id)}</span> {p.title}
+                        </span>
                         <KindBadge kind={p.kind} />
                         <DifficultyBadge level={p.difficulty} />
                       </a>

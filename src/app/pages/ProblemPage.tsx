@@ -20,6 +20,7 @@ import { QuestionView, type NonBookingProblem } from '../../components/questions
 import { JournalTable } from '../../components/questions/JournalTable';
 import { Markdown } from '../Markdown';
 import { href, replaceHash } from '../router';
+import { problemNumber } from '../problemNumber';
 import { boardFor, solvedRows, withTypes } from '../solutionBoard';
 import { DifficultyBadge, KindBadge, ROLE_LABEL } from '../badges';
 
@@ -158,6 +159,7 @@ function ProblemFrame({
   const { section, index, total, prev, next } = neighbors(problem);
   const pair = problem.perspectivePairId ? problems[problem.perspectivePairId] : undefined;
   const entityName = entityNameOf(problem);
+  const num = problemNumber(problem.id);
 
   return (
     <article>
@@ -170,14 +172,27 @@ function ProblemFrame({
         ) : (
           problem.sectionId
         )}
+        {num && (
+          <>
+            {' '}
+            / <span aria-current="page">Problem {num}</span>
+          </>
+        )}
       </div>
+      {/* Where you are: the problem's number (same as in the section lists) and its place in the section. */}
+      {num && (
+        <p className="problem-kicker">
+          Problem {num}
+          {index >= 0 && (
+            <span className="problem-kicker-of">
+              {' '}
+              · {index + 1} of {total} in this section
+            </span>
+          )}
+        </p>
+      )}
       <h1>{problem.title}</h1>
       <div className="meta-row">
-        {index >= 0 && (
-          <span className="badge">
-            Problem {index + 1} of {total}
-          </span>
-        )}
         <span className="badge">{ROLE_LABEL[problem.role]}</span>
         <KindBadge kind={problem.kind} />
         <DifficultyBadge level={problem.difficulty} />
@@ -197,14 +212,14 @@ function ProblemFrame({
       <nav className="pager" aria-label="Problem navigation">
         {prev ? (
           <a className="btn" href={href.problem(prev.id)}>
-            ← {prev.title}
+            ← {problemNumber(prev.id)} {prev.title}
           </a>
         ) : (
           <span />
         )}
         {next ? (
           <a className="btn" href={href.problem(next.id)}>
-            {next.title} →
+            {problemNumber(next.id)} {next.title} →
           </a>
         ) : (
           <span />
@@ -281,7 +296,9 @@ function SolutionBody({ problem, accounts }: { problem: BookingProblem; accounts
       <div className="toolbar">
         <BoardLinks board={boardFor(problem, accounts, rows, true)} prefix="solution " />
         {pair?.kind === 'booking' && pair.entityId !== problem.entityId && (
-          <span className="note">Includes the other side’s books ({entities[pair.entityId]?.name}).</span>
+          <span className="note">
+            Includes the other side’s books ({entities[pair.entityId]?.name}).
+          </span>
         )}
       </div>
     </>

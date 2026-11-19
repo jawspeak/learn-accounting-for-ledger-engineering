@@ -936,3 +936,28 @@ textarea {
 .q-key .primer-figure {
   margin: var(--space-3) 0;
 }
+
+/* Problem numbers (5.7 = §5, problem 7) — the same label in section lists, problem header and pager. */
+.problem-list .title .num {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+.problem-kicker {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.problem-kicker-of {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.problem-kicker + h1 {
+  margin-top: 0.15rem;
+}
