@@ -175,22 +175,17 @@ function ProblemFrame({
         {num && (
           <>
             {' '}
+            {/* Where you are, once: the problem's number (same as in the section lists) and its place. */}
             / <span aria-current="page">Problem {num}</span>
+            {index >= 0 && (
+              <span className="breadcrumb-of">
+                {' '}
+                ({index + 1} of {total})
+              </span>
+            )}
           </>
         )}
       </div>
-      {/* Where you are: the problem's number (same as in the section lists) and its place in the section. */}
-      {num && (
-        <p className="problem-kicker">
-          Problem {num}
-          {index >= 0 && (
-            <span className="problem-kicker-of">
-              {' '}
-              · {index + 1} of {total} in this section
-            </span>
-          )}
-        </p>
-      )}
       <h1>{problem.title}</h1>
       <div className="meta-row">
         <span className="badge">{ROLE_LABEL[problem.role]}</span>

@@ -58,8 +58,7 @@ test('"Show me" focuses the flagged cell; a correct answer offers the next probl
 
 test('multi-event problem starts with one labelled row per numbered event', async ({ page }) => {
   await page.goto('/#/p/10-december-midmonth');
-  await expect(page.locator('.problem-kicker')).toHaveText('Problem 10.3 · 3 of 9 in this section');
-  await expect(page.locator('.breadcrumb')).toContainText('Problem 10.3');
+  await expect(page.locator('.breadcrumb')).toContainText('Problem 10.3 (3 of 9)');
   const labels = page.locator('tr[data-row] .tab-label-input');
   await expect(labels).toHaveCount(3);
   await expect(labels.first()).toHaveValue('Catering client pays invoice');
