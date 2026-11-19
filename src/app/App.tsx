@@ -11,6 +11,7 @@ import { CheatSheetPage } from './pages/CheatSheetPage';
 import { DefinitionsPage } from './pages/DefinitionsPage';
 import { GlossaryPopover } from './GlossaryPopover';
 import { CheatSheetDrawer } from './CheatSheetDrawer';
+import { SearchDialog } from './SearchDialog';
 import { problems } from '@content';
 import { useTheme } from './theme';
 import { AskGemini, type AskContext } from './AskGemini';
@@ -92,6 +93,26 @@ export function App() {
   const [drawer, setDrawer] = useState(false);
   const [theme, toggleTheme] = useTheme();
   const closeDrawer = useCallback(() => setDrawer(false), []);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  // ⌘K / Ctrl-K anywhere toggles search; "/" opens it when you're not typing in a field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+        return;
+      }
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      setSearchOpen(true);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   // The section list: ☰ shows/hides it on every page. Phones open it over the page; on wider screens the
   // choice is remembered; workspaces (sandbox, spreadsheet) always start with it hidden.
@@ -166,6 +187,16 @@ export function App() {
         >
           Sandbox
         </a>
+        <button
+          type="button"
+          className="search-btn"
+          onClick={() => setSearchOpen(true)}
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Meta+K Control+K /"
+          title="Search titles (⌘K or /)"
+        >
+          Search<kbd className="hide-narrow">⌘K</kbd>
+        </button>
         <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog">
           Cheat sheet
         </button>
@@ -297,13 +328,13 @@ export function App() {
         </nav>
         <main className={mainClass(route)} id="main" tabIndex={-1}>
           {route.name === 'home' && <HomePage />}
-          {route.name === 'section' && <SectionPage id={route.id} />}
+          {route.name === 'section' && <SectionPage id={route.id} at={route.at} />}
           {route.name === 'problem' && (
             <ProblemPage key={route.id} id={route.id} attempt={route.attempt} />
           )}
           {route.name === 'sandbox' && <SandboxPage data={route.data} />}
           {route.name === 'sheet' && <SheetPage data={route.data} entity={route.entity} />}
-          {route.name === 'cheatsheet' && <CheatSheetPage />}
+          {route.name === 'cheatsheet' && <CheatSheetPage at={route.at} />}
           {route.name === 'definitions' && <DefinitionsPage id={route.id} />}
           {route.name === 'animations' && <AnimationGallery />}
           {route.name === 'not-found' && (
@@ -314,6 +345,7 @@ export function App() {
         </main>
       </div>
       {drawer && <CheatSheetDrawer onClose={closeDrawer} />}
+      {searchOpen && <SearchDialog onClose={closeSearch} />}
       <GlossaryPopover />
       <AskGemini context={askContext} />
     </>

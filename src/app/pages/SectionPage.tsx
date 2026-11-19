@@ -5,19 +5,13 @@ import { href } from '../router';
 import { problemNumber } from '../problemNumber';
 import { animations } from '../../components/animations';
 import { DifficultyBadge, KindBadge, ROLE_BLURB, ROLE_LABEL, ROLE_ORDER } from '../badges';
-
-/** Which step-through animations appear on which section page (VISION-2 §9). */
-const SECTION_ANIMATIONS: Record<string, string[]> = {
-  '03-t-accounts': ['cash-to-checking'],
-  '04-perspectives': ['bank-view-deposit'],
-  '06-loans': ['loan-creates-deposit'],
-  '08-accruals': ['daily-accrual'],
-  '11-fintech': ['fbo-gross-up'],
-};
+import { SECTION_ANIMATIONS, calloutAnchor, LENS_ANCHOR, watchAnchor } from '../sectionAnimations';
+import { useScrollToAt } from '../useScrollToAt';
 
 const isStub = (md: string) => /^\s*_?coming soon\.?_?\s*$/i.test(md);
 
-export function SectionPage({ id }: { id: string }) {
+export function SectionPage({ id, at }: { id: string; at?: string }) {
+  useScrollToAt(at, id);
   const idx = sections.findIndex((s) => s.id === id);
   const section = sections[idx];
   if (!section)
@@ -77,7 +71,7 @@ export function SectionPage({ id }: { id: string }) {
                 </section>
               )}
               {(section.callouts ?? []).map((c, i) => (
-                <aside key={i} className="callout" aria-label={c.title}>
+                <aside key={i} id={calloutAnchor(i)} className="callout" aria-label={c.title}>
                   <h3>{c.title}</h3>
                   <RichMarkdown text={c.body} />
                 </aside>
@@ -87,7 +81,7 @@ export function SectionPage({ id }: { id: string }) {
         </div>
 
         {section.lens && (
-          <aside className="callout lens" aria-label="Ledger engineer's lens">
+          <aside id={LENS_ANCHOR} className="callout lens" aria-label="Ledger engineer's lens">
             <h3>Ledger engineer’s lens</h3>
             <Markdown text={section.lens} />
           </aside>
@@ -101,7 +95,12 @@ export function SectionPage({ id }: { id: string }) {
         if (!anim) return null;
         const Anim = anim.component;
         return (
-          <section key={aid} className="animation-block" aria-label={`Animation: ${anim.title}`}>
+          <section
+            key={aid}
+            id={watchAnchor(aid)}
+            className="animation-block"
+            aria-label={`Animation: ${anim.title}`}
+          >
             <h2>Watch it: {anim.title}</h2>
             <Anim />
           </section>

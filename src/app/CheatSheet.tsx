@@ -157,13 +157,17 @@ export function CheatSheetSvg() {
   );
 }
 
+/** Ids for the cheat-sheet page's blocks (`#/cheatsheet?at=…`, used by search). Only the full page sets them. */
+export const CHEATSHEET_ANCHORS = { dealer: 'dealer', contra: 'contra' } as const;
+
 export function CheatSheetBody({ heading = 'h1' }: { heading?: 'h1' | 'h2' }): ReactNode {
   const H = heading;
+  const page = heading === 'h1';
   return (
     <>
       <H>Cheat sheet</H>
       <CheatSheetSvg />
-      <h3>Mnemonic: DEALER</h3>
+      <h3 id={page ? CHEATSHEET_ANCHORS.dealer : undefined}>Mnemonic: DEALER</h3>
       <ul className="dealer" aria-label="DEALER mnemonic">
         {[
           ['D', 'Dividends', 'dr'],
@@ -180,7 +184,7 @@ export function CheatSheetBody({ heading = 'h1' }: { heading?: 'h1' | 'h2' }): R
           </li>
         ))}
       </ul>
-      <h3>Contra accounts</h3>
+      <h3 id={page ? CHEATSHEET_ANCHORS.contra : undefined}>Contra accounts</h3>
       <p>
         A contra account has the <strong>opposite</strong> normal side of its parent and reduces it.
         Example: Allowance for Doubtful Accounts (credit-normal) reduces Accounts Receivable

@@ -1,17 +1,18 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Hash routes: #/  #/s/<sectionId>  #/p/<problemId>?a=<attempt>  #/sandbox?d=<state>  #/cheatsheet
+ * Hash routes: #/  #/s/<sectionId>?at=<element id>  #/p/<problemId>?a=<attempt>  #/sandbox?d=<state>
+ * #/cheatsheet?at=<element id> — `at` scrolls to a block on the page (search results deep-link with it).
  * #/sheet?d=<state>&e=<entity index> — the full-screen spreadsheet view of the same sandbox state.
  */
 export type Route =
   | { name: 'home' }
-  | { name: 'section'; id: string }
+  | { name: 'section'; id: string; at?: string }
   | { name: 'problem'; id: string; attempt?: string }
   | { name: 'sandbox'; data?: string }
   | { name: 'sheet'; data?: string; entity: number }
   | { name: 'definitions'; id?: string }
-  | { name: 'cheatsheet' }
+  | { name: 'cheatsheet'; at?: string }
   | { name: 'animations' }
   | { name: 'not-found' };
 
@@ -20,7 +21,8 @@ export function parseHash(hash: string): Route {
   const params = new URLSearchParams(query);
   const parts = path.split('/').filter(Boolean);
   if (parts.length === 0) return { name: 'home' };
-  if (parts[0] === 's' && parts[1]) return { name: 'section', id: parts[1] };
+  const at = params.get('at') ?? undefined;
+  if (parts[0] === 's' && parts[1]) return { name: 'section', id: parts[1], ...(at ? { at } : {}) };
   if (parts[0] === 'p' && parts[1])
     return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
   if (parts[0] === 'sandbox') return { name: 'sandbox', data: params.get('d') ?? undefined };
@@ -29,14 +31,14 @@ export function parseHash(hash: string): Route {
     return { name: 'sheet', data: params.get('d') ?? undefined, entity: Number.isInteger(e) && e > 0 ? e : 0 };
   }
   if (parts[0] === 'definitions') return { name: 'definitions', id: parts[1] };
-  if (parts[0] === 'cheatsheet') return { name: 'cheatsheet' };
+  if (parts[0] === 'cheatsheet') return { name: 'cheatsheet', ...(at ? { at } : {}) };
   if (parts[0] === 'animations') return { name: 'animations' };
   return { name: 'not-found' };
 }
 
 export const href = {
   home: () => '#/',
-  section: (id: string) => `#/s/${id}`,
+  section: (id: string, at?: string) => `#/s/${id}${at ? `?at=${encodeURIComponent(at)}` : ''}`,
   problem: (id: string, attempt?: string) => `#/p/${id}${attempt ? `?a=${attempt}` : ''}`,
   sandbox: (data?: string) => `#/sandbox${data ? `?d=${data}` : ''}`,
   sheet: (data?: string, entity = 0) => {
@@ -44,7 +46,7 @@ export const href = {
     return `#/sheet${q ? `?${q}` : ''}`;
   },
   definitions: (id?: string) => `#/definitions${id ? `/${id}` : ''}`,
-  cheatsheet: () => '#/cheatsheet',
+  cheatsheet: (at?: string) => `#/cheatsheet${at ? `?at=${encodeURIComponent(at)}` : ''}`,
   animations: () => '#/animations',
 };
 
