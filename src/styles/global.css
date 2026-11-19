@@ -951,3 +951,99 @@ textarea {
 .breadcrumb-of {
   color: var(--muted);
 }
+/* Floating "chat with this page" tip (Gemini in Chrome) */
+.ask-gemini {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: calc(100vw - 32px);
+}
+.ask-toggle {
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+}
+.ask-toggle[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+.ask-panel {
+  width: 340px;
+  max-width: 100%;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+}
+.ask-panel p {
+  margin: 0 0 var(--space-2);
+}
+.ask-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.ask-head button {
+  padding: 0.1rem 0.4rem;
+}
+.ask-badge {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.5rem;
+  font-weight: 600;
+}
+.ask-steps {
+  margin: 0 0 var(--space-2);
+  padding-left: 1.2rem;
+}
+.ask-note {
+  color: var(--fg);
+}
+.ask-sub {
+  color: var(--muted);
+  margin-top: var(--space-3) !important;
+}
+.ask-questions {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: grid;
+  gap: var(--space-1, 0.25rem);
+}
+.ask-q {
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+  background: var(--surface-2);
+}
+.ask-copied {
+  color: var(--ok);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.ask-fine {
+  color: var(--muted);
+  font-size: 0.8em;
+}
+@media (max-width: 860px) {
+  .ask-gemini:not(.open) .ask-label {
+    display: none;
+  }
+}
+@media print {
+  .ask-gemini {
+    display: none;
+  }
+}
