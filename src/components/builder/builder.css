@@ -696,26 +696,27 @@ tr.tab-hl-row > * {
 
 /* One Dr = Cr status bar above the grid (replaces the per-row "Dr = Cr?" column): quiet when all is well,
    unmistakable when a row doesn't balance. */
+/* The running Dr = Cr check: quiet coloured text under the grid (no banner). */
 .tab-balance-bar {
-  margin: 0 0 0.4rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: 6px;
+  margin: 0.35rem 0 0;
+  padding: 0;
   font-size: 0.85rem;
-  border: 1px solid transparent;
+  text-align: left;
 }
 .tab-balance-bar.is-ok {
   color: var(--tab-ok);
-  background: color-mix(in srgb, var(--tab-ok) 9%, transparent);
 }
 .tab-balance-bar.is-bad {
   color: var(--tab-err);
   font-weight: 650;
-  background: color-mix(in srgb, var(--tab-err) 10%, transparent);
-  border-color: color-mix(in srgb, var(--tab-err) 45%, transparent);
 }
 .tab-balance-bar.is-empty {
   color: var(--muted, #6b6b70);
-  background: color-mix(in srgb, var(--border, #d9d6cf) 25%, transparent);
+}
+.tab-grid .tab-check-row td {
+  border: 0;
+  background: none;
+  padding: 0 0.3rem;
 }
 .tab-row-bad {
   color: var(--tab-err);

@@ -280,12 +280,9 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
     .map((r, ri) => ({ r, ri, t: engine.rowTotals(r) }))
     .filter(({ r, t }) => r.postings.length > 0 && !t.balanced);
   const anyPosted = rows.some((r) => r.postings.length > 0);
-  const balanceBar = (
-    <p
-      className={`tab-balance-bar ${!anyPosted ? 'is-empty' : unbalanced.length ? 'is-bad' : 'is-ok'}`}
-      role="status"
-      aria-live="polite"
-    >
+  const balanceClass = `tab-balance-bar ${!anyPosted ? 'is-empty' : unbalanced.length ? 'is-bad' : 'is-ok'}`;
+  const balanceText = (
+    <>
       {!anyPosted ? (
         <>Each row’s debits must equal its credits.</>
       ) : unbalanced.length === 0 ? (
@@ -300,6 +297,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             .join(' · ')}
         </>
       )}
+    </>
+  );
+  // The Dr = Cr check sits under the grid, starting at the first account column (plain text, no banner);
+  // with no grid to sit in (no accounts yet, or Journal view) it goes under the work area instead.
+  const inGrid = !showJournal && placed.length > 0;
+  const balanceBar = (
+    <p className={balanceClass} role="status" aria-live="polite">
+      {balanceText}
     </p>
   );
   const unbalancedIds = new Set(unbalanced.map(({ r }) => r.id));
@@ -544,6 +549,14 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             </th>
             {eachCol((c) => sideCells(c.accountId, balanceOf.get(c.accountId) ?? 0, 'bal', true), eqCell)}
           </tr>
+          <tr className="tab-check-row">
+            <td />
+            <td colSpan={placed.length * 2 + (dividerAt >= 0 ? 1 : 0)}>
+              <p className={balanceClass} role="status" aria-live="polite">
+                {balanceText}
+              </p>
+            </td>
+          </tr>
         </tfoot>
       )}
     </table>
@@ -601,7 +614,6 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           </div>
         )}
         <div className="tab-grid-area">
-        {balanceBar}
         <div
           className="tab-scroll"
           ref={gridRef}
@@ -611,6 +623,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         >
           {showJournal ? <JournalView rows={rows} nameOf={nameOf} /> : grid}
         </div>
+        {!inGrid && balanceBar}
         </div>
         {showBalanceSheets && (
           <div className="tab-bs-after">
