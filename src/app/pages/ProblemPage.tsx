@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { recordResult, statusOf, useProgress } from '../progress';
 import type {
   Account,
@@ -36,20 +36,36 @@ function ProblemStatusTag({ id }: { id: string }) {
   );
 }
 
-/** "Mark as done" for a worked example (counts as solved in your progress). */
-function WorkedDone({ id }: { id: string }) {
-  const done = statusOf(useProgress(), id) === 'solved';
-  return (
-    <div className="toolbar">
-      {done ? (
-        <span className="problem-status is-solved">✓ Done</span>
-      ) : (
-        <button type="button" className="primary" onClick={() => recordResult(id, true)}>
-          ✓ Mark as done
-        </button>
-      )}
-    </div>
-  );
+/** How long the end of a worked example has to stay on screen before it counts as read. */
+export const WORKED_READ_MS = 3000;
+
+/** A booking worked example: there's nothing to check, so it counts as done once you've read it through. */
+export const isWorkedExample = (p: Problem) => p.kind === 'booking' && p.role === 'worked';
+
+/**
+ * Invisible marker at the end of a worked example: when it has stayed in view for a few seconds (you scrolled
+ * down and lingered on "Why does this work?"), the example counts as done. Clicking Next also does.
+ */
+function WorkedReadMarker({ id }: { id: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver !== 'function') return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const io = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting) timer ??= setTimeout(() => recordResult(id, true), WORKED_READ_MS);
+      else {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      clearTimeout(timer);
+    };
+  }, [id]);
+  return <div ref={ref} className="worked-read-marker" aria-hidden="true" />;
 }
 
 export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
@@ -243,7 +259,12 @@ function ProblemFrame({
           <span />
         )}
         {next ? (
-          <a className="btn" href={href.problem(next.id)}>
+          <a
+            className="btn"
+            href={href.problem(next.id)}
+            // Moving on from a worked example counts as having done it.
+            onClick={isWorkedExample(problem) ? () => recordResult(problem.id, true) : undefined}
+          >
             {problemNumber(next.id)} {next.title} →
           </a>
         ) : (
@@ -436,7 +457,7 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
             <Markdown text={problem.explanation} />
           </section>
           {/* A worked example has nothing to check: you finish it by reading it through, then marking it done. */}
-          <WorkedDone id={problem.id} />
+          <WorkedReadMarker id={problem.id} />
         </>
       ) : (
         <>
