@@ -102,6 +102,26 @@ describe('Journal view (the editor)', () => {
   });
 });
 
+describe('Accounts panel', () => {
+  it('manual order: a list, so ↑ ↓ move an account earlier / later (the order the Grid shows left → right)', () => {
+    mount('journal', loan());
+    expect(screen.queryByRole('button', { name: /^Move (?!entry).* (up|down)$/ })).toBeNull(); // auto order
+    fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
+    expect(screen.queryByRole('button', { name: /^Move (?!entry).* (left|right)$/ })).toBeNull();
+    const names = () =>
+      [...document.querySelectorAll<HTMLInputElement>('.sbx-accounts tbody input')].map(
+        (i) => i.value,
+      );
+    const before = names();
+    fireEvent.click(screen.getByRole('button', { name: `Move ${before[1]} up` }));
+    expect(names().slice(0, 2)).toEqual([before[1], before[0]]);
+    expect(screen.getByRole('button', { name: `Move ${before[1]} up` })).toHaveProperty(
+      'disabled',
+      true,
+    );
+  });
+});
+
 describe('party bar (Journal and Grid)', () => {
   it('tabs pick whose books; add, duplicate, rename and remove a party', () => {
     mount('journal', loan());

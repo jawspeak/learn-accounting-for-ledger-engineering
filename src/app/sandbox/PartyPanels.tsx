@@ -160,20 +160,23 @@ export function AccountsEditor({
                         <button
                           type="button"
                           className="btn"
-                          aria-label={`Move ${a.name} left`}
+                          // A list, so up / down — the same order the Grid shows left → right.
+                          aria-label={`Move ${a.name} up`}
+                          title="Earlier in the order (left in the Grid)"
                           disabled={i === 0}
                           onClick={() => onChange(moveAccountInOrder(entity, a.id, -1))}
                         >
-                          ←
+                          <span aria-hidden="true">↑</span>
                         </button>
                         <button
                           type="button"
                           className="btn"
-                          aria-label={`Move ${a.name} right`}
+                          aria-label={`Move ${a.name} down`}
+                          title="Later in the order (right in the Grid)"
                           disabled={i === listed.length - 1}
                           onClick={() => onChange(moveAccountInOrder(entity, a.id, 1))}
                         >
-                          →
+                          <span aria-hidden="true">↓</span>
                         </button>
                       </>
                     )}
