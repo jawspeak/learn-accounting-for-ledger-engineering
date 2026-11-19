@@ -14,7 +14,7 @@ import { ROLE_LABEL } from '../app/badges';
 import { CHEATSHEET_ANCHORS } from '../app/CheatSheet';
 import { problemNumber } from '../app/problemNumber';
 import { href } from '../app/router';
-import { EXAMPLES } from '../app/sandbox/examples';
+import { EXAMPLES } from '../../content/sandbox-examples';
 import { lensKeywords } from '../../content/search-keywords';
 import {
   SECTION_ANIMATIONS,

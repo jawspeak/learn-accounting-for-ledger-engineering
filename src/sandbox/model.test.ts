@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { SandboxEntity } from '@contracts';
 import { engine } from '@engine';
 import { entities } from '@content';
-import { EXAMPLES } from './examples';
+import { EXAMPLES } from '../../content/sandbox-examples';
 import {
   applyAccounts,
   applyTemplate,

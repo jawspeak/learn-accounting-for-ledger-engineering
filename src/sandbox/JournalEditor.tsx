@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { AccountType, SandboxEntity, Side } from '@contracts';
-import { AmountInput } from '../../components/builder/AmountInput';
-import { formatDollars } from '../../components/builder/model';
-import { addAccount } from '../sheet/model';
-import { useScrollToAt } from '../useScrollToAt';
+import { AmountInput } from '../components/builder/AmountInput';
+import { formatDollars } from '../components/builder/model';
+import { addAccount } from './grid/model';
+import { useScrollToAt } from '../lib/useScrollToAt';
 import {
   ACCOUNT_TYPES,
   addEntry,

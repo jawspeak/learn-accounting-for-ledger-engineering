@@ -15,9 +15,6 @@ import type {
 } from '@contracts';
 import { engine } from '@engine';
 
-/** Warn (non-blocking) once the shareable URL gets longer than this. */
-export const URL_WARN_LENGTH = 6000;
-
 export const ACCOUNT_TYPES: { type: AccountType; label: string }[] = [
   { type: 'asset', label: 'Asset' },
   { type: 'contra-asset', label: 'Contra-asset' },
@@ -65,7 +62,7 @@ export function newEntity(existing: SandboxEntity[], name = 'New entity'): Sandb
     ),
     name,
     accounts: [],
-    rows: [{ id: 'r1', postings: [] }],
+    rows: [],
     showBalanceSheets: false,
   };
 }
@@ -130,7 +127,10 @@ export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity 
 }
 
 /** Copy a content entity's accounts into a sandbox entity (accounts already present by id are kept). */
-export function applyTemplate(e: SandboxEntity, coa: EntityCoA): SandboxEntity {
+export function applyTemplate(
+  e: SandboxEntity,
+  coa: Pick<EntityCoA, 'name' | 'accounts'>,
+): SandboxEntity {
   const have = new Set(e.accounts.map((a) => a.id));
   const added = coa.accounts.filter((a) => !have.has(a.id)).map((a) => ({ ...a }));
   const pristineName = e.accounts.length === 0 && /^(new entity|you)( \d+)?$/i.test(e.name.trim());

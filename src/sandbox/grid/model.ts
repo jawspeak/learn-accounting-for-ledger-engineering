@@ -11,7 +11,7 @@ import type {
 } from '@contracts';
 import { engine } from '@engine';
 import { nextRowId, setCell } from '../../components/builder/model';
-import { typeResolver, uniqueId } from '../sandbox/model';
+import { typeResolver, uniqueId } from '../model';
 
 /** The sheet always shows at least this many event rows, so there's room to type. */
 export const MIN_ROWS = 12;

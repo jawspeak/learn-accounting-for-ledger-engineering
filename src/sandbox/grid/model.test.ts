@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SandboxEntity } from '@contracts';
 import { engine } from '@engine';
-import { EXAMPLES } from '../sandbox/examples';
+import { EXAMPLES } from '../../../content/sandbox-examples';
 import { parseDollars, formatDollars } from '../../components/builder/model';
 import {
   isManualOrder,
@@ -11,7 +11,7 @@ import {
   orderedIds,
   removeRow,
   setManualOrder,
-} from '../sandbox/model';
+} from '../model';
 import {
   addAccount,
   ensureRows,

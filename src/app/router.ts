@@ -1,4 +1,7 @@
 import { useSyncExternalStore } from 'react';
+import type { SandboxView } from '../sandbox';
+
+export type { SandboxView };
 
 /**
  * Hash routes: #/  #/s/<sectionId>?at=<element id>  #/p/<problemId>?a=<attempt>
@@ -8,7 +11,6 @@ import { useSyncExternalStore } from 'react';
  *   #/taccounts?d=&at=    T-accounts — every party's ledger, read-only
  *   #/sheet?d=&e=         Grid — one party as a wide spreadsheet
  */
-export type SandboxView = 'journal' | 'taccounts' | 'grid';
 const VIEW_PATH: Record<SandboxView, string> = {
   journal: 'sandbox',
   taccounts: 'taccounts',

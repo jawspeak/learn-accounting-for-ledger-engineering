@@ -1,11 +1,11 @@
 import type { Account, AccountId, SandboxEntity, SandboxState, Side } from '@contracts';
 import { engine } from '@engine';
-import { BalanceSheetPanel } from '../../components/builder/BalanceSheetPanel';
-import { formatDollars } from '../../components/builder/model';
-import '../../components/animations/animations.css';
-import { href } from '../router';
-import { useScrollToAt } from '../useScrollToAt';
+import { BalanceSheetPanel } from '../components/builder/BalanceSheetPanel';
+import { formatDollars } from '../components/builder/model';
+import '../components/animations/animations.css';
+import { useScrollToAt } from '../lib/useScrollToAt';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
+import { SandboxLink } from './nav';
 import { entryAnchor } from './JournalEditor';
 import { isManualOrder, orderedAccounts, setManualOrder, summarize, typeResolver } from './model';
 import { EntitySummaryLine, typeLabel } from './PartyPanels';
@@ -22,13 +22,10 @@ const other = (s: Side): Side => (s === 'dr' ? 'cr' : 'dr');
  */
 export function LedgerView({
   state,
-  data,
   onEntityChange,
   at,
 }: {
   state: SandboxState;
-  /** The encoded state, for links back to the Journal. */
-  data: string;
   onEntityChange(i: number, e: SandboxEntity): void;
   at?: string;
 }) {
@@ -36,13 +33,7 @@ export function LedgerView({
   return (
     <div className="lv">
       {state.entities.map((e, pi) => (
-        <PartyLedger
-          key={e.id}
-          entity={e}
-          index={pi}
-          data={data}
-          onChange={(x) => onEntityChange(pi, x)}
-        />
+        <PartyLedger key={e.id} entity={e} index={pi} onChange={(x) => onEntityChange(pi, x)} />
       ))}
     </div>
   );
@@ -51,12 +42,10 @@ export function LedgerView({
 function PartyLedger({
   entity: e,
   index,
-  data,
   onChange,
 }: {
   entity: SandboxEntity;
   index: number;
-  data: string;
   onChange(e: SandboxEntity): void;
 }) {
   const typeOf = typeResolver(e);
@@ -70,7 +59,6 @@ function PartyLedger({
   const liab = shown.filter((a) => a.type === 'liability' || a.type === 'contra-liability');
   const eq = shown.filter((a) => !left.includes(a) && !liab.includes(a));
   const nameOf = (id: AccountId) => e.accounts.find((a) => a.id === id)?.name ?? id;
-  const journalLink = (n: number) => href.sandbox(data, index, entryAnchor(n));
   // The same rows in every T of this party, so a row means the same thing everywhere: the opening balance
   // (if any T has one), then one row per entry, in order (blank where the entry doesn't touch the account),
   // then the ending balance.
@@ -93,7 +81,7 @@ function PartyLedger({
               account={a}
               balance={balances}
               layout={layout}
-              journalLink={journalLink}
+              party={index}
             />
           ))}
         </div>
@@ -121,15 +109,17 @@ function PartyLedger({
           />
           Show balance sheets
         </label>
-        <a className="lv-edit" href={href.sandbox(data, index)}>
+        <SandboxLink className="lv-edit" to={{ view: 'journal', party: index }}>
           Edit in Journal
-        </a>
+        </SandboxLink>
       </div>
       <EntitySummaryLine summary={summarize(e)} rows={e.rows.length} />
       {shown.length === 0 ? (
         <p className="note">
-          No postings yet. Write entries in the <a href={href.sandbox(data, index)}>Journal</a> or
-          the <a href={href.sheet(data, index)}>Grid</a>, and each account you use gets a T here.
+          No postings yet. Write entries in the{' '}
+          <SandboxLink to={{ view: 'journal', party: index }}>Journal</SandboxLink> or the{' '}
+          <SandboxLink to={{ view: 'grid', party: index }}>Grid</SandboxLink>, and each account you
+          use gets a T here.
         </p>
       ) : (
         <div className="lv-ledger">
@@ -179,13 +169,14 @@ function TAccount({
   account: a,
   balance,
   layout,
-  journalLink,
+  party,
 }: {
   entity: SandboxEntity;
   account: Account;
   balance: { lines: { accountId: AccountId; amount: number }[] };
   layout: Layout;
-  journalLink(n: number): string;
+  /** Which party this T belongs to (its entry numbers link to that party's Journal). */
+  party: number;
 }) {
   const normal = engine.normalSide(a.type);
   const bal = balance.lines.find((l) => l.accountId === a.id)?.amount ?? 0;
@@ -245,13 +236,13 @@ function TAccount({
               {SIDES.map((s) =>
                 l[s] ? (
                   <span key={s} className={`tacct__cell tacct__${s}`}>
-                    <a
+                    <SandboxLink
                       className="tacct__ref lv-ref"
-                      href={journalLink(l.n)}
+                      to={{ view: 'journal', party, at: entryAnchor(l.n) }}
                       title={`Entry ${l.n}${l.label ? `: ${l.label}` : ''} — open in the Journal`}
                     >
                       ({l.n})
-                    </a>
+                    </SandboxLink>
                     <span className="tacct__amt">{formatDollars(l[s])}</span>
                     <span className="visually-hidden"> {s === 'dr' ? 'debit' : 'credit'}</span>
                   </span>

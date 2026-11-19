@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { SandboxState } from '@contracts';
 import { engine } from '@engine';
-import { parseHash, type SandboxView } from '../router';
-import { SandboxApp, URL_DEBOUNCE_MS } from './SandboxApp';
-import { EXAMPLES } from './examples';
-import { addEntry, emptyState, persistable, setLineAccount, setLineAmount } from './model';
+import { parseHash, type SandboxView } from './router';
+import SandboxRoute, { URL_DEBOUNCE_MS } from './SandboxRoute';
+import { EXAMPLES } from '../../content/sandbox-examples';
+import { addEntry, emptyState, persistable, setLineAccount, setLineAmount } from '../sandbox/model';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -26,7 +26,7 @@ function urlState(): SandboxState | null {
 }
 const flush = () => act(() => vi.advanceTimersByTime(URL_DEBOUNCE_MS + 10));
 const mount = (view: SandboxView, s?: SandboxState, entity = 0) =>
-  render(<SandboxApp view={view} data={s ? engine.encodeState(s) : undefined} entity={entity} />);
+  render(<SandboxRoute view={view} data={s ? engine.encodeState(s) : undefined} entity={entity} />);
 const loan = () => EXAMPLES.find((x) => x.id === 'loan')!.build();
 
 describe('Journal view (the editor)', () => {

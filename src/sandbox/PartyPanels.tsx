@@ -1,8 +1,7 @@
 /** Party-level panels shared by the Sandbox views: checks summary, template picker, accounts list, opening balances. */
 import { Fragment, useId, useState } from 'react';
 import type { Account, AccountType, SandboxEntity } from '@contracts';
-import { entities as contentEntities } from '@content';
-import { formatDollars, parseDollars } from '../../components/builder/model';
+import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
   accountUsed,
@@ -52,21 +51,26 @@ export function EntitySummaryLine({
   );
 }
 
-export function TemplatePicker({ onPick }: { onPick(entityId: string): void }) {
-  const list = Object.values(contentEntities).sort((a, b) =>
-    a.id === 'you' ? -1 : b.id === 'you' ? 1 : a.name.localeCompare(b.name),
-  );
+/** "Start from a template": the host's charts of accounts, in the host's order. */
+export function TemplatePicker({
+  templates,
+  onPick,
+}: {
+  templates: { id: string; name: string; accounts: Account[] }[];
+  onPick(t: { id: string; name: string; accounts: Account[] }): void;
+}) {
   return (
     <label className="sbx-inline">
       Start from a template:
       <select
         value=""
         onChange={(e) => {
-          if (e.target.value) onPick(e.target.value);
+          const t = templates.find((x) => x.id === e.target.value);
+          if (t) onPick(t);
         }}
       >
         <option value="">Choose…</option>
-        {list.map((c) => (
+        {templates.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name} ({c.accounts.length} accounts)
           </option>

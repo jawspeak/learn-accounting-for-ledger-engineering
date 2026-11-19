@@ -6,7 +6,7 @@ import { problemNumber } from '../problemNumber';
 import { animations } from '../../components/animations';
 import { DifficultyBadge, KindBadge, ROLE_BLURB, ROLE_LABEL, ROLE_ORDER } from '../badges';
 import { SECTION_ANIMATIONS, calloutAnchor, LENS_ANCHOR, watchAnchor } from '../sectionAnimations';
-import { useScrollToAt } from '../useScrollToAt';
+import { useScrollToAt } from '../../lib/useScrollToAt';
 
 const isStub = (md: string) => /^\s*_?coming soon\.?_?\s*$/i.test(md);
 

@@ -10,7 +10,7 @@ import {
   orderedAccounts,
   orderedIds,
   removeRow,
-} from '../sandbox/model';
+} from '../model';
 import {
   addAccount,
   contraBase,

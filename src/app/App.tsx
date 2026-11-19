@@ -1,11 +1,10 @@
 import { AnimationGallery } from '../components/animations';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { sections } from '@content';
 import { href, useRoute } from './router';
 import { HomePage } from './pages/HomePage';
 import { SectionPage } from './pages/SectionPage';
 import { ProblemPage } from './pages/ProblemPage';
-import { SandboxApp } from './sandbox/SandboxApp';
 import { CheatSheetPage } from './pages/CheatSheetPage';
 import { DefinitionsPage } from './pages/DefinitionsPage';
 import { GlossaryPopover } from './GlossaryPopover';
@@ -18,6 +17,9 @@ import { problemNumber } from './problemNumber';
 import { ProgressBar } from './ProgressBar';
 import { ProgressSummary } from './ProgressSummary';
 import { statusOf, useProgress } from './progress';
+
+/** The Sandbox is its own module and chunk: loaded the first time someone opens it. */
+const SandboxRoute = lazy(() => import('./SandboxRoute'));
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
@@ -358,7 +360,14 @@ export function App() {
             <ProblemPage key={route.id} id={route.id} attempt={route.attempt} />
           )}
           {route.name === 'sandbox' && (
-            <SandboxApp view={route.view} data={route.data} entity={route.entity} at={route.at} />
+            <Suspense fallback={<p className="note">Loading the Sandbox…</p>}>
+              <SandboxRoute
+                view={route.view}
+                data={route.data}
+                entity={route.entity}
+                at={route.at}
+              />
+            </Suspense>
           )}
           {route.name === 'cheatsheet' && <CheatSheetPage at={route.at} />}
           {route.name === 'definitions' && <DefinitionsPage id={route.id} />}

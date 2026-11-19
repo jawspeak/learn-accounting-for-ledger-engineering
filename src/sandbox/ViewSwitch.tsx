@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { href, type SandboxView } from '../router';
+import { SandboxLink, type SandboxView } from './nav';
 import './viewSwitch.css';
 
 /**
@@ -82,31 +82,23 @@ const VIEWS: [SandboxView, ComponentType][] = [
   ['grid', GridIcon],
 ];
 
-/** "Sandbox · [Journal | T-accounts | Grid]" — the same header on every view. `data` = the encoded state. */
-export function ViewSwitch({
-  current,
-  data,
-  entity = 0,
-}: {
-  current: SandboxView;
-  data?: string;
-  entity?: number;
-}) {
+/** "Sandbox · [Journal | T-accounts | Grid]" — the same header on every view; links resolve via the host. */
+export function ViewSwitch({ current, party = 0 }: { current: SandboxView; party?: number }) {
   return (
     <div className="vs">
       <span className="vs-tool">Sandbox</span>
       <nav className="vs-switch" aria-label="Sandbox view">
         {VIEWS.map(([v, Icon]) => (
-          <a
+          <SandboxLink
             key={v}
-            href={href.sandboxView(v, data, v === 'taccounts' ? 0 : entity)}
+            to={{ view: v, party: v === 'taccounts' ? 0 : party }}
             className={`vs-opt${v === current ? ' is-current' : ''}`}
             aria-current={v === current ? 'page' : undefined}
             title={VIEW_HINT[v]}
           >
             <Icon />
             {VIEW_NAME[v]}
-          </a>
+          </SandboxLink>
         ))}
       </nav>
       <span className="vs-note">Free practice — not graded. Switching views keeps your work.</span>
