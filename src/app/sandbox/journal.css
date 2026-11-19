@@ -157,6 +157,62 @@
   align-self: flex-start;
   font-weight: 600;
 }
+/* Read like a journal, edit like the Grid: with a mouse, a chosen account and an amount look like plain text
+   (no border, no dropdown arrow) until you hover the line or focus the field; the line / entry tools appear
+   on hover or focus too. Touch screens can't hover, so there everything stays visible. */
+.jx-lines tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.jx-lines tbody tr:last-child {
+  border-bottom: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .jx .jx-quiet:not(.is-empty) {
+    border-color: transparent;
+    background-color: transparent;
+    transition:
+      border-color 0.12s,
+      background-color 0.12s;
+  }
+  .jx select.jx-quiet:not(.is-empty) {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  .jx-lines tr:hover .jx-quiet,
+  .jx .jx-quiet:focus {
+    border-color: var(--border);
+    background-color: var(--surface);
+  }
+  .jx-lines tr:hover select.jx-quiet,
+  .jx select.jx-quiet:focus {
+    appearance: auto;
+    -webkit-appearance: auto;
+  }
+  .jx .jx-quiet:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .jx-remove-line {
+    opacity: 0;
+  }
+  .jx-lines tr:hover .jx-remove-line,
+  .jx-lines tr:focus-within .jx-remove-line {
+    opacity: 1;
+  }
+  .jx-tools,
+  .jx-line-tools {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .jx-entry:hover .jx-tools,
+  .jx-entry:focus-within .jx-tools,
+  .jx-entry:hover .jx-line-tools,
+  .jx-entry:focus-within .jx-line-tools {
+    opacity: 1;
+  }
+}
+
 /* Phones: the account list shrinks and the amount columns narrow, so an entry fits without sideways scroll. */
 @media (max-width: 560px) {
   .jx-entry {

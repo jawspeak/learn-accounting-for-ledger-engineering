@@ -139,6 +139,9 @@ test('Open in Sandbox carries the problem accounts', async ({ page }) => {
   await expect(page).toHaveURL(/#\/sandbox\?d=/);
   // It opens in the Journal: the learner's entry, line by line.
   await expect(page.getByLabel('Entry 1 line 1 account')).toHaveValue('checking');
+  // Amounts read as money at rest and become a plain number to edit.
+  await expect(page.getByLabel('Entry 1 line 1 debit')).toHaveValue('$100');
+  await page.getByLabel('Entry 1 line 1 debit').focus();
   await expect(page.getByLabel('Entry 1 line 1 debit')).toHaveValue('100');
   await expect(page.getByLabel('Entry 1 line 2 account')).toHaveValue('cash');
   await expect(page.locator('#entry-1 .jx-status')).toContainText('Debits = credits');

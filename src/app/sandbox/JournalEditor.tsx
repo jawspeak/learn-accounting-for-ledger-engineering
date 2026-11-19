@@ -152,6 +152,8 @@ export function JournalEditor({
                         <td className="jx-acct">
                           <select
                             aria-label={`${line} account`}
+                            // Reads as plain text once chosen; looks like a control on hover / focus.
+                            className={`jx-quiet${p.accountId ? '' : ' is-empty'}`}
                             value={p.accountId}
                             onChange={(ev) => {
                               if (ev.target.value === NEW) setCreating(key);
@@ -187,9 +189,10 @@ export function JournalEditor({
                         {(['dr', 'cr'] as Side[]).map((s) => (
                           <td key={s} className="jx-amt">
                             <AmountInput
-                              className="jx-amount"
+                              className="jx-amount jx-quiet"
                               aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
                               allowCents
+                              formatAtRest
                               cents={p.side === s ? p.amount : 0}
                               onCentsChange={(c) => onChange(setLineAmount(e, ri, li, s, c))}
                             />
