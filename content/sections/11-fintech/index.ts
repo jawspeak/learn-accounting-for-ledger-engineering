@@ -20,9 +20,9 @@ In **Zap’s** books (the *[[gross-up]]* model):
 
 | Account | Type | Meaning |
 |---|---|---|
+| Cash: Operating | Asset | Zap’s own money. |
 | Cash: FBO (Restricted) | Asset | Customers’ money in the FBO account. Zap controls it, can’t spend it. |
 | Customer Balances Payable – *Alice/Bob/Carol* | Liability | What Zap owes each customer: their wallet balance. |
-| Cash: Operating | Asset | Zap’s own money. |
 | Clearing: Pending ACH Cash-outs | Liability | Cash-outs already deducted from a wallet but not yet settled out of the FBO account. |
 | Transaction Fee Revenue | Revenue | Zap’s earnings. |
 

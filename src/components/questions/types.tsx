@@ -1,4 +1,4 @@
-import type { AccountType, AttemptState } from '@contracts';
+import type { AccountType, AttemptState, EntityCoA } from '@contracts';
 import { Markdown } from '../../app/Markdown';
 import { RichMarkdown } from '../../app/RichMarkdown';
 
@@ -14,6 +14,8 @@ export interface QuestionInputProps<P> {
   wrongItems?: number[];
   /** Display names for entity accounts (statement-fill). */
   accountName?(id: string): string;
+  /** statement-fill: whose books — account types, CoA order and contra parents for the statement layout. */
+  entity?: EntityCoA;
 }
 
 export const ALL_TYPES: AccountType[] = [

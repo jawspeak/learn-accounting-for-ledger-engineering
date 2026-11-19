@@ -56,7 +56,7 @@ export function QuestionInput({
     case 'statement-fill': {
       const ent = entities[problem.entityId];
       const nameOf = (id: string) => ent?.accounts.find((a) => a.id === id)?.name ?? id;
-      return <StatementFill problem={problem} {...common} accountName={nameOf} />;
+      return <StatementFill problem={problem} {...common} accountName={nameOf} entity={ent} />;
     }
     case 'multiple-choice':
       return <MultipleChoice problem={problem} {...common} />;

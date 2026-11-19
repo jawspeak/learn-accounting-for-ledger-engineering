@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within as inside } from '@testing-library/react';
+import { problems } from '@content';
 import type { AttemptState } from '@contracts';
 import { QuestionInput, QuestionView, marksFor, type NonBookingProblem } from './QuestionView';
 import { stripAnswerWord } from './types';
@@ -139,6 +140,99 @@ describe('StatementFill', () => {
   });
 });
 
+describe('StatementFill — conventional statement layout', () => {
+  const bsNet = problems['09-bs-net'] as NonBookingProblem;
+  const type = (label: string, dollars: string) =>
+    fireEvent.change(screen.getByLabelText(`${label} amount`), { target: { value: dollars } });
+  const answerTable = () => screen.getByRole('table', { name: /Balance sheet after/ });
+
+  it('balance sheet: sections in order, accounts in CoA order, contras as "less", expenses inside equity', () => {
+    mount(bsNet);
+    const t = answerTable();
+    const heads = inside(t)
+      .getAllByRole('rowheader')
+      .map((h) => h.textContent);
+    expect(inside(t).getAllByRole('rowgroup').length).toBeGreaterThan(3);
+    expect(heads.indexOf('Cash')).toBeLessThan(heads.indexOf('Accounts Receivable'));
+    expect(heads.indexOf('Allowance for Doubtful Accounts (less)')).toBe(
+      heads.indexOf('Accounts Receivable') + 1,
+    );
+    expect(heads).toContain('Depreciation Expense (less)');
+    expect(heads.indexOf('Total assets')).toBeLessThan(heads.indexOf('Accounts Payable'));
+    expect(heads.at(-1)).toBe('Total liabilities and equity');
+    // The opening balances are a read-only balance sheet too.
+    expect(screen.getByRole('table', { name: 'Opening balance sheet' })).toBeTruthy();
+  });
+
+  it('live totals from the learner’s own numbers: net lines, section totals, A = L + E', () => {
+    mount(bsNet);
+    expect(screen.getByText(/totals and the A = L \+ E check update as you type/)).toBeTruthy();
+    type('Equipment', '12000');
+    type('Accumulated Depreciation: Equipment', '1200');
+    const netRow = inside(answerTable())
+      .getByRole('rowheader', { name: 'Equipment, net' })
+      .closest('tr')!;
+    expect(netRow.textContent).toContain('$10,800');
+    expect(screen.getByRole('status').textContent).toMatch(/✗ A ≠ L \+ E/);
+    for (const [label, v] of [
+      ['Cash', '5300'],
+      ['Accounts Receivable', '1700'],
+      ['Allowance for Doubtful Accounts', '150'],
+      ['Accounts Payable', '500'],
+      ['Paid-in Capital', '15000'],
+      ['Retained Earnings', '2400'],
+      ['Depreciation Expense', '200'],
+      ['Bad Debt Expense', '50'],
+    ] as const)
+      type(label, v);
+    expect(screen.getByRole('status').textContent).toMatch(
+      /✓ A = L \+ E: \$17,650 = \$500 \+ \$17,150/,
+    );
+    const totalAssets = inside(answerTable())
+      .getByRole('rowheader', { name: 'Total assets' })
+      .closest('tr')!;
+    expect(totalAssets.textContent).toContain('$17,650');
+  });
+
+  it('✓ / ✗ marks still follow the authored answer positions after re-ordering', () => {
+    const p = problems['10-december-trial-balance'] as NonBookingProblem & {
+      answer: { trialBalance: { accountId: string }[] };
+    };
+    const rentIdx = p.answer.trialBalance.findIndex((l) => l.accountId === 'rent-expense');
+    mount(p, { wrong: [rentIdx] });
+    const row = screen.getByRole('rowheader', { name: 'Rent Expense' }).closest('tr')!;
+    expect(row.className).toContain('is-wrong');
+    const heads = screen.getAllByRole('rowheader').map((h) => h.textContent);
+    expect(heads.indexOf('Rent Expense')).toBeLessThan(heads.indexOf('Wages Expense')); // CoA order
+  });
+
+  it('trial balance: live Σ Dr = Σ Cr row', () => {
+    mount(trialBalanceFx);
+    fireEvent.change(screen.getByLabelText('Checking Account debit'), { target: { value: '100' } });
+    expect(screen.getByRole('status').textContent).toMatch(
+      /✗ Total debits ≠ total credits: \$100 ≠ \$0/,
+    );
+    fireEvent.change(screen.getByLabelText('Net Worth credit'), { target: { value: '100' } });
+    expect(screen.getByRole('status').textContent).toMatch(/✓ Total debits = total credits/);
+  });
+
+  it('income statement: revenue, then expenses, then net income (or loss)', () => {
+    mount(problems['07-income-statement'] as NonBookingProblem);
+    const heads = screen.getAllByRole('rowheader').map((h) => h.textContent);
+    expect(heads.indexOf('Sales Revenue')).toBeLessThan(heads.indexOf('Cost of Goods Sold'));
+    expect(heads).toContain('Total expenses');
+    type('Sales Revenue', '9000');
+    type('Rent Expense', '1500');
+    expect(
+      screen.getByRole('rowheader', { name: 'Net income' }).closest('tr')!.textContent,
+    ).toContain('$7,500');
+    type('Wages Expense', '9000');
+    expect(
+      screen.getByRole('rowheader', { name: 'Net loss' }).closest('tr')!.textContent,
+    ).toContain('$1,500');
+  });
+});
+
 describe('MultipleChoice', () => {
   it('single select replaces', () => {
     const spy = mount(mcFx);
@@ -210,14 +304,24 @@ describe('instant feedback (multiple choice, Dr/Cr): graded on each pick, no Che
 
 describe('stripAnswerWord', () => {
   it('drops a stand-alone answer word, never one that is part of the sentence', () => {
-    expect(stripAnswerWord('Yes — the balance sheet grew on both sides.')).toBe('The balance sheet grew on both sides.');
-    expect(stripAnswerWord('No. The Fed holds one reserve balance.')).toBe('The Fed holds one reserve balance.');
-    expect(stripAnswerWord('Exactly — this is how lending creates money.')).toBe('This is how lending creates money.');
+    expect(stripAnswerWord('Yes — the balance sheet grew on both sides.')).toBe(
+      'The balance sheet grew on both sides.',
+    );
+    expect(stripAnswerWord('No. The Fed holds one reserve balance.')).toBe(
+      'The Fed holds one reserve balance.',
+    );
+    expect(stripAnswerWord('Exactly — this is how lending creates money.')).toBe(
+      'This is how lending creates money.',
+    );
     // These used to lose their first word and invert their meaning:
     expect(stripAnswerWord('No money left the bank.')).toBe('No money left the bank.');
-    expect(stripAnswerWord("No other depositor's balance changed.")).toBe("No other depositor's balance changed.");
+    expect(stripAnswerWord("No other depositor's balance changed.")).toBe(
+      "No other depositor's balance changed.",
+    );
     expect(stripAnswerWord('Right side, wrong account.')).toBe('Right side, wrong account.');
-    expect(stripAnswerWord("Can't be true: the left side grew.")).toBe("Can't be true: the left side grew.");
+    expect(stripAnswerWord("Can't be true: the left side grew.")).toBe(
+      "Can't be true: the left side grew.",
+    );
   });
 });
 

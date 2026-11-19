@@ -716,6 +716,69 @@ textarea {
 .stmt tr.is-wrong td {
   background: var(--err-soft);
 }
+/* Statements laid out the conventional way (fill-in problems): sections, less / net lines, totals, check. */
+.stmt-statement {
+  min-width: min(30rem, 100%);
+}
+.stmt-statement th[scope='row'] {
+  font-weight: 400;
+}
+.stmt-num {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.stmt-sec th {
+  padding-top: var(--space-3) !important;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stmt-less {
+  padding-left: 1.4rem !important;
+}
+.stmt-less-tag,
+.stmt-net th {
+  color: var(--muted);
+}
+.stmt-net th {
+  padding-left: 1.4rem !important;
+  font-style: italic;
+}
+.stmt-net td {
+  color: var(--muted);
+  font-style: italic;
+}
+.stmt-total th,
+.stmt-total td {
+  font-weight: 700 !important;
+  border-top: 1px solid var(--fg);
+}
+.stmt-bottom-line th,
+.stmt-bottom-line td {
+  border-bottom: 3px double var(--fg);
+}
+.stmt-check td {
+  border-bottom: none;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.stmt-check.is-ok td {
+  color: var(--ok);
+}
+.stmt-check.is-bad td {
+  color: var(--err);
+}
+.stmt-opening summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.stmt .money-input {
+  text-align: right;
+  width: 7.5rem;
+}
 .table-scroll {
   overflow-x: auto;
   max-width: 100%;

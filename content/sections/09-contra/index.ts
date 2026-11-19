@@ -344,7 +344,7 @@ const mod: SectionModule = {
         'Don’t forget the expense accounts — they’re part of equity until closing.',
       ],
       explanation:
-        '| Account | Balance |\n|---|---|\n| Cash | 5,300 |\n| Accounts Receivable | 1,700 |\n| Allowance for Doubtful Accounts | (150) |\n| Equipment | 12,000 |\n| Accumulated Depreciation | (1,200) |\n| Accounts Payable | 500 |\n| Paid-in Capital | 15,000 |\n| Retained Earnings | 2,400 |\n| Depreciation Expense | 200 |\n| Bad Debt Expense | 50 |\n\n**Net book value** of equipment = 12,000 − 1,200 = **10,800**. **Net receivables** = 1,700 − 150 = **1,550**. Total assets = 5,300 + 1,550 + 10,800 = 17,650 = liabilities 500 + equity 17,150 (15,000 + 2,400 − 250). ✓',
+        '| | Balance |\n|---|---:|\n| **Assets** | |\n| Cash | 5,300 |\n| Accounts Receivable | 1,700 |\n| less Allowance for Doubtful Accounts | (150) |\n| *Accounts Receivable, net* | *1,550* |\n| Equipment | 12,000 |\n| less Accumulated Depreciation | (1,200) |\n| *Equipment, net* | *10,800* |\n| **Total assets** | **17,650** |\n| **Liabilities** | |\n| Accounts Payable | 500 |\n| **Total liabilities** | **500** |\n| **Equity** | |\n| Paid-in Capital | 15,000 |\n| Retained Earnings | 2,400 |\n| less Depreciation Expense | (200) |\n| less Bad Debt Expense | (50) |\n| **Total equity** | **17,150** |\n\nEnter each contra account as a **positive** amount on its normal side; the statement subtracts it. **Net book value** of equipment = 12,000 − 1,200 = **10,800**. **Net receivables** = 1,700 − 150 = **1,550**. A = L + E: 17,650 = 500 + 17,150 ✓',
       opening: bs({
         cash: 5000,
         'accounts-receivable': 2000,
