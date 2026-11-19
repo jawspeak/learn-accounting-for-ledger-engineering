@@ -9,7 +9,9 @@ test.beforeEach(async ({ page }) => {
 test('keyboard-only booking: row balances, Check says correct', async ({ page }) => {
   const w = watchErrors(page);
   await enterCorrectCashToChecking(page);
-  await expect(page.locator('.tab-balance-bar.is-ok')).toContainText('Debits = credits in every row');
+  await expect(page.locator('.tab-balance-bar.is-ok')).toContainText(
+    'Debits = credits in every row',
+  );
   await page.getByRole('button', { name: 'Check answer' }).click();
   await expect(page.locator('.fb-headline')).toContainText('Correct!');
   await page.getByRole('button', { name: 'Why does this work?' }).click();
@@ -36,7 +38,9 @@ test('wrong answer: issue count, then Tell me more through levels 2-5', async ({
   await expect(page.getByRole('heading', { name: 'Solution' })).toBeVisible();
 });
 
-test('"Show me" focuses the flagged cell; a correct answer offers the next problem', async ({ page }) => {
+test('"Show me" focuses the flagged cell; a correct answer offers the next problem', async ({
+  page,
+}) => {
   const w = watchErrors(page);
   await addAccountByKeyboard(page, 'Asset', 'Checking Account');
   await addAccountByKeyboard(page, 'Asset', 'Cash');
@@ -64,7 +68,9 @@ test('multi-event problem starts with one labelled row per numbered event', asyn
   await expect(labels.first()).toHaveValue('Catering client pays invoice');
 });
 
-test('solution on demand: read-only grid, then open it (with the bank’s side) in the spreadsheet', async ({ page }) => {
+test('solution on demand: read-only grid, then open it (with the bank’s side) in the spreadsheet', async ({
+  page,
+}) => {
   const w = watchErrors(page);
   const panel = page.locator('details.solution-reveal');
   await expect(panel.getByRole('region', { name: 'T-account grid' })).toBeHidden();
@@ -95,7 +101,9 @@ test('hints reveal one at a time', async ({ page }) => {
   await expect(page.getByText('That’s all the hints.')).toBeVisible();
 });
 
-test('trap account (Customer Deposits) shows counterparty explanation at level 4', async ({ page }) => {
+test('trap account (Customer Deposits) shows counterparty explanation at level 4', async ({
+  page,
+}) => {
   await addAccountByKeyboard(page, 'Asset', 'Customer Deposits');
   await addAccountByKeyboard(page, 'Asset', 'Cash');
   await page.getByRole('textbox', { name: 'Row 1 Customer Deposits Dr' }).fill('100');
@@ -106,7 +114,10 @@ test('trap account (Customer Deposits) shows counterparty explanation at level 4
   await expect(page.locator('.fb-expl').filter({ hasText: "bank's" })).toBeVisible();
 });
 
-test('attempt sharing: URL has ?a=, reload restores, Copy link shows status', async ({ page, context }) => {
+test('attempt sharing: URL has ?a=, reload restores, Copy link shows status', async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await enterCorrectCashToChecking(page);
   await expect.poll(() => page.url()).toContain('?a=');
@@ -126,7 +137,9 @@ test('Open in Sandbox carries the problem accounts', async ({ page }) => {
   await enterCorrectCashToChecking(page);
   await page.getByRole('link', { name: 'Open in Sandbox' }).click();
   await expect(page).toHaveURL(/#\/sandbox\?d=/);
-  await expect(page.locator('[data-col-head]').filter({ hasText: 'Checking Account' })).toBeVisible();
+  await expect(
+    page.locator('[data-col-head]').filter({ hasText: 'Checking Account' }),
+  ).toBeVisible();
   await expect(page.locator('[data-col-head]').filter({ hasText: 'Cash' })).toBeVisible();
 });
 
@@ -151,8 +164,14 @@ test('the nav is a tree: the current section lists its problems, and any section
   // The section you are in is open, with the current problem marked.
   await expect(nav.locator('.nav-problems [aria-current="page"]')).toContainText('5.7');
   // Open another section and go to one of its problems from the nav.
-  await nav.getByRole('button', { name: /Show the \d+ problems in T-Accounts/ }).click();
+  await nav
+    .getByRole('button', { name: /Show the overview and \d+ problems in T-Accounts/ })
+    .click();
   await nav.locator('.nav-problems a', { hasText: /^3\.1 / }).click();
   await expect(page.locator('.breadcrumb')).toContainText('Problem 3.1');
   await expect(nav.locator('.nav-problems [aria-current="page"]')).toContainText('3.1');
+  // Each section's first leaf is its Overview (the section page), current when you are on it.
+  await nav.locator('.nav-overview a').first().click();
+  await expect(page).toHaveURL(/#\/s\/03-/);
+  await expect(nav.locator('.nav-problems [aria-current="page"]')).toHaveText(/Overview/);
 });

@@ -249,6 +249,10 @@ textarea {
 .sidebar .nav-problems a[aria-current='page'] {
   color: var(--fg);
 }
+.sidebar .nav-overview a {
+  font-weight: 600;
+  color: var(--fg);
+}
 .sidebar .nav-pnum {
   display: inline-block;
   min-width: 2.6em;

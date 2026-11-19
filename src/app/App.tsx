@@ -188,30 +188,42 @@ export function App() {
                   <div className="nav-section__row">
                     <a
                       href={href.section(s.id)}
-                      // The section page itself is "the page"; on one of its problems the section is where you are.
-                      aria-current={route.name === 'section' && here ? 'page' : undefined}
-                      className={here && route.name === 'problem' ? 'is-ancestor' : undefined}
+                      // The top level is a heading for its leaves: it opens the section's Overview, and is bold
+                      // while you are anywhere in the section; the leaf you are on is the current page.
+                      className={here ? 'is-ancestor' : undefined}
                       onClick={() => setNavOpen(false)}
                     >
                       <span className="nav-num">{s.id === 'review' ? '↻' : `${s.number}.`}</span>{' '}
                       {s.title}
                     </a>
-                    {s.problemIds.length > 0 && (
+                    {
                       <button
                         type="button"
                         className="nav-toggle"
                         aria-expanded={open}
                         aria-controls={listId}
-                        aria-label={`${open ? 'Hide' : 'Show'} the ${s.problemIds.length} problems in ${s.title}`}
-                        title={`${open ? 'Hide' : 'Show'} problems`}
+                        aria-label={`${open ? 'Hide' : 'Show'} the overview and ${s.problemIds.length} problems in ${s.title}`}
+                        title={`${open ? 'Hide' : 'Show'} the overview and problems`}
                         onClick={() => toggleSection(s.id)}
                       >
                         <span className="nav-chev" aria-hidden="true" />
                       </button>
-                    )}
+                    }
                   </div>
-                  {open && s.problemIds.length > 0 && (
-                    <ol className="nav-problems" id={listId} aria-label={`${s.title}: problems`}>
+                  {open && (
+                    <ol className="nav-problems" id={listId} aria-label={`${s.title}: contents`}>
+                      <li className="nav-overview">
+                        <a
+                          href={href.section(s.id)}
+                          aria-current={route.name === 'section' && here ? 'page' : undefined}
+                          onClick={() => setNavOpen(false)}
+                        >
+                          <span className="nav-pnum" aria-hidden="true">
+                            ≡
+                          </span>{' '}
+                          Overview
+                        </a>
+                      </li>
                       {s.problemIds.map((pid) => (
                         <li key={pid}>
                           <a
