@@ -3,8 +3,13 @@ import type { Account, AccountId, AccountType } from '@contracts';
 import { PICKER_TYPES, rankAccounts, typeLabel } from './model';
 
 export interface AccountPickerProps {
-  /** All choices, already in deterministic (alphabetical) order. Never filtered by type. */
+  /** All choices, already in deterministic (alphabetical) order. */
   accounts: Account[];
+  /**
+   * Sandbox: list only accounts of the type chosen in step 1. Problems leave this off — there the list is the
+   * full, unfiltered CoA, so picking a name of the wrong type stays a diagnosable choice.
+   */
+  filterByType?: boolean;
   /** Accounts that already have a column (picking one again just changes its type). */
   existing: Set<AccountId>;
   /** Types offered in step 1 (defaults to every picker type). */
@@ -33,6 +38,7 @@ const withArticle = (label: string) => `${/^[aeiou]/i.test(label) ? 'an' : 'a'} 
  */
 export function AccountPicker({
   accounts,
+  filterByType,
   existing,
   types,
   allowCreate,
@@ -55,7 +61,8 @@ export function AccountPicker({
     : PICKER_TYPES;
 
   const q = query.trim().toLowerCase();
-  const options: Option[] = rankAccounts(accounts, query).map((account) => ({
+  const pool = filterByType && type ? accounts.filter((a) => a.type === type) : accounts;
+  const options: Option[] = rankAccounts(pool, query).map((account) => ({
     kind: 'account',
     account,
   }));
@@ -207,7 +214,9 @@ export function AccountPicker({
             <ul id={listId} role="listbox" aria-label="Accounts" className="tab-picker-list">
               {options.length === 0 && (
                 <li className="tab-picker-empty" role="presentation">
-                  No matching accounts.
+                  {filterByType && type && pool.length === 0
+                    ? `No ${typeChoices.find((t) => t.type === type)?.label.toLowerCase() ?? type} accounts yet${allowCreate ? ' — type a name to create one.' : '.'}`
+                    : 'No matching accounts.'}
                 </li>
               )}
               {options.map((opt, i) => (
@@ -225,7 +234,9 @@ export function AccountPicker({
                     <>
                       {opt.account.name}
                       {existing.has(opt.account.id) && (
-                        <span className="tab-picker-tag"> (already added — sets its type)</span>
+                        <span className="tab-picker-tag">
+                          {filterByType ? ' (already a column)' : ' (already added — sets its type)'}
+                        </span>
                       )}
                     </>
                   ) : (

@@ -145,10 +145,10 @@ export function summarize(e: SandboxEntity): EntitySummary {
   };
 }
 
-/** Set (or clear, when `dollars` is null) one opening balance line. Amounts are whole dollars. */
-export function setOpening(e: SandboxEntity, accountId: AccountId, dollars: number | null): SandboxEntity {
+/** Set (or clear, when `cents` is null) one opening balance line, in cents. */
+export function setOpening(e: SandboxEntity, accountId: AccountId, cents: number | null): SandboxEntity {
   const lines = (e.opening?.lines ?? []).filter((l) => l.accountId !== accountId);
-  if (dollars !== null && Number.isFinite(dollars)) lines.push({ accountId, amount: Math.round(dollars) * 100 });
+  if (cents !== null && Number.isFinite(cents)) lines.push({ accountId, amount: Math.round(cents) });
   const order = new Map(e.accounts.map((a, i) => [a.id, i]));
   lines.sort((a, b) => (order.get(a.accountId) ?? 1e9) - (order.get(b.accountId) ?? 1e9));
   return { ...e, opening: lines.length ? { lines } : undefined };
@@ -196,4 +196,47 @@ export function withColumnOrder(e: SandboxEntity, order: AccountId[] | undefined
   if (order && order.length) next.columnOrder = order;
   else delete next.columnOrder;
   return next;
+}
+
+// ---- One account order for the whole Sandbox (both views, the Accounts panel, opening balances) ----
+// Auto (no `columnOrder`): the conventional balance-sheet order, A ‖ L │ E, contras after their parent.
+// Manual (`columnOrder` set): the learner's order; moving an account in either view edits it.
+
+export const isManualOrder = (e: SandboxEntity) => !!e.columnOrder?.length;
+
+/** Every account id in display order. In manual mode, accounts the order doesn't list yet go at the end. */
+export function orderedIds(e: SandboxEntity): AccountId[] {
+  const auto = canonicalOrder(e);
+  if (!isManualOrder(e)) return auto;
+  const have = new Set(auto);
+  const manual = e.columnOrder!.filter((id) => have.has(id));
+  return [...manual, ...auto.filter((id) => !manual.includes(id))];
+}
+
+export function orderedAccounts(e: SandboxEntity): Account[] {
+  const byId = new Map(e.accounts.map((a) => [a.id, a]));
+  return orderedIds(e).map((id) => byId.get(id)!);
+}
+
+/** Switch auto ↔ manual. Manual starts from the order you're looking at, so nothing jumps. */
+export function setManualOrder(e: SandboxEntity, manual: boolean): SandboxEntity {
+  return withColumnOrder(e, manual && e.accounts.length ? orderedIds(e) : undefined);
+}
+
+/** Move one account left/right in the manual order (a no-op in auto mode). */
+export function moveAccountInOrder(e: SandboxEntity, id: AccountId, delta: -1 | 1): SandboxEntity {
+  return isManualOrder(e) ? withColumnOrder(e, moveInOrder(orderedIds(e), id, delta)) : e;
+}
+
+/** Move a transaction row up/down — the same rows in both views. */
+export function moveRow(e: SandboxEntity, i: number, delta: -1 | 1): SandboxEntity {
+  const j = i + delta;
+  if (i < 0 || j < 0 || i >= e.rows.length || j >= e.rows.length) return e;
+  const rows = [...e.rows];
+  [rows[i], rows[j]] = [rows[j]!, rows[i]!];
+  return { ...e, rows };
+}
+
+export function removeRow(e: SandboxEntity, i: number): SandboxEntity {
+  return { ...e, rows: e.rows.filter((_, j) => j !== i) };
 }

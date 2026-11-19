@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { SandboxState, TAccountBuilderProps } from '@contracts';
 import { engine } from '@engine';
 import { parseHash } from '../router';
@@ -99,11 +99,16 @@ describe('SandboxPage', () => {
     expect(s.entities[1]!.rows[0]!.postings).toHaveLength(2);
     expect(screen.getAllByText(/A = L \+ E: \$100 = \$100 \+ \$0/)).toHaveLength(1);
 
-    // Empty column order from builder = canonical.
-    act(() => lastBuilder(1).onColumnOrderChange!(['vault-cash', 'customer-deposits']));
+    // Auto order: the builder can't reorder. Manual: it starts from the auto order and reorders it.
+    expect(lastBuilder(1).onColumnOrderChange).toBeUndefined();
+    const toggles = screen.getAllByRole('group', { name: 'Account order' });
+    fireEvent.click(within(toggles[1]!).getByRole('button', { name: 'Manual' }));
     expect(lastBuilder(1).columnOrder).toEqual(['vault-cash', 'customer-deposits']);
-    act(() => lastBuilder(1).onColumnOrderChange!([]));
+    act(() => lastBuilder(1).onColumnOrderChange!(['customer-deposits', 'vault-cash']));
+    expect(lastBuilder(1).columnOrder).toEqual(['customer-deposits', 'vault-cash']);
+    fireEvent.click(within(toggles[1]!).getByRole('button', { name: /Auto/ }));
     expect(lastBuilder(1).columnOrder).toBeUndefined();
+    expect(lastBuilder(1).onColumnOrderChange).toBeUndefined();
   });
 
   it('loads an example and shows balanced summaries', () => {

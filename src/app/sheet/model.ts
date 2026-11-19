@@ -134,7 +134,10 @@ export function addAccount(
     const parent = contraCandidates(e.accounts, type)[0];
     if (parent) account.contraOf = parent.id;
   }
-  return { entity: { ...e, accounts: [...e.accounts, account] }, id };
+  const entity: SandboxEntity = { ...e, accounts: [...e.accounts, account] };
+  // Manual order: a new account goes at the end (auto order places it by type).
+  if (e.columnOrder?.length) entity.columnOrder = [...e.columnOrder, id];
+  return { entity, id };
 }
 
 /** Patch one account. Changing to a contra type picks a parent if none is set (the URL schema requires one). */
@@ -204,30 +207,6 @@ export function removeAccount(e: SandboxEntity, id: AccountId): SandboxEntity {
     else delete out.columnOrder;
   }
   return out;
-}
-
-export function moveAccount(e: SandboxEntity, id: AccountId, delta: -1 | 1): SandboxEntity {
-  const i = e.accounts.findIndex((a) => a.id === id);
-  const j = i + delta;
-  if (i < 0 || j < 0 || j >= e.accounts.length) return e;
-  const accounts = [...e.accounts];
-  [accounts[i], accounts[j]] = [accounts[j]!, accounts[i]!];
-  return { ...e, accounts };
-}
-
-/** Reorder accounts into the canonical A ‖ L │ E order (contras right after their parent). */
-export function sortCanonical(e: SandboxEntity): SandboxEntity {
-  const ordered = engine.orderColumns(
-    e.accounts.map((a) => ({
-      accountId: a.id,
-      type: a.type,
-      contraOf: a.contraOf,
-      equityGroup: a.equityGroup,
-    })),
-    e.accounts.map((a) => a.id),
-  );
-  const byId = new Map(e.accounts.map((a) => [a.id, a]));
-  return { ...e, accounts: ordered.map((c) => byId.get(c.accountId)!).filter(Boolean) };
 }
 
 /** Index of the first right-hand (liability/equity) account, when the columns are in A ‖ L/E order; else -1. */

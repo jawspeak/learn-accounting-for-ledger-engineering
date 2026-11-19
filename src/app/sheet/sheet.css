@@ -544,6 +544,49 @@ tbody tr:hover td:not(.sh-add-col) {
 .sh-opening td {
   color: var(--muted);
 }
+/* Row tools in the event cell: ▲ ▼ × appear on hover / focus (same rows as the T-accounts view).
+   The cell is already position: sticky (frozen column), which anchors this absolute box. */
+.sh-row-tools {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0.1rem;
+  padding: 0 0.1rem;
+  background: var(--sh-left-bg);
+  border-radius: 4px;
+  opacity: 0;
+}
+tr:hover .sh-row-tools,
+tr:focus-within .sh-row-tools {
+  opacity: 1;
+}
+.sh-row-tools button {
+  font-size: 0.65rem;
+  line-height: 1.2;
+  padding: 0 0.3rem;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sh-row-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.sh-add-row {
+  position: sticky;
+  left: 0;
+  margin: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 .sh-empty {
   margin: 0;
   padding: 0.75rem 1rem;

@@ -102,3 +102,80 @@ test('T-accounts view: no Dr / Cr words, ▲ on the side that increases', async 
   await expect(page.locator('tr.tab-sides th').first()).toBeVisible();
   expect((await page.locator('tr.tab-sides th').allInnerTexts()).join(' ')).toMatch(/Dr/);
 });
+
+test('both views share cents, the account order (auto / manual) and the rows', async ({ page }) => {
+  const w = watchErrors(page);
+  await page.goto('/#/sheet');
+  await page.locator('.sh-toolbar select').selectOption('payroll');
+
+  // Cents.
+  await page.getByRole('textbox', { name: 'Row 5 event' }).fill('Bank fee');
+  await page.getByRole('textbox', { name: 'Row 5 Cash credit' }).fill('44.24');
+  await expect(page.getByRole('textbox', { name: 'Row 5 Cash credit' })).toHaveValue('44.24');
+  await page.getByRole('textbox', { name: 'Row 5 Fee Revenue debit' }).fill('44.24');
+  await page.getByRole('textbox', { name: 'Row 5 event' }).click(); // blur: shows as money
+  await expect(page.getByRole('textbox', { name: 'Row 5 Cash credit' })).toHaveValue('$44.24');
+  await expect(page.locator('.sh-checks')).toContainText('Every row balances');
+
+  // Auto order: no ◀ ▶. Manual: ◀ ▶ appear and move columns.
+  const order = page.getByRole('group', { name: 'Account order' });
+  await expect(order.getByRole('button', { name: /Auto/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Move Cash right' })).toHaveCount(0);
+  await order.getByRole('button', { name: 'Manual' }).click();
+  await page.getByRole('button', { name: 'Move Cash right' }).click();
+  const sheetHeads = page.locator('.sh-names .sh-name');
+  await expect(sheetHeads.nth(0)).toHaveValue('Employer Foo Receivable');
+  await expect(sheetHeads.nth(1)).toHaveValue('Cash');
+
+  // Rows: move "Bank fee" (row 5) up to row 4.
+  await page.getByRole('textbox', { name: 'Row 5 event' }).hover();
+  await page.getByRole('button', { name: 'Move row 5 up' }).click();
+  await expect(page.getByRole('textbox', { name: 'Row 4 event' })).toHaveValue('Bank fee');
+
+  // The T-accounts view shows the same: manual order (with ◀ ▶), same columns, same rows, cents.
+  await page.waitForTimeout(400); // debounced URL write
+  await page
+    .getByRole('navigation', { name: 'Sandbox view' })
+    .getByRole('link', { name: 'T-accounts' })
+    .click();
+  const card = page.locator('.sbx-entity').first();
+  await expect(
+    card.getByRole('group', { name: 'Account order' }).getByRole('button', { name: 'Manual' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  const heads = card.locator('th[data-col-head]');
+  await expect(heads.nth(0)).toHaveAttribute('data-col-head', 'employer-foo-receivable');
+  await expect(heads.nth(1)).toHaveAttribute('data-col-head', 'cash');
+  await expect(card.getByRole('button', { name: 'Move Cash left' })).toBeVisible();
+  await expect(card.getByRole('textbox', { name: 'Row 4 label' })).toHaveValue('Bank fee');
+  await expect(card.getByRole('textbox', { name: 'Row 4 Cash Cr' })).toHaveValue('44.24');
+  // …and the Accounts panel lists them in that same order.
+  await card.getByText(/^Accounts \(/).click();
+  await expect(card.locator('.sbx-accounts tbody tr input').first()).toHaveValue(
+    'Employer Foo Receivable',
+  );
+
+  // Back to auto: balance-sheet order, no ◀ ▶, Accounts panel grouped under headings.
+  await card
+    .getByRole('group', { name: 'Account order' })
+    .getByRole('button', { name: /Auto/ })
+    .click();
+  await expect(heads.nth(0)).toHaveAttribute('data-col-head', 'cash');
+  await expect(card.getByRole('button', { name: 'Move Cash left' })).toHaveCount(0);
+  await expect(card.locator('.sbx-section-row').first()).toHaveText('Assets');
+
+  // The picker lists only accounts of the chosen type.
+  await card
+    .locator('.tab-toolbar')
+    .getByRole('button', { name: /Add account/ })
+    .click();
+  await card
+    .getByRole('group', { name: 'Add a T-account' })
+    .getByLabel('Liability', { exact: true })
+    .check();
+  const names = await card
+    .getByRole('listbox', { name: 'Accounts' })
+    .getByRole('option')
+    .allTextContents();
+  expect(names, names.join(' | ')).toEqual(names.filter((n) => /Payable/.test(n)));
+  w.assertClean();
+});

@@ -55,8 +55,8 @@ describe('applyAccounts', () => {
     expect(out.columnOrder).toEqual(['cash-2', 'cash']);
   });
   it('keeps ids of existing accounts on rename and drops opening lines of deleted accounts', () => {
-    const e = setOpening(base, 'cash', 10);
-    expect(e.opening?.lines).toEqual([{ accountId: 'cash', amount: 1000 }]);
+    const e = setOpening(base, 'cash', 1024); // cents: $10.24
+    expect(e.opening?.lines).toEqual([{ accountId: 'cash', amount: 1024 }]);
     const renamed = applyAccounts(e, [{ id: 'cash', name: 'Wallet', type: 'asset' }]);
     expect(renamed.accounts[0]).toEqual({ id: 'cash', name: 'Wallet', type: 'asset' });
     expect(applyAccounts(e, []).opening).toBeUndefined();

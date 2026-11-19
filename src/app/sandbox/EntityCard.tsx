@@ -1,18 +1,22 @@
-import { useId, useState } from 'react';
+import { Fragment, useId, useState } from 'react';
 import type { Account, AccountType, SandboxEntity } from '@contracts';
 import { entities as contentEntities } from '@content';
 import { TAccountBuilder } from '../../components/builder/TAccountBuilder';
+import { formatDollars, parseDollars } from '../../components/builder/model';
+import { ColumnOrderToggle } from './ColumnOrderToggle';
 import {
   ACCOUNT_TYPES,
   accountUsed,
   applyAccounts,
   applyTemplate,
-  canonicalOrder,
   fmtMoney,
-  moveInOrder,
-  withColumnOrder,
+  isManualOrder,
+  moveAccountInOrder,
+  orderedAccounts,
+  setManualOrder,
   setOpening,
   summarize,
+  withColumnOrder,
 } from './model';
 
 interface Props {
@@ -33,6 +37,7 @@ export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove
   const [showOpening, setShowOpening] = useState(false);
   const summary = summarize(entity);
   const coaOrder = entity.accounts.map((a) => a.id);
+  const manual = isManualOrder(entity);
   const setAccounts = (accounts: Account[]) => onChange(applyAccounts(entity, accounts));
 
   return (
@@ -82,15 +87,11 @@ export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove
           />
           Show balance sheets
         </label>
-        <label className="sbx-check">
-          <input
-            type="checkbox"
-            checked={!!entity.columnOrder}
-            disabled={entity.accounts.length === 0}
-            onChange={(e) => onChange(withColumnOrder(entity, e.target.checked ? canonicalOrder(entity) : undefined))}
-          />
-          Manual column order
-        </label>
+        <ColumnOrderToggle
+          manual={manual}
+          disabled={entity.accounts.length === 0}
+          onChange={(m) => onChange(setManualOrder(entity, m))}
+        />
       </div>
 
       <div className="sbx-builder table-scroll">
@@ -106,8 +107,9 @@ export function EntityCard({ entity, builderKey, onChange, onDuplicate, onRemove
           opening={entity.opening}
           // The builder's "Journal view" toggle button is always available in the sandbox.
           journalView
+          // Manual order only: then ◀ ▶ (and drag) reorder the same order the Spreadsheet uses.
           columnOrder={entity.columnOrder}
-          onColumnOrderChange={(order) => onChange(withColumnOrder(entity, order))}
+          onColumnOrderChange={manual ? (order) => onChange(withColumnOrder(entity, order)) : undefined}
         />
       </div>
 
@@ -193,14 +195,10 @@ function AccountsEditor({
   const [type, setType] = useState<AccountType>('asset');
   const [contraOf, setContraOf] = useState('');
   const isContra = type.startsWith('contra-');
-  const manual = entity.columnOrder;
+  const manual = isManualOrder(entity);
   const byId = new Map(entity.accounts.map((a) => [a.id, a]));
-  const listed: Account[] = manual
-    ? [
-        ...manual.map((id) => byId.get(id)).filter((a): a is Account => !!a),
-        ...entity.accounts.filter((a) => !manual.includes(a.id)),
-      ]
-    : entity.accounts;
+  // The same order as the columns: balance-sheet order (auto) or the manual order.
+  const listed = orderedAccounts(entity);
 
   const add = () => {
     const n = name.trim();
@@ -234,7 +232,15 @@ function AccountsEditor({
           </thead>
           <tbody>
             {listed.map((a, i) => (
-              <tr key={a.id}>
+              <Fragment key={a.id}>
+              {!manual && (i === 0 || sectionOf(listed[i - 1]!.type) !== sectionOf(a.type)) && (
+                <tr className="sbx-section-row">
+                  <th scope="rowgroup" colSpan={3}>
+                    {SECTION_LABEL[sectionOf(a.type)]}
+                  </th>
+                </tr>
+              )}
+              <tr>
                 <td>
                   <input
                     aria-label={`Name of ${a.name}`}
@@ -256,7 +262,7 @@ function AccountsEditor({
                         className="btn"
                         aria-label={`Move ${a.name} left`}
                         disabled={i === 0}
-                        onClick={() => onChange({ ...entity, columnOrder: moveInOrder(listedIds(listed), a.id, -1) })}
+                        onClick={() => onChange(moveAccountInOrder(entity, a.id, -1))}
                       >
                         ←
                       </button>
@@ -265,7 +271,7 @@ function AccountsEditor({
                         className="btn"
                         aria-label={`Move ${a.name} right`}
                         disabled={i === listed.length - 1}
-                        onClick={() => onChange({ ...entity, columnOrder: moveInOrder(listedIds(listed), a.id, 1) })}
+                        onClick={() => onChange(moveAccountInOrder(entity, a.id, 1))}
                       >
                         →
                       </button>
@@ -283,6 +289,7 @@ function AccountsEditor({
                   </button>
                 </td>
               </tr>
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -326,17 +333,32 @@ function AccountsEditor({
   );
 }
 
-const listedIds = (list: Account[]) => list.map((a) => a.id);
+/** Balance-sheet sections for the Accounts list headings (income-statement accounts sit inside equity). */
+type BsSection = 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+const SECTION_LABEL: Record<BsSection, string> = {
+  assets: 'Assets',
+  liabilities: 'Liabilities',
+  equity: 'Equity',
+  revenue: 'Revenue',
+  expenses: 'Expenses & dividends',
+};
+function sectionOf(t: AccountType): BsSection {
+  if (t === 'asset' || t === 'contra-asset') return 'assets';
+  if (t === 'liability' || t === 'contra-liability') return 'liabilities';
+  if (t === 'revenue' || t === 'contra-revenue') return 'revenue';
+  if (t === 'expense' || t === 'dividend') return 'expenses';
+  return 'equity';
+}
 
 function OpeningEditor({ entity, onChange }: { entity: SandboxEntity; onChange(e: SandboxEntity): void }) {
   if (entity.accounts.length === 0) return <p className="note">Add accounts first.</p>;
   const amountOf = (id: string) => entity.opening?.lines.find((l) => l.accountId === id)?.amount;
   return (
     <div>
-      <p className="note">Whole dollars, on each account’s normal side. Leave blank for zero.</p>
+      <p className="note">On each account’s normal side (cents allowed). Leave blank for zero.</p>
       <table className="sbx-table">
         <tbody>
-          {entity.accounts.map((a) => {
+          {orderedAccounts(entity).map((a) => {
             const amt = amountOf(a.id);
             return (
               <tr key={a.id}>
@@ -344,17 +366,10 @@ function OpeningEditor({ entity, onChange }: { entity: SandboxEntity; onChange(e
                   {a.name} <span className="note">({typeLabel(a.type)})</span>
                 </th>
                 <td>
-                  <input
-                    aria-label={`Opening balance for ${a.name}`}
-                    inputMode="numeric"
-                    size={8}
-                    value={amt === undefined ? '' : String(amt / 100)}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[$,\s]/g, '');
-                      if (raw === '') return onChange(setOpening(entity, a.id, null));
-                      if (!/^-?\d+$/.test(raw)) return;
-                      onChange(setOpening(entity, a.id, Number(raw)));
-                    }}
+                  <OpeningInput
+                    label={`Opening balance for ${a.name}`}
+                    cents={amt}
+                    onCents={(c) => onChange(setOpening(entity, a.id, c))}
                   />
                 </td>
               </tr>
@@ -368,5 +383,33 @@ function OpeningEditor({ entity, onChange }: { entity: SandboxEntity; onChange(e
         </button>
       )}
     </div>
+  );
+}
+
+/** Opening balance: dollars and cents, negative allowed (an abnormal balance); blank clears the line. */
+function OpeningInput({ label, cents, onCents }: { label: string; cents?: number; onCents(c: number | null): void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const rest = cents === undefined ? '' : String(cents / 100);
+  return (
+    <input
+      aria-label={label}
+      inputMode="decimal"
+      size={9}
+      title={cents === undefined ? undefined : formatDollars(cents)}
+      value={draft ?? rest}
+      onFocus={() => setDraft(rest)}
+      onBlur={() => setDraft(null)}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw.trim() === '') {
+          setDraft('');
+          return onCents(null);
+        }
+        const c = parseDollars(raw, { allowNegative: true, allowCents: true });
+        if (c === null) return;
+        setDraft(raw);
+        if (raw.trim() !== '-') onCents(c);
+      }}
+    />
   );
 }

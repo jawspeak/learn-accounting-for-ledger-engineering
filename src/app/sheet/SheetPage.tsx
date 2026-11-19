@@ -3,10 +3,17 @@ import type { SandboxEntity, SandboxState } from '@contracts';
 import { engine } from '@engine';
 import { href, parseHash, replaceHash } from '../router';
 import { EXAMPLES } from '../sandbox/examples';
-import { emptyState, newEntity, typeResolver, URL_WARN_LENGTH } from '../sandbox/model';
+import {
+  emptyState,
+  isManualOrder,
+  newEntity,
+  setManualOrder,
+  typeResolver,
+  URL_WARN_LENGTH,
+} from '../sandbox/model';
 import { SheetGrid } from './SheetGrid';
 import { ViewSwitch } from '../sandbox/ViewSwitch';
-import { sortCanonical } from './model';
+import { ColumnOrderToggle } from '../sandbox/ColumnOrderToggle';
 import { formatDollars } from '../../components/builder/model';
 import './sheet.css';
 
@@ -196,14 +203,11 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          className="btn"
-          title="Reorder the columns as Assets ‖ = ‖ Liabilities │ Equity"
-          onClick={() => setEntity(sortCanonical(current))}
-        >
-          Sort A = L + E
-        </button>
+        <ColumnOrderToggle
+          manual={isManualOrder(current)}
+          disabled={current.accounts.length === 0}
+          onChange={(m) => setEntity(setManualOrder(current, m))}
+        />
         {/* Starts a blank sheet in place of this one. Links already copied keep their own copy of the old
             sheet, but this tab's URL is replaced — so confirm first, like the sandbox's New / Clear. */}
         {confirmNew ? (

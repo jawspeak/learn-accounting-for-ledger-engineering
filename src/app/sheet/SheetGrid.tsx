@@ -2,13 +2,21 @@ import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Account, AccountType, BalanceSheet, Money, SandboxEntity, Side } from '@contracts';
 import { engine } from '@engine';
 import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
-import { ACCOUNT_TYPES } from '../sandbox/model';
+import {
+  ACCOUNT_TYPES,
+  isManualOrder,
+  moveAccountInOrder,
+  moveRow,
+  orderedAccounts,
+  orderedIds,
+  removeRow,
+} from '../sandbox/model';
 import {
   addAccount,
   contraBase,
   contraCandidates,
+  ensureRows,
   equalsAt,
-  moveAccount,
   removeAccount,
   setAmount,
   setLabel,
@@ -42,7 +50,9 @@ export function SheetGrid({
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('asset');
 
-  const accounts = e.accounts;
+  // One account order for both views: auto (A = L + E) or the manual order; ◀ ▶ only in manual.
+  const accounts = orderedAccounts(e);
+  const manual = isManualOrder(e);
   const n = visibleRowCount(e.rows);
   const balance = sheetBalance(e);
   const eqAt = equalsAt(accounts);
@@ -80,11 +90,11 @@ export function SheetGrid({
   const add = () => {
     const name = newName.trim();
     if (!name) return;
-    const { entity } = addAccount(e, name, newType);
+    const { entity, id } = addAccount(e, name, newType);
     onChange(entity);
     setNewName('');
-    // Jump to the new column's first debit cell, ready to type an amount.
-    const col = FIRST_AMOUNT_COL + accounts.length * 2;
+    // Jump to the new column's first debit cell (auto order may place it mid-grid), ready to type.
+    const col = FIRST_AMOUNT_COL + orderedIds(entity).indexOf(id) * 2;
     setTimeout(() => focusCell(0, col));
   };
 
@@ -171,22 +181,26 @@ export function SheetGrid({
                   />
                 </div>
                 <div className="sh-col-tools">
-                  <button
-                    type="button"
-                    aria-label={`Move ${a.name} left`}
-                    disabled={i === 0}
-                    onClick={() => onChange(moveAccount(e, a.id, -1))}
-                  >
-                    <span aria-hidden="true">◀</span>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Move ${a.name} right`}
-                    disabled={i === accounts.length - 1}
-                    onClick={() => onChange(moveAccount(e, a.id, 1))}
-                  >
-                    <span aria-hidden="true">▶</span>
-                  </button>
+                  {manual && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label={`Move ${a.name} left`}
+                        disabled={i === 0}
+                        onClick={() => onChange(moveAccountInOrder(e, a.id, -1))}
+                      >
+                        <span aria-hidden="true">◀</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move ${a.name} right`}
+                        disabled={i === accounts.length - 1}
+                        onClick={() => onChange(moveAccountInOrder(e, a.id, 1))}
+                      >
+                        <span aria-hidden="true">▶</span>
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     aria-label={`Remove ${a.name}`}
@@ -381,6 +395,35 @@ export function SheetGrid({
                     value={row?.label ?? ''}
                     onChange={(ev) => onChange(setLabel(e, ri, ev.target.value))}
                   />
+                  {/* Row tools (same rows as the T-accounts view): move up / down, remove. */}
+                  {row && (row.postings.length > 0 || row.label) && (
+                    <span className="sh-row-tools">
+                      <button
+                        type="button"
+                        aria-label={`Move row ${ri + 1} up`}
+                        disabled={ri === 0}
+                        onClick={() => onChange(moveRow(e, ri, -1))}
+                      >
+                        <span aria-hidden="true">▲</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move row ${ri + 1} down`}
+                        disabled={ri >= e.rows.length - 1}
+                        onClick={() => onChange(moveRow(e, ri, 1))}
+                      >
+                        <span aria-hidden="true">▼</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove row ${ri + 1}`}
+                        title="Remove this row"
+                        onClick={() => onChange(removeRow(e, ri))}
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    </span>
+                  )}
                 </td>
                 <td className="sh-left sh-l4 sh-check">
                   {used &&
@@ -422,6 +465,16 @@ export function SheetGrid({
           })}
         </tbody>
       </table>
+      <button
+        type="button"
+        className="sh-add-row"
+        onClick={() => {
+          onChange({ ...e, rows: ensureRows(e.rows, n) });
+          setTimeout(() => focusCell(n, 0));
+        }}
+      >
+        <span aria-hidden="true">＋ </span>Add row
+      </button>
       {accounts.length === 0 && (
         <p className="sh-empty">
           Add your first account on the right — start with the one you’re sure changes (often{' '}
@@ -478,7 +531,7 @@ function MoneyCell({
       onFocus={() => setDraft(cents === 0 ? '' : String(cents / 100))}
       onBlur={() => setDraft(null)}
       onChange={(ev) => {
-        const parsed = parseDollars(ev.target.value, { allowNegative });
+        const parsed = parseDollars(ev.target.value, { allowNegative, allowCents: true });
         if (parsed === null) return;
         setDraft(ev.target.value);
         if (parsed !== cents) onChange(parsed);

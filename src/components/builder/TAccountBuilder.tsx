@@ -146,6 +146,10 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const setColumnType = (id: AccountId, type: AccountType) => {
     setCols((cs) => (cs.some((c) => c.accountId === id) ? cs.map((c) => (c.accountId === id ? { ...c, type } : c)) : [...cs, { accountId: id, type }]));
     retypeRows(id, type);
+    // Sandbox: there is no "right answer" to protect, so the column's type is the account's type — the
+    // Accounts list and the Spreadsheet show the same thing. (Problems keep the learner's choice separate.)
+    const acct = accounts.find((a) => a.id === id);
+    if (sandbox && acct && acct.type !== type) onAccountsChange?.(accounts.map((a) => (a.id === id ? retyped(a, type, accounts) : a)));
     setFlash(id);
   };
 
@@ -187,6 +191,13 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
   const updateRow = (ri: number, f: (r: TransactionRow) => TransactionRow) => onRowsChange(rows.map((r, i) => (i === ri ? f(r) : r)));
   const addRow = () => onRowsChange([...rows, { id: nextRowId(rows), postings: [] }]);
   const removeRow = (ri: number) => onRowsChange(rows.filter((_, i) => i !== ri));
+  const moveRow = (ri: number, delta: -1 | 1) => {
+    const to = ri + delta;
+    if (to < lockedRowCount || to >= rows.length) return;
+    const next = [...rows];
+    [next[ri], next[to]] = [next[to]!, next[ri]!];
+    onRowsChange(next);
+  };
 
   const moveColumn = (id: AccountId, to: number) => {
     const order = placed.map((c) => c.accountId);
@@ -494,6 +505,28 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                     }
                   />
                 )}
+                {sandbox && !locked && (
+                  <>
+                    <button
+                      type="button"
+                      className="tab-icon-btn tab-row-move"
+                      aria-label={`Move row ${ri + 1} up`}
+                      disabled={ri === 0}
+                      onClick={() => moveRow(ri, -1)}
+                    >
+                      <span aria-hidden="true">▲</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="tab-icon-btn tab-row-move"
+                      aria-label={`Move row ${ri + 1} down`}
+                      disabled={ri === rows.length - 1}
+                      onClick={() => moveRow(ri, 1)}
+                    >
+                      <span aria-hidden="true">▼</span>
+                    </button>
+                  </>
+                )}
                 {!locked && (
                   <button
                     type="button"
@@ -513,10 +546,15 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                     'Choose a type, then a name, above.'
                   ) : (
                     <button type="button" className="tab-empty-add" onClick={() => setPickerOpen(true)}>
-                      <span aria-hidden="true">＋ </span>Add your first account
+                      <span aria-hidden="true">＋ </span>
+                      {sandbox && accounts.length > 0 ? 'Add an account column' : 'Add your first account'}
                     </button>
                   )}
-                  <span className="tab-empty-hint">Start with the account you’re sure changes.</span>
+                  <span className="tab-empty-hint">
+                    {sandbox && accounts.length > 0
+                      ? `This party already has ${accounts.length} account${accounts.length === 1 ? '' : 's'} (see Accounts below); a column appears once you pick one or post to it.`
+                      : 'Start with the account you’re sure changes.'}
+                  </span>
                 </td>
               )}
               {eachCol((c) => {
@@ -540,6 +578,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
                           className="tab-amount"
                           aria-label={`Row ${ri + 1} ${name} ${SIDE_LABEL[side]}`}
                           cents={amt}
+                          allowCents={sandbox}
                           onCentsChange={(cents) => updateRow(ri, (row) => setCell(row, id, side, cents, typeOf(id)!))}
                         />
                       )}
@@ -582,19 +621,11 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
             <button type="button" ref={addBtnRef} aria-expanded={pickerOpen} onClick={() => setPickerOpen((o) => !o)}>
               <span aria-hidden="true">＋ </span>Add account
             </button>
-            <button type="button" onClick={addRow}>
-              <span aria-hidden="true">＋ </span>Add row
-            </button>
           </>
         )}
         {journalView && (
           <button type="button" aria-pressed={showJournal} onClick={() => setShowJournal((j) => !j)}>
             Journal view
-          </button>
-        )}
-        {canReorder && !!columnOrder?.length && (
-          <button type="button" onClick={() => onColumnOrderChange!([])}>
-            Reset to canonical order
           </button>
         )}
       </div>
@@ -603,6 +634,7 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
           accounts={sandbox ? [...allAccounts].sort((a, b) => a.name.localeCompare(b.name)) : allAccounts}
           existing={columnIds}
           types={pickerTypes ? offered.map((t) => t.type) : undefined}
+          filterByType={sandbox}
           allowCreate={sandbox && !!onAccountsChange}
           onPick={addColumn}
           onCreate={createAccount}
@@ -635,6 +667,11 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         >
           {showJournal ? <JournalView rows={rows} nameOf={nameOf} /> : grid}
         </div>
+        {!showJournal && !readOnly && (
+          <button type="button" className="tab-add-row" onClick={addRow}>
+            <span aria-hidden="true">＋ </span>Add row
+          </button>
+        )}
         {!inGrid && balanceBar}
         </div>
         {showBalanceSheets && (
@@ -672,4 +709,28 @@ function DividerHead({ rowSpan }: { rowSpan: number }) {
       <span className="sr-only">equals: assets on the left, liabilities and equity on the right</span>
     </th>
   );
+}
+
+const CONTRA_BASE: Partial<Record<AccountType, AccountType>> = {
+  'contra-asset': 'asset',
+  'contra-liability': 'liability',
+  'contra-equity': 'equity',
+  'contra-revenue': 'revenue',
+};
+
+/** Sandbox: an account retyped from its column. A contra needs a parent of its base type (the link schema
+ *  requires one), so it takes the first candidate; non-contras drop contraOf, non-equity drops equityGroup. */
+function retyped(a: Account, type: AccountType, all: Account[]): Account {
+  const next: Account = { ...a, type };
+  const base = CONTRA_BASE[type];
+  if (base) {
+    if (!all.some((x) => x.id === next.contraOf && x.type === base)) {
+      const parent = all.find((x) => x.type === base && x.id !== a.id);
+      if (parent) next.contraOf = parent.id;
+      else delete next.contraOf;
+    }
+  } else delete next.contraOf;
+  if (type !== 'equity') delete next.equityGroup;
+  else next.equityGroup ??= 'paid-in';
+  return next;
 }

@@ -163,6 +163,15 @@
 .sbx-row-actions {
   white-space: nowrap;
 }
+/* Accounts list: balance-sheet section headings (auto order). */
+.sbx-section-row th {
+  padding-top: var(--space-3);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
 .sbx-row-actions .btn {
   padding: 0.15rem 0.45rem;
 }

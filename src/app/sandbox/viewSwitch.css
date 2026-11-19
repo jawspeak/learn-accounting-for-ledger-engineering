@@ -47,6 +47,44 @@
 .vs-icon {
   flex: none;
 }
+/* Auto | Manual account order (both views). */
+.vs-order {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-sm);
+}
+.vs-order-label {
+  margin-right: 0.4rem;
+  color: var(--muted);
+}
+.vs-order button {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+.vs-order button:first-of-type {
+  border-radius: 6px 0 0 6px;
+}
+.vs-order button:last-of-type {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+.vs-order button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.vs-order button:last-of-type[aria-pressed='true'] {
+  border-left: 1px solid var(--accent);
+}
+.vs-order button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 .vs-note {
   font-size: var(--text-sm);
   color: var(--muted);

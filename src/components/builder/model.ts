@@ -89,7 +89,9 @@ export const isEquityGroup = (g: ColumnGroup) => g !== 'assets' && g !== 'liabil
 /** "$1,234" (negative → "−$1,234"). Cents are shown as whole dollars (v1 content is whole dollars). */
 export function formatDollars(cents: Money): string {
   const abs = Math.abs(cents) / 100;
-  const s = `$${abs.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  // Whole dollars as "$1,200"; anything with cents shows both digits ("$44.20", not "$44.2").
+  const digits = cents % 100 === 0 ? 0 : 2;
+  const s = `$${abs.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: 2 })}`;
   return cents < 0 ? `−${s}` : s;
 }
 
@@ -102,14 +104,26 @@ export function centsToInput(cents: Money): string {
  * Parse a whole-dollar input into cents. Accepts "1,000", "$100", " 25 ". Empty → 0.
  * Returns null for anything that isn't a whole number (so the input can reject the keystroke).
  */
-export function parseDollars(input: string, opts: { allowNegative?: boolean } = {}): Money | null {
+export function parseDollars(
+  input: string,
+  opts: { allowNegative?: boolean; allowCents?: boolean } = {},
+): Money | null {
   const s = input.replace(/[\s,$]/g, '');
   if (s === '' || (opts.allowNegative && s === '-')) return 0;
-  const re = opts.allowNegative ? /^-?\d+$/ : /^\d+$/;
+  // Whole dollars (problems), or up to two decimals (the sandbox): "44", "44.", "44.2", "44.24".
+  const re = opts.allowCents
+    ? opts.allowNegative
+      ? /^-?(\d+\.?\d{0,2}|\.\d{1,2})$/
+      : /^(\d+\.?\d{0,2}|\.\d{1,2})$/
+    : opts.allowNegative
+      ? /^-?\d+$/
+      : /^\d+$/;
   if (!re.test(s)) return null;
-  const n = Number(s);
-  if (!Number.isSafeInteger(n * 100)) return null;
-  return n * 100;
+  const neg = s.startsWith('-');
+  const [whole = '', frac = ''] = s.replace('-', '').split('.');
+  const cents = Number(whole || '0') * 100 + Number(frac.padEnd(2, '0'));
+  if (!Number.isSafeInteger(cents)) return null;
+  return neg ? -cents : cents;
 }
 
 /** Sum of postings for one account/side in a row. */

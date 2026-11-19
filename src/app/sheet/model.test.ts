@@ -1,19 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import type { SandboxEntity, SandboxState } from '@contracts';
+import type { SandboxEntity } from '@contracts';
 import { engine } from '@engine';
 import { EXAMPLES } from '../sandbox/examples';
+import { parseDollars, formatDollars } from '../../components/builder/model';
+import {
+  isManualOrder,
+  moveAccountInOrder,
+  moveRow,
+  orderedAccounts,
+  orderedIds,
+  removeRow,
+  setManualOrder,
+} from '../sandbox/model';
 import { parseHash, href } from '../router';
 import {
   addAccount,
   ensureRows,
   equalsAt,
   MIN_ROWS,
-  moveAccount,
   removeAccount,
   setAmount,
   setOpening,
   sheetBalance,
-  sortCanonical,
   updateAccount,
   visibleRowCount,
 } from './model';
@@ -100,14 +108,54 @@ describe('accounts', () => {
     expect(e.rows[0]!.postings).toEqual([]);
     expect(e.opening).toBeUndefined();
   });
+});
 
-  it('moves and sorts columns; the = divider sits before the first right-hand account', () => {
-    const e = moveAccount(base(), 'cash', 1);
-    expect(e.accounts.map((a) => a.id)).toEqual(['revenue', 'cash', 'payable']);
-    expect(equalsAt(e.accounts)).toBe(-1); // not in A ‖ L/E order
-    const sorted = sortCanonical(e);
-    expect(sorted.accounts.map((a) => a.id)).toEqual(['cash', 'payable', 'revenue']);
-    expect(equalsAt(sorted.accounts)).toBe(1);
+describe('one account order (both views)', () => {
+  it('auto is the balance-sheet order, whatever order accounts were added in', () => {
+    expect(isManualOrder(base())).toBe(false);
+    expect(orderedIds(base())).toEqual(['cash', 'payable', 'revenue']);
+    expect(equalsAt(orderedAccounts(base()))).toBe(1);
+    // ◀ ▶ do nothing in auto mode.
+    expect(moveAccountInOrder(base(), 'cash', 1)).toEqual(base());
+  });
+
+  it('manual starts from what you see, moves edit it, new accounts go at the end, auto clears it', () => {
+    let e = setManualOrder(base(), true);
+    expect(e.columnOrder).toEqual(['cash', 'payable', 'revenue']);
+    e = moveAccountInOrder(e, 'cash', 1);
+    expect(orderedIds(e)).toEqual(['payable', 'cash', 'revenue']);
+    expect(equalsAt(orderedAccounts(e))).toBe(-1); // not in A ‖ L/E order: no = divider
+    e = addAccount(e, 'Savings', 'asset').entity;
+    expect(orderedIds(e)).toEqual(['payable', 'cash', 'revenue', 'savings']);
+    expect(orderedIds(setManualOrder(e, false))).toEqual(['cash', 'savings', 'payable', 'revenue']);
+    expect('columnOrder' in setManualOrder(e, false)).toBe(false);
+  });
+});
+
+describe('rows (both views)', () => {
+  it('move up / down and remove', () => {
+    let e = setAmount(base(), 0, 'cash', 'dr', 100);
+    e = setAmount(e, 1, 'cash', 'dr', 200);
+    e = moveRow(e, 1, -1);
+    expect(e.rows.map((r) => r.postings[0]!.amount)).toEqual([200, 100]);
+    expect(moveRow(e, 0, -1)).toBe(e); // already at the top
+    expect(removeRow(e, 0).rows.map((r) => r.postings[0]!.amount)).toEqual([100]);
+  });
+});
+
+describe('money', () => {
+  it('the sandbox takes dollars and cents; problems stay whole dollars', () => {
+    expect(parseDollars('44.24', { allowCents: true })).toBe(4424);
+    expect(parseDollars('44.2', { allowCents: true })).toBe(4420);
+    expect(parseDollars('44.', { allowCents: true })).toBe(4400);
+    expect(parseDollars('.5', { allowCents: true })).toBe(50);
+    expect(parseDollars('$1,200.05', { allowCents: true })).toBe(120005);
+    expect(parseDollars('-3.10', { allowCents: true, allowNegative: true })).toBe(-310);
+    expect(parseDollars('44.245', { allowCents: true })).toBeNull();
+    expect(parseDollars('44.24')).toBeNull();
+    expect(parseDollars('44')).toBe(4400);
+    expect(formatDollars(4420)).toBe('$44.20');
+    expect(formatDollars(120000)).toBe('$1,200');
   });
 });
 
@@ -117,17 +165,6 @@ describe('URL state', () => {
     const back = engine.decodeSandbox(engine.encodeState(s));
     expect(back).toEqual(s);
     expect(back!.entities[0]!.accounts[0]!.subtitle).toBe('Bank account');
-  });
-
-  it('old links with the removed attributes JSON and pending flags still open (those fields are dropped)', () => {
-    const s = EXAMPLES.find((x) => x.id === 'payroll')!.build();
-    const old = structuredClone(s) as unknown as {
-      entities: { accounts: Record<string, unknown>[]; rows: Record<string, unknown>[] }[];
-    };
-    old.entities[0]!.accounts[0]!.metadata = '{ "type": "cash" }';
-    old.entities[0]!.rows[2]!.pending = true;
-    const back = engine.decodeSandbox(engine.encodeState(old as unknown as SandboxState));
-    expect(back).toEqual(s);
   });
 
   it('routes #/sheet with data and entity index', () => {

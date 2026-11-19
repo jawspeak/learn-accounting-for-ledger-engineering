@@ -658,6 +658,22 @@ tr.tab-hl-row > * {
 .tab-row-remove {
   margin-left: 0.25rem;
 }
+/* Sandbox: ▲ ▼ move a row (the same rows as the Spreadsheet view). */
+.tab-row-move {
+  margin-left: 0.15rem;
+  font-size: 0.6rem;
+}
+/* "+ Add row" sits under the grid, where the next row goes. */
+.tab-add-row {
+  margin: 0.35rem 0 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
 
 .tab-cell.tab-hl > .tab-num {
   display: inline-block;
