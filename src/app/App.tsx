@@ -13,6 +13,7 @@ import { GlossaryPopover } from './GlossaryPopover';
 import { CheatSheetDrawer } from './CheatSheetDrawer';
 import { problems } from '@content';
 import { useTheme } from './theme';
+import { AskGemini, type AskContext } from './AskGemini';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
@@ -88,6 +89,14 @@ export function App() {
       : route.name === 'problem'
         ? problems[route.id]?.sectionId
         : undefined;
+
+  const problem = route.name === 'problem' ? problems[route.id] : undefined;
+  const section = route.name === 'section' ? sections.find((s) => s.id === route.id) : undefined;
+  const askContext: AskContext = problem
+    ? { kind: 'problem', title: problem.title }
+    : section
+      ? { kind: 'section', title: section.title }
+      : { kind: 'other' };
 
   return (
     <>
@@ -208,6 +217,7 @@ export function App() {
       </div>
       {drawer && <CheatSheetDrawer onClose={closeDrawer} />}
       <GlossaryPopover />
+      <AskGemini context={askContext} />
     </>
   );
 }
