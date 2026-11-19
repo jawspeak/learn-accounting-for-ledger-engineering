@@ -99,12 +99,28 @@ const esc = (s: string) =>
     .replace(/'/g, '&#39;');
 const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
 
-function ledgerHtml(l: Ledger): string {
+/**
+ * Shared line keys for every account in one block, so line n is the same transaction in every T: an opening line
+ * if ANY account has an opening balance, then one line per distinct transaction label in order of first
+ * appearance (e.g. "(1)", "(2)" — the same label lines up across accounts). Unlabelled postings get a line each.
+ */
+function sharedLines(ls: Ledger[]): string[] {
+  const keys: string[] = [];
+  if (ls.some((l) => l.postings.some((p) => p.opening))) keys.push('opening');
+  ls.forEach((l, li) =>
+    l.postings.forEach((p, pi) => {
+      if (p.opening) return;
+      const k = p.label ? `label:${p.label}` : `own:${li}:${pi}`;
+      if (!keys.includes(k)) keys.push(k);
+    }),
+  );
+  return keys;
+}
+
+function ledgerHtml(l: Ledger, li: number, keys: string[]): string {
   const inc = engine.normalSide(l.type);
-  // Openings first on each side, then postings in authored order.
-  // One line per posting, like a ledger: the opening balance(s) first, then each transaction in authored order,
-  // each on its own line on its own side (the other half of that line stays empty).
-  const lines = [...l.postings.filter((p) => p.opening), ...l.postings.filter((p) => !p.opening)];
+  const keyOf = (p: LedgerPosting, pi: number) =>
+    p.opening ? 'opening' : p.label ? `label:${p.label}` : `own:${li}:${pi}`;
   const entry = (p: LedgerPosting | undefined, s: Side) => {
     if (!p) return `<span class="tacct-cell tacct-${s} tl-cell"></span>`;
     const up = p.side === inc;
@@ -120,11 +136,21 @@ function ledgerHtml(l: Ledger): string {
     const inner = s === 'dr' ? `${label}${amt}` : `${amt}${label}`;
     return `<span class="tacct-cell tacct-${s} tl-cell${p.opening ? ' is-opening' : ''}"><span aria-hidden="true" class="tl-entry">${inner}</span>${sr}</span>`;
   };
-  const rows = lines
-    .map(
-      (p) =>
-        entry(p.side === 'dr' ? p : undefined, 'dr') + entry(p.side === 'cr' ? p : undefined, 'cr'),
-    )
+  // One line per shared key: this account's posting for that transaction on its side, or an empty line.
+  const rows = keys
+    .map((k) => {
+      const here = l.postings.filter((p, pi) => keyOf(p, pi) === k);
+      return (
+        entry(
+          here.find((p) => p.side === 'dr'),
+          'dr',
+        ) +
+        entry(
+          here.find((p) => p.side === 'cr'),
+          'cr',
+        )
+      );
+    })
     .join('');
   let balance = '';
   if (l.showBalance) {
@@ -169,9 +195,11 @@ export function tAccountsHtml(src: string): string {
   } catch (err) {
     return `<pre class="tentry-error">${esc(err instanceof Error ? err.message : String(err))}\n\n${esc(src)}</pre>`;
   }
+  const shown = ordered(ledgers);
+  const keys = sharedLines(ledgers);
   return (
     `<figure class="tledgers">` +
-    `<div class="tledgers-row">${ordered(ledgers).map(ledgerHtml).join('')}</div>` +
+    `<div class="tledgers-row">${shown.map((l) => ledgerHtml(l, ledgers.indexOf(l), keys)).join('')}</div>` +
     `<figcaption class="tentry-legend">Shaded half <span aria-hidden="true">(▲)</span> = the side that <strong>increases</strong> the account. ` +
     `Amounts: <span class="is-up">▲ increase</span>, <span class="is-down">▼ decrease</span>.</figcaption></figure>`
   );

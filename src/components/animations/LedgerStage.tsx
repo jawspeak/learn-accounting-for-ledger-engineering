@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import type { AccountId, AccountType, Money, Side, TransactionRow } from '@contracts';
 import { normalSide } from '@engine';
 import {
@@ -61,6 +61,39 @@ function rowNumbers(ledger: AnimLedger, step: AnimStep): Map<string, number> {
   return m;
 }
 
+type LedgerLine =
+  | { kind: 'opening'; key: string }
+  | { kind: 'tx'; key: string; row: TransactionRow; n: number; state: EntryState }
+  | { kind: 'more'; key: string; hidden: number };
+
+/**
+ * The line structure shared by every T in a ledger at this step: opening (if any account has one), one line per
+ * transaction in order (posted, then the draft), with a long run collapsed to first 3 · "⋯ N more" · last 3.
+ */
+function ledgerLines(ledger: AnimLedger, step: AnimStep, seen: Set<string>): LedgerLine[] {
+  const nums = rowNumbers(ledger, step);
+  const out: LedgerLine[] = [];
+  if (
+    ledger.tAccounts.some(
+      (id) => (ledger.opening.find((l) => l.accountId === id)?.amount ?? 0) !== 0,
+    )
+  )
+    out.push({ kind: 'opening', key: 'open' });
+  const tx: { row: TransactionRow; state: EntryState }[] = (step.posted[ledger.id] ?? []).map(
+    (row) => ({
+      row,
+      state: seen.has(row.id) ? 'posted' : 'new',
+    }),
+  );
+  if (step.draft?.ledger === ledger.id) tx.push({ row: step.draft.row, state: 'draft' });
+  const c = collapse(tx, 7, 3, 3);
+  c.items.forEach(({ row, state }, i) => {
+    if (i === c.at && c.hidden > 0) out.push({ kind: 'more', key: 'more', hidden: c.hidden });
+    out.push({ kind: 'tx', key: row.id, row, n: nums.get(row.id) ?? 0, state });
+  });
+  return out;
+}
+
 function TAccount({
   ledger,
   accountId,
@@ -82,40 +115,43 @@ function TAccount({
   const account = accountOf(ledger, accountId);
   if (!account) return null;
   const normal = normalSide(account.type);
-  const nums = rowNumbers(ledger, step);
   const posted = step.posted[ledger.id] ?? [];
-  const entries: Entry[] = [];
-  const opening = ledger.opening.find((l) => l.accountId === accountId)?.amount ?? 0;
-  if (opening !== 0) {
-    entries.push({
-      key: 'open',
-      ref: 'Bal',
-      side: opening > 0 ? normal : normal === 'dr' ? 'cr' : 'dr',
-      amount: Math.abs(opening),
-      state: 'opening',
-    });
-  }
-  const addRow = (r: TransactionRow, state: EntryState) =>
-    r.postings.forEach((p, i) => {
-      if (p.accountId !== accountId) return;
-      entries.push({
-        key: `${r.id}-${i}`,
-        ref: `(${nums.get(r.id) ?? '?'})`,
-        side: p.side,
-        amount: p.amount,
-        state,
-      });
-    });
-  for (const r of posted) addRow(r, seen.has(r.id) ? 'posted' : 'new');
-  if (step.draft?.ledger === ledger.id) addRow(step.draft.row, 'draft');
-
   const balance = balancesOf(ledger, posted).get(accountId) ?? 0;
   const balSide: Side = balance >= 0 ? normal : normal === 'dr' ? 'cr' : 'dr';
 
-  // One line per entry, like a ledger: the opening balance first, then each posting on its own line on its side.
-  const c = collapse(entries, 7, 3, 3);
-  const cell = (e: Entry, side: Side) =>
-    e.side === side ? (
+  // The same lines in every T of this set of books, so line n is transaction n everywhere (even when the T's
+  // wrap onto several rows): an opening line if ANY T has an opening balance, then one line per transaction
+  // (empty where this account isn't touched), then the total. Long runs collapse the same way in every T.
+  const lines = ledgerLines(ledger, step, seen);
+  const ownOpening = ledger.opening.find((l) => l.accountId === accountId)?.amount ?? 0;
+  const cellsFor = (line: LedgerLine): Partial<Record<Side, Entry>> => {
+    if (line.kind === 'opening') {
+      if (ownOpening === 0) return {};
+      const side: Side = ownOpening > 0 ? normal : normal === 'dr' ? 'cr' : 'dr';
+      return {
+        [side]: { key: 'open', ref: 'Bal', side, amount: Math.abs(ownOpening), state: 'opening' },
+      };
+    }
+    if (line.kind !== 'tx') return {};
+    const out: Partial<Record<Side, Entry>> = {};
+    for (const side of ['dr', 'cr'] as Side[]) {
+      const amount = line.row.postings
+        .filter((q) => q.accountId === accountId && q.side === side)
+        .reduce((sum, q) => sum + q.amount, 0);
+      if (amount)
+        out[side] = {
+          key: `${line.row.id}-${side}`,
+          ref: `(${line.n})`,
+          side,
+          amount,
+          state: line.state,
+        };
+    }
+    return out;
+  };
+
+  const cell = (e: Entry | undefined, side: Side) =>
+    e ? (
       <span className={`tacct__cell tacct__${side}`}>
         <span className="tacct__ref">{e.ref}</span>
         <span className="tacct__amt">{formatMoney(e.amount)}</span>
@@ -132,6 +168,9 @@ function TAccount({
   return (
     <div
       className={`tacct inc-${normal}${highlighted ? ' is-highlighted' : ''}`}
+      // Rows on the ledger's shared grid: header, Dr/Cr labels, one per line, the total. Every T in the ledger
+      // has the same count, so each line is as tall as its tallest version across the row (see animations.css).
+      style={{ ['--tacct-rows' as string]: lines.length + 3 }}
       data-acct={`${ledger.id}:${accountId}`}
       role="group"
       aria-label={`${account.name}, ${TYPE_LABEL[account.type]} T-account (increases on the ${normal === 'dr' ? 'debit' : 'credit'} side), balance ${formatMoney(Math.abs(balance))} ${sideName(balSide)}`}
@@ -146,26 +185,32 @@ function TAccount({
       </div>
       {/* The T: one continuous stem from the top bar to the bottom, drawn by .tacct__t (not per row), so even an
           account with no entries reads as a T. */}
-      <div className="tacct__t">
+      <div className="tacct__t" style={{ ['--tacct-t-rows' as string]: lines.length + 2 }}>
         <div className="tacct__sides" aria-hidden="true">
           <span>Dr{normal === 'dr' && <span className="tacct__inc"> ▲</span>}</span>
           <span>Cr{normal === 'cr' && <span className="tacct__inc"> ▲</span>}</span>
         </div>
-        <ul className="tacct__body">
-          {c.items.map((e, i) => (
-            <Fragment key={e.key}>
-              {i === c.at && c.hidden > 0 && (
-                <li className="tacct__row tacct__more-row">
-                  <span className="tacct__cell tacct__dr tacct__more">⋯ {c.hidden} more</span>
+        <ul className="tacct__body" style={{ ['--tacct-body-rows' as string]: lines.length + 1 }}>
+          {lines.map((line) => {
+            if (line.kind === 'more')
+              return (
+                <li key={line.key} className="tacct__row tacct__more-row">
+                  <span className="tacct__cell tacct__dr tacct__more">⋯ {line.hidden} more</span>
                   <span className="tacct__cell tacct__cr" />
                 </li>
-              )}
-              <li className={`tacct__row is-${e.state}`}>
-                {cell(e, 'dr')}
-                {cell(e, 'cr')}
+              );
+            const c = cellsFor(line);
+            const state = line.kind === 'opening' ? 'opening' : line.state;
+            return (
+              <li
+                key={line.key}
+                className={`tacct__row is-${state}${c.dr || c.cr ? '' : ' is-blank'}`}
+              >
+                {cell(c.dr, 'dr')}
+                {cell(c.cr, 'cr')}
               </li>
-            </Fragment>
-          ))}
+            );
+          })}
           {/* The total: extra space above it, a short rule only under the side that carries it. */}
           <li className="tacct__row tacct__total">
             {(['dr', 'cr'] as Side[]).map((s) => (

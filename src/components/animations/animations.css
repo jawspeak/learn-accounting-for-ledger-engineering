@@ -130,7 +130,7 @@
 }
 
 /* ---- T-account ---- */
-.tacct {
+.ledger__taccts .tacct {
   border: 1px solid var(--sa-border);
   border-radius: 0.35rem;
   padding: 0.35rem 0.4rem;
@@ -144,13 +144,27 @@
   .ledger__taccts {
     grid-auto-rows: auto;
   }
-  .tacct {
+  /* Every T spans the same rows of its ledger's grid — header, Dr/Cr labels, each line, the total — and passes
+     them down (subgrid) to its T and its list of lines. So line n is level across every T on a row, even when a
+     label wraps in one of them, and wrapped rows of T's keep the same structure. */
+  /* Scoped to animation ledgers: lesson T-account blocks reuse the .tacct class and must not get this grid. */
+  .ledger__taccts > .tacct {
     display: grid;
-    grid-row: span 2;
+    grid-row: span var(--tacct-rows, 2);
     grid-template-rows: subgrid;
     row-gap: 0;
   }
-  .tacct__head {
+  .ledger__taccts .tacct__t {
+    display: grid;
+    grid-row: span var(--tacct-t-rows, 1);
+    grid-template-rows: subgrid;
+  }
+  .ledger__taccts .tacct__body {
+    display: grid;
+    grid-row: span var(--tacct-body-rows, 1);
+    grid-template-rows: subgrid;
+  }
+  .ledger__taccts .tacct__head {
     justify-content: flex-end;
   }
 }
@@ -167,7 +181,7 @@
   margin-top: auto;
 }
 /* The account this step is about: an outline, not a fill — the fill is reserved for the increasing side. */
-.tacct.is-highlighted {
+.ledger__taccts .tacct.is-highlighted {
   box-shadow: 0 0 0 2px var(--sa-accent);
 }
 .tacct__head {
@@ -515,10 +529,10 @@
 
 /* The increasing (normal) side of each T: shaded for its full height, with ▲ on its Dr/Cr label — the same
    convention as the lesson T-accounts, builder and cheat sheet, just smaller. */
-.tacct.inc-dr .tacct__t {
+.ledger__taccts .tacct.inc-dr .tacct__t {
   background: linear-gradient(to right, var(--sa-hl) 50%, transparent 50%);
 }
-.tacct.inc-cr .tacct__t {
+.ledger__taccts .tacct.inc-cr .tacct__t {
   background: linear-gradient(to right, transparent 50%, var(--sa-hl) 50%);
 }
 .tacct__inc {

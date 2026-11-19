@@ -53,6 +53,31 @@ describe('taccount', () => {
     expect(lines).toEqual(['dr:$1,000', 'cr:', 'dr:', 'cr:$60']);
   });
 
+  it('several accounts share their lines: the same transaction label is on the same line in every T', () => {
+    const html = tAccountsHtml(
+      'Groceries Expense (expense)\n(1): Dr 120\n\nCredit Card Payable (liability)\n(2): Dr 120\n(1): Cr 120\n\nChecking Account (asset)\n(2): Cr 120',
+    );
+    // Each T as its cells in order (Dr, Cr per line), showing the transaction number or "·" for empty.
+    const lines = html
+      .split('class="tacct tledger')
+      .slice(1)
+      .map((t) =>
+        [
+          ...t.matchAll(
+            /<span class="tacct-cell tacct-(dr|cr) tl-cell[^"]*">(.*?)<\/span>(?=<span class="tacct-cell|<\/div>)/g,
+          ),
+        ]
+          .map((m) => `${m[1]}:${(m[2]!.match(/\((\d)\)/) ?? [])[1] ?? '·'}`)
+          .join(' '),
+      );
+    // Assets → Liabilities → Equity order; line 1 = transaction (1), line 2 = transaction (2), in every T.
+    expect(lines).toEqual([
+      'dr:· cr:· dr:· cr:2', // Checking Account: nothing in (1), credit in (2)
+      'dr:· cr:1 dr:2 cr:·', // Credit Card Payable: credit in (1), debit in (2)
+      'dr:1 cr:· dr:· cr:·', // Groceries Expense: debit in (1), nothing in (2)
+    ]);
+  });
+
   it('orders several accounts Assets → Liabilities → Equity and flags an abnormal balance', () => {
     const html = tAccountsHtml(
       'Groceries Expense (expense)\n(1): Dr 120\n\nChecking Account (asset)\n(2): Cr 120\nBalance',
