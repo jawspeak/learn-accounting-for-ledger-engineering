@@ -160,7 +160,9 @@ textarea {
 .sidebar {
   border-right: 1px solid var(--border);
   /* Tight: the width goes to titles, not padding (the chevrons sit at the right edge). */
-  padding: var(--space-3) 0.2rem var(--space-3) var(--space-2);
+  /* The right padding keeps a strip for the scrollbar (macOS overlays it on the content) clear of the chevrons. */
+  padding: var(--space-3) 0.7rem var(--space-3) var(--space-2);
+  scrollbar-gutter: stable;
   font-size: var(--text-sm);
   background: var(--surface-2);
   position: sticky;
@@ -192,7 +194,7 @@ textarea {
 .sidebar .nav-num {
   color: var(--muted);
   display: inline-block;
-  min-width: 1.5em;
+  min-width: 1.9em;
 }
 /* Number, then the title (wrapped lines hang under the title, not the number), then counts/status. */
 .sidebar .nav-section__row > a,
@@ -272,7 +274,7 @@ textarea {
 }
 .sidebar .nav-pnum {
   display: inline-block;
-  min-width: 2.4em;
+  min-width: 2.9em;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
