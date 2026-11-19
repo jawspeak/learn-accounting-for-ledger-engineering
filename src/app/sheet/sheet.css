@@ -341,14 +341,31 @@ th.sh-left[colspan='3'] {
   font: inherit;
   color: var(--fg);
 }
-.sh-name {
+/* Account name: regular weight, wraps onto two lines (every column the same height, so headers stay level). */
+.sh-grid .sh-name {
+  display: block;
   width: 100%;
-  font-weight: 700 !important;
+  box-sizing: border-box;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  line-height: 1.2;
+  /* two lines + padding (0.1rem × 2) + border (1px × 2), with a hair to spare for descenders */
+  height: calc(0.85rem * 1.2 * 2 + 0.2rem + 2px + 0.15rem);
   text-align: center;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
   padding: 0.1rem 0.25rem;
+  resize: none;
+  overflow: hidden;
+}
+.sh-grid .sh-name:hover {
+  border-color: var(--sh-grid);
+}
+.sh-grid .sh-name:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  outline: none;
 }
 .sh-col-tools {
   display: flex;

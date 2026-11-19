@@ -489,15 +489,26 @@ export function SheetGrid({
 function NameInput({ name, onCommit }: { name: string; onCommit(name: string): void }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <input
+    // Two lines, wrapping, so a long name fits a narrow column instead of being cut off. Enter finishes
+    // (a name has no line breaks).
+    <textarea
       className="sh-name"
       aria-label={`Account name: ${name}`}
+      rows={2}
+      spellCheck={false}
       value={draft ?? name}
       onFocus={() => setDraft(name)}
       onBlur={() => setDraft(null)}
+      onKeyDown={(ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          ev.currentTarget.blur();
+        }
+      }}
       onChange={(ev) => {
-        setDraft(ev.target.value);
-        if (ev.target.value.trim()) onCommit(ev.target.value);
+        const v = ev.target.value.replace(/\s*\n\s*/g, ' ');
+        setDraft(v);
+        if (v.trim()) onCommit(v);
       }}
     />
   );

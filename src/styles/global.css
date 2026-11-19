@@ -913,7 +913,7 @@ textarea {
 .content.wide {
   max-width: none;
 }
-/* Spreadsheet view: no sidebar, full width, tight padding. The ☰ button still opens the section list. */
+/* Sandbox (all three views): no sidebar, full width, tight padding. The ☰ button still opens the section list. */
 .layout.no-side {
   grid-template-columns: minmax(0, 1fr);
 }

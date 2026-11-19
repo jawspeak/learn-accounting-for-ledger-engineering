@@ -21,7 +21,8 @@ import { statusOf, useProgress } from './progress';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
-  if (route.name === 'sandbox') return route.view === 'grid' ? 'content sheet-full' : 'content wide';
+  // All three Sandbox views share the Grid's layout: full width, tight padding.
+  if (route.name === 'sandbox') return 'content sheet-full';
   if (route.name === 'problem') {
     const p = problems[route.id];
     if (p?.kind === 'booking') return 'content wide-problem';
@@ -195,9 +196,27 @@ export function App() {
           title="Search titles (⌘K or /)"
         >
           {/* Phones: just the magnifier (the header is full). */}
-          <svg className="search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-            <circle cx="6.5" cy="6.5" r="4.75" fill="none" stroke="currentColor" strokeWidth="1.75" />
-            <path d="M10 10l4.25 4.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          <svg
+            className="search-icon"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            aria-hidden="true"
+          >
+            <circle
+              cx="6.5"
+              cy="6.5"
+              r="4.75"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+            />
+            <path
+              d="M10 10l4.25 4.25"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
           </svg>
           <span className="hide-narrow">Search</span>
           <kbd className="hide-narrow">⌘K</kbd>

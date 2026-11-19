@@ -109,7 +109,7 @@ export function ViewSwitch({
           </a>
         ))}
       </nav>
-      <span className="vs-note">Ungraded · the same books in all three views</span>
+      <span className="vs-note">Free practice — not graded. Switching views keeps your work.</span>
     </div>
   );
 }
