@@ -84,55 +84,6 @@ export function SectionPage({ id }: { id: string }) {
               ))}
             </>
           )}
-
-          {(SECTION_ANIMATIONS[section.id] ?? []).map((aid) => {
-            const anim = animations[aid];
-            if (!anim) return null;
-            const Anim = anim.component;
-            return (
-              <section
-                key={aid}
-                className="animation-block"
-                aria-label={`Animation: ${anim.title}`}
-              >
-                <h2>Watch it: {anim.title}</h2>
-                <Anim />
-              </section>
-            );
-          })}
-
-          {ROLE_ORDER.map((role) => {
-            const group = probs.filter((p) => p.role === role);
-            if (group.length === 0) return null;
-            return (
-              <section key={role} className="problem-group" aria-labelledby={`g-${role}`}>
-                <h2 id={`g-${role}`}>
-                  {ROLE_LABEL[role]}
-                  {group.length > 1 ? 's' : ''}
-                </h2>
-                <p className="note">{ROLE_BLURB[role]}</p>
-                <ul className="problem-list">
-                  {group.map((p) => (
-                    <li key={p.id}>
-                      <a className="row" href={href.problem(p.id)}>
-                        <span className="title">
-                          <span className="num">{problemNumber(p.id)}</span> {p.title}
-                        </span>
-                        <KindBadge kind={p.kind} />
-                        <DifficultyBadge level={p.difficulty} />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
-          {probs.length === 0 && !noPrimer && (
-            <p className="note">
-              <span className="badge coming">Coming soon</span> Problems for this section are on the
-              way.
-            </p>
-          )}
         </div>
 
         {section.lens && (
@@ -142,6 +93,53 @@ export function SectionPage({ id }: { id: string }) {
           </aside>
         )}
       </div>
+
+      {/* Below the primer | lens grid: "Watch it" blocks use the full width (wider still on big screens, so two
+          sets of books sit side by side and every step is visible without scrolling), then the problem lists. */}
+      {(SECTION_ANIMATIONS[section.id] ?? []).map((aid) => {
+        const anim = animations[aid];
+        if (!anim) return null;
+        const Anim = anim.component;
+        return (
+          <section key={aid} className="animation-block" aria-label={`Animation: ${anim.title}`}>
+            <h2>Watch it: {anim.title}</h2>
+            <Anim />
+          </section>
+        );
+      })}
+
+      {ROLE_ORDER.map((role) => {
+        const group = probs.filter((p) => p.role === role);
+        if (group.length === 0) return null;
+        return (
+          <section key={role} className="problem-group" aria-labelledby={`g-${role}`}>
+            <h2 id={`g-${role}`}>
+              {ROLE_LABEL[role]}
+              {group.length > 1 ? 's' : ''}
+            </h2>
+            <p className="note">{ROLE_BLURB[role]}</p>
+            <ul className="problem-list">
+              {group.map((p) => (
+                <li key={p.id}>
+                  <a className="row" href={href.problem(p.id)}>
+                    <span className="title">
+                      <span className="num">{problemNumber(p.id)}</span> {p.title}
+                    </span>
+                    <KindBadge kind={p.kind} />
+                    <DifficultyBadge level={p.difficulty} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+      {probs.length === 0 && !noPrimer && (
+        <p className="note">
+          <span className="badge coming">Coming soon</span> Problems for this section are on the
+          way.
+        </p>
+      )}
 
       <nav className="pager" aria-label="Section navigation">
         {prev ? (

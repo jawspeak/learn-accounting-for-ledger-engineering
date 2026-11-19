@@ -447,6 +447,20 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* "Watch it": as wide as the screen allows on big displays (past the 62rem text column, up to 84rem), so
+   the sets of books sit side by side. 6rem = the content padding plus room for a scrollbar. */
+.animation-block {
+  width: max(100%, min(84rem, calc(100vw - var(--sidebar-w) - 6rem)));
+}
+.layout.no-side .animation-block {
+  width: max(100%, min(84rem, calc(100vw - 6rem)));
+}
+@media (max-width: 860px) {
+  .animation-block,
+  .layout.no-side .animation-block {
+    width: 100%;
+  }
+}
 .problem-group h2 {
   border-bottom: 1px solid var(--border);
   padding-bottom: var(--space-1);
