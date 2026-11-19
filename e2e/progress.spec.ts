@@ -37,3 +37,12 @@ test('progress: tried then solved shows in the nav, the bar and the problem; res
   await expect(page.locator('.progress-summary')).toContainText(/0 of \d+/);
   await expect(page.locator('.progress-bar .progress-slot.is-solved')).toHaveCount(0);
 });
+
+test('a worked example (no Check button) is finished with "Mark as done"', async ({ page }) => {
+  await page.goto('./#/p/00-tour-savings-to-checking');
+  const mine = page.locator('#site-nav .nav-problems [aria-current="page"] .nav-status');
+  await expect(mine).toHaveClass(/is-todo/);
+  await page.getByRole('button', { name: '✓ Mark as done' }).click();
+  await expect(mine).toHaveClass(/is-solved/);
+  await expect(page.locator('.problem-status').first()).toContainText('Solved');
+});

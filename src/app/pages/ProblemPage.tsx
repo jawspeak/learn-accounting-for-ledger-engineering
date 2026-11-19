@@ -36,6 +36,22 @@ function ProblemStatusTag({ id }: { id: string }) {
   );
 }
 
+/** "Mark as done" for a worked example (counts as solved in your progress). */
+function WorkedDone({ id }: { id: string }) {
+  const done = statusOf(useProgress(), id) === 'solved';
+  return (
+    <div className="toolbar">
+      {done ? (
+        <span className="problem-status is-solved">✓ Done</span>
+      ) : (
+        <button type="button" className="primary" onClick={() => recordResult(id, true)}>
+          ✓ Mark as done
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
   const problem = problems[id];
   if (!problem)
@@ -419,6 +435,8 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
             <h2 id="why">Why does this work?</h2>
             <Markdown text={problem.explanation} />
           </section>
+          {/* A worked example has nothing to check: you finish it by reading it through, then marking it done. */}
+          <WorkedDone id={problem.id} />
         </>
       ) : (
         <>
