@@ -15,6 +15,8 @@ import { problems } from '@content';
 import { useTheme } from './theme';
 import { AskGemini, type AskContext } from './AskGemini';
 import { problemNumber } from './problemNumber';
+import { ProgressBar } from './ProgressBar';
+import { statusOf, useProgress } from './progress';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
@@ -65,6 +67,22 @@ function useNavHidden(): [boolean, (v: boolean) => void] {
   return [hidden, set];
 }
 
+/** ✓ solved · ✗ tried, not correct yet · ○ not started (in the nav's open section). */
+function StatusMark({ status }: { status: ReturnType<typeof statusOf> }) {
+  const [mark, label] =
+    status === 'solved'
+      ? ['✓', 'solved']
+      : status === 'tried'
+        ? ['✗', 'tried, not solved yet']
+        : ['○', 'not started'];
+  return (
+    <span className={`nav-status is-${status ?? 'todo'}`}>
+      <span aria-hidden="true">{mark}</span>
+      <span className="visually-hidden"> ({label})</span>
+    </span>
+  );
+}
+
 export function App() {
   const route = useRoute();
   const [navOpen, setNavOpen] = useState(false);
@@ -97,6 +115,7 @@ export function App() {
   const isOpen = (id: string) => openSections[id] ?? id === currentSectionId;
   const toggleSection = (id: string) => setOpenSections((o) => ({ ...o, [id]: !isOpen(id) }));
   const currentProblemId = route.name === 'problem' ? route.id : undefined;
+  const progress = useProgress();
 
   // Keep where you are visible in the nav (e.g. arriving at problem 9.12 from a link).
   const navRef = useRef<HTMLElement>(null);
@@ -158,6 +177,7 @@ export function App() {
         >
           {theme === 'dark' ? '☾ Dark' : '☀ Light'}
         </button>
+        <ProgressBar currentSectionId={currentSectionId} />
       </header>
       <div className={collapsed ? 'layout no-side' : 'layout'}>
         <nav
@@ -195,6 +215,14 @@ export function App() {
                     >
                       <span className="nav-num">{s.id === 'review' ? '↻' : `${s.number}.`}</span>{' '}
                       {s.title}
+                      {s.problemIds.length > 0 && (
+                        <span className="nav-count">
+                          {' '}
+                          {s.problemIds.filter((p) => statusOf(progress, p) === 'solved').length}/
+                          {s.problemIds.length}
+                          <span className="visually-hidden"> solved</span>
+                        </span>
+                      )}
                     </a>
                     {
                       <button
@@ -218,9 +246,6 @@ export function App() {
                           aria-current={route.name === 'section' && here ? 'page' : undefined}
                           onClick={() => setNavOpen(false)}
                         >
-                          <span className="nav-pnum" aria-hidden="true">
-                            ≡
-                          </span>{' '}
                           Overview
                         </a>
                       </li>
@@ -233,6 +258,7 @@ export function App() {
                           >
                             <span className="nav-pnum">{problemNumber(pid)}</span>{' '}
                             {problems[pid]?.title ?? pid}
+                            <StatusMark status={statusOf(progress, pid)} />
                           </a>
                         </li>
                       ))}

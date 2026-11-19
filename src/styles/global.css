@@ -159,7 +159,8 @@ textarea {
 }
 .sidebar {
   border-right: 1px solid var(--border);
-  padding: var(--space-4);
+  /* Tight: the width goes to titles, not padding (the chevrons sit at the right edge). */
+  padding: var(--space-3) 0.2rem var(--space-3) var(--space-2);
   font-size: var(--text-sm);
   background: var(--surface-2);
   position: sticky;
@@ -175,7 +176,7 @@ textarea {
 }
 .sidebar li a {
   display: block;
-  padding: 0.35rem 0.6rem;
+  padding: 0.3rem 0.4rem;
   border-radius: 6px;
   color: var(--fg);
   text-decoration: none;
@@ -191,7 +192,23 @@ textarea {
 .sidebar .nav-num {
   color: var(--muted);
   display: inline-block;
-  min-width: 1.6em;
+  min-width: 1.5em;
+}
+/* Number, then the title (wrapped lines hang under the title, not the number), then counts/status. */
+.sidebar .nav-section__row > a,
+.sidebar .nav-problems a {
+  display: flex;
+  align-items: baseline;
+}
+.sidebar .nav-num,
+.sidebar .nav-pnum {
+  flex: none;
+}
+.nav-count,
+.nav-status {
+  flex: none;
+  margin-left: auto;
+  padding-left: 0.3rem;
 }
 /* The nav as a tree: a section row (link + ▸ toggle) and, when open, its problems indented beneath it. */
 .nav-section__row {
@@ -211,7 +228,7 @@ textarea {
   border: 0;
   background: transparent;
   color: var(--muted);
-  padding: 0.35rem 0.45rem;
+  padding: 0.3rem 0.3rem;
   border-radius: 6px;
   line-height: 1.2;
   cursor: pointer;
@@ -235,12 +252,12 @@ textarea {
   color: var(--fg);
 }
 .sidebar .nav-problems {
-  margin: 0.1rem 0 0.4rem 1.35rem;
-  padding-left: 0.4rem;
+  margin: 0.1rem 0 0.4rem 0.75rem;
+  padding-left: 0.25rem;
   border-left: 1px solid var(--border);
 }
 .sidebar .nav-problems a {
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.3;
@@ -255,7 +272,7 @@ textarea {
 }
 .sidebar .nav-pnum {
   display: inline-block;
-  min-width: 2.6em;
+  min-width: 2.4em;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -1112,4 +1129,117 @@ textarea {
   .ask-gemini {
     display: none;
   }
+}
+
+/* ---- Progress (stored in this browser only) ---- */
+/* A thin bar along the bottom edge of the header: a segment per section, a slot per problem. */
+.progress-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 5px;
+}
+.progress-bar ol {
+  display: flex;
+  gap: 3px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.progress-bar li {
+  flex-basis: 0;
+  min-width: 0;
+}
+.progress-bar a {
+  display: flex;
+  gap: 1px;
+  height: 100%;
+  transition: transform 0.12s ease;
+  transform-origin: top;
+}
+.progress-bar a:hover,
+.progress-bar a:focus-visible {
+  transform: scaleY(2.2);
+}
+.progress-slot {
+  flex: 1;
+  min-width: 0;
+  background: var(--border);
+}
+.progress-bar li.is-current .progress-slot:not(.is-solved):not(.is-tried) {
+  background: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.progress-slot.is-solved {
+  background: var(--ok);
+}
+.progress-slot.is-tried {
+  background: var(--warn);
+}
+
+.nav-count {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nav-status {
+  font-size: 0.75rem;
+}
+.nav-status.is-solved {
+  color: var(--ok);
+  font-weight: 700;
+}
+.nav-status.is-tried {
+  color: var(--warn);
+  font-weight: 700;
+}
+.nav-status.is-todo {
+  color: var(--muted);
+  opacity: 0.6;
+}
+.problem-status {
+  margin-left: 0.6rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.problem-status.is-solved {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.problem-status.is-tried {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.progress-summary {
+  margin: var(--space-5) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 40rem;
+}
+.progress-summary h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+}
+.progress-summary__sections {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem var(--space-3);
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+.progress-summary__sections .num {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-align: right;
+}
+.progress-summary__note {
+  color: var(--muted);
+  font-size: var(--text-sm);
 }

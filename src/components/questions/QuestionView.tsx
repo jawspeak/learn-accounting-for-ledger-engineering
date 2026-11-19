@@ -70,12 +70,15 @@ export function QuestionView({
   problem,
   initial,
   onAttemptChange,
+  onChecked,
   next,
 }: {
   problem: NonBookingProblem;
   next?: { href: string; title: string };
   initial?: AttemptState;
   onAttemptChange?(a: AttemptState): void;
+  /** Called with the verdict whenever an answer is checked (progress tracking). */
+  onChecked?(correct: boolean): void;
 }) {
   const [value, setValue] = useState<AttemptState>(initial ?? { v: 1, problemId: problem.id });
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -86,6 +89,9 @@ export function QuestionView({
     setResult(null);
     setLevel(0);
     onAttemptChange?.(next);
+    // Instant kinds are graded as you choose: each choice is a check.
+    if (INSTANT.has(problem.kind))
+      onChecked?.(engine.checkProblem(problem, next, entities).correct);
   };
   const { correctItems, wrongItems } = marksFor(result, level);
 
@@ -121,8 +127,10 @@ export function QuestionView({
           type="button"
           className="primary"
           onClick={() => {
-            setResult(engine.checkProblem(problem, value, entities));
+            const r = engine.checkProblem(problem, value, entities);
+            setResult(r);
             setLevel(1);
+            onChecked?.(r.correct);
           }}
         >
           Check answer

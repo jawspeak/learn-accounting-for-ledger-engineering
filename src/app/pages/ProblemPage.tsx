@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
+import { recordResult, statusOf, useProgress } from '../progress';
 import type {
   Account,
   AccountType,
@@ -24,6 +25,17 @@ import { problemNumber } from '../problemNumber';
 import { boardFor, solvedRows, withTypes } from '../solutionBoard';
 import { DifficultyBadge, KindBadge, ROLE_LABEL } from '../badges';
 
+/** "✓ Solved" / "Tried" next to the breadcrumb, from your saved progress. */
+function ProblemStatusTag({ id }: { id: string }) {
+  const status = statusOf(useProgress(), id);
+  if (!status) return null;
+  return (
+    <span className={`problem-status is-${status}`}>
+      {status === 'solved' ? '✓ Solved' : 'Tried — not solved yet'}
+    </span>
+  );
+}
+
 export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
   const problem = problems[id];
   if (!problem)
@@ -44,6 +56,7 @@ export function ProblemPage({ id, attempt }: { id: string; attempt?: string }) {
         next={nextLink(problem)}
         initial={initial}
         onAttemptChange={(a) => saveAttempt(problem.id, a)}
+        onChecked={(ok) => recordResult(problem.id, ok)}
       />
     </ProblemFrame>
   );
@@ -183,6 +196,7 @@ function ProblemFrame({
                 ({index + 1} of {total})
               </span>
             )}
+            <ProblemStatusTag id={problem.id} />
           </>
         )}
       </div>
@@ -419,8 +433,10 @@ function BookingView({ problem, initial }: { problem: BookingProblem; initial?: 
                   rows,
                   balanceSheet: askBs ? bs : undefined,
                 };
-                setResult(engine.checkProblem(problem, attempt, entities));
+                const r = engine.checkProblem(problem, attempt, entities);
+                setResult(r);
                 setLevel(1);
+                recordResult(problem.id, r.correct);
                 // Bring the verdict into view without jumping away from the grid more than needed.
                 requestAnimationFrame(() =>
                   feedbackRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }),
