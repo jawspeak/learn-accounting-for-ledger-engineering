@@ -193,6 +193,68 @@ textarea {
   display: inline-block;
   min-width: 1.6em;
 }
+/* The nav as a tree: a section row (link + ▸ toggle) and, when open, its problems indented beneath it. */
+.nav-section__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+.nav-section__row > a {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar li a.is-ancestor {
+  font-weight: 650;
+}
+.nav-toggle {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.35rem 0.45rem;
+  border-radius: 6px;
+  line-height: 1.2;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.nav-toggle .nav-chev {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  vertical-align: 0.1em;
+}
+.nav-toggle[aria-expanded='true'] .nav-chev {
+  transform: rotate(45deg);
+}
+.nav-toggle:hover {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+.sidebar .nav-problems {
+  margin: 0.1rem 0 0.4rem 1.35rem;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--border);
+}
+.sidebar .nav-problems a {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.sidebar .nav-problems a:hover,
+.sidebar .nav-problems a[aria-current='page'] {
+  color: var(--fg);
+}
+.sidebar .nav-pnum {
+  display: inline-block;
+  min-width: 2.6em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 .content {
   padding: var(--space-5) var(--space-6) var(--space-6);
   max-width: 62rem;

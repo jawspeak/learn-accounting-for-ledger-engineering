@@ -132,12 +132,27 @@ test('Open in Sandbox carries the problem accounts', async ({ page }) => {
 
 test('prev/next navigation resets the answer', async ({ page }) => {
   await enterCorrectCashToChecking(page);
-  await page.getByRole('link', { name: /Transfer checking → savings/ }).click();
+  const pager = page.locator('nav.pager');
+  await pager.getByRole('link', { name: /Transfer checking → savings/ }).click();
   await expect(page.getByRole('heading', { name: 'Transfer checking → savings' })).toBeVisible();
   expect(page.url()).not.toContain('?a=');
   await expect(page.locator('.tab-amount')).toHaveCount(0);
-  await page.getByRole('link', { name: /Deposit cash into checking/ }).click();
+  await pager.getByRole('link', { name: /Deposit cash into checking/ }).click();
   await expect(page.getByRole('heading', { name: 'Deposit cash into checking' })).toBeVisible();
   await expect(page.locator('.tab-amount')).toHaveCount(0);
   await expect(page.locator('.fb-headline')).toHaveCount(0);
+});
+
+test('the nav is a tree: the current section lists its problems, and any section opens', async ({
+  page,
+}) => {
+  await page.goto('./#/p/05-friend-repays');
+  const nav = page.locator('#site-nav');
+  // The section you are in is open, with the current problem marked.
+  await expect(nav.locator('.nav-problems [aria-current="page"]')).toContainText('5.7');
+  // Open another section and go to one of its problems from the nav.
+  await nav.getByRole('button', { name: /Show the \d+ problems in T-Accounts/ }).click();
+  await nav.locator('.nav-problems a', { hasText: /^3\.1 / }).click();
+  await expect(page.locator('.breadcrumb')).toContainText('Problem 3.1');
+  await expect(nav.locator('.nav-problems [aria-current="page"]')).toContainText('3.1');
 });

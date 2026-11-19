@@ -1,5 +1,5 @@
 import { AnimationGallery } from '../components/animations';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { sections } from '@content';
 import { href, useRoute } from './router';
 import { HomePage } from './pages/HomePage';
@@ -14,6 +14,7 @@ import { CheatSheetDrawer } from './CheatSheetDrawer';
 import { problems } from '@content';
 import { useTheme } from './theme';
 import { AskGemini, type AskContext } from './AskGemini';
+import { problemNumber } from './problemNumber';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
 function mainClass(route: ReturnType<typeof useRoute>): string {
@@ -90,6 +91,20 @@ export function App() {
         ? problems[route.id]?.sectionId
         : undefined;
 
+  // The nav is a tree: each section can open to list its problems. The section you're in opens by itself;
+  // any section's ▸ opens/closes it (your choice wins over the automatic one).
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const isOpen = (id: string) => openSections[id] ?? id === currentSectionId;
+  const toggleSection = (id: string) => setOpenSections((o) => ({ ...o, [id]: !isOpen(id) }));
+  const currentProblemId = route.name === 'problem' ? route.id : undefined;
+
+  // Keep where you are visible in the nav (e.g. arriving at problem 9.12 from a link).
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = navRef.current?.querySelector('.nav-problems [aria-current="page"]');
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
+  }, [currentProblemId]);
+
   const problem = route.name === 'problem' ? problems[route.id] : undefined;
   const section = route.name === 'section' ? sections.find((s) => s.id === route.id) : undefined;
   const askContext: AskContext = problem
@@ -145,7 +160,12 @@ export function App() {
         </button>
       </header>
       <div className={collapsed ? 'layout no-side' : 'layout'}>
-        <nav id="site-nav" className={`sidebar ${navOpen ? 'open' : ''}`} aria-label="Sections">
+        <nav
+          id="site-nav"
+          ref={navRef}
+          className={`sidebar ${navOpen ? 'open' : ''}`}
+          aria-label="Sections"
+        >
           <ol>
             <li>
               <a
@@ -159,18 +179,56 @@ export function App() {
                 Home
               </a>
             </li>
-            {sections.map((s) => (
-              <li key={s.id}>
-                <a
-                  href={href.section(s.id)}
-                  aria-current={currentSectionId === s.id ? 'page' : undefined}
-                  onClick={() => setNavOpen(false)}
-                >
-                  <span className="nav-num">{s.id === 'review' ? '↻' : `${s.number}.`}</span>{' '}
-                  {s.title}
-                </a>
-              </li>
-            ))}
+            {sections.map((s) => {
+              const open = isOpen(s.id);
+              const listId = `nav-problems-${s.id}`;
+              const here = currentSectionId === s.id;
+              return (
+                <li key={s.id} className="nav-section">
+                  <div className="nav-section__row">
+                    <a
+                      href={href.section(s.id)}
+                      // The section page itself is "the page"; on one of its problems the section is where you are.
+                      aria-current={route.name === 'section' && here ? 'page' : undefined}
+                      className={here && route.name === 'problem' ? 'is-ancestor' : undefined}
+                      onClick={() => setNavOpen(false)}
+                    >
+                      <span className="nav-num">{s.id === 'review' ? '↻' : `${s.number}.`}</span>{' '}
+                      {s.title}
+                    </a>
+                    {s.problemIds.length > 0 && (
+                      <button
+                        type="button"
+                        className="nav-toggle"
+                        aria-expanded={open}
+                        aria-controls={listId}
+                        aria-label={`${open ? 'Hide' : 'Show'} the ${s.problemIds.length} problems in ${s.title}`}
+                        title={`${open ? 'Hide' : 'Show'} problems`}
+                        onClick={() => toggleSection(s.id)}
+                      >
+                        <span className="nav-chev" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                  {open && s.problemIds.length > 0 && (
+                    <ol className="nav-problems" id={listId} aria-label={`${s.title}: problems`}>
+                      {s.problemIds.map((pid) => (
+                        <li key={pid}>
+                          <a
+                            href={href.problem(pid)}
+                            aria-current={currentProblemId === pid ? 'page' : undefined}
+                            onClick={() => setNavOpen(false)}
+                          >
+                            <span className="nav-pnum">{problemNumber(pid)}</span>{' '}
+                            {problems[pid]?.title ?? pid}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </li>
+              );
+            })}
             <li>
               <a
                 href={href.cheatsheet()}
