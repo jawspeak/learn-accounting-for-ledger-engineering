@@ -3,7 +3,7 @@
  * so it can never go stale and needs no build step.
  *
  * Deliberately narrow: names and headings only (problem titles, section H1s, "Watch it" animations, callout
- * titles, glossary term names, a few pages). No prose — primers, prompts, definitions and hints are not indexed,
+ * titles, glossary term names, a few pages, and each lens by its topic + keywords). No prose — primers, prompts, definitions and hints are not indexed,
  * so a common word like "debit" finds the handful of things *named* for it, not every page that mentions it.
  */
 import { problems, sections } from '@content';
@@ -15,16 +15,23 @@ import { CHEATSHEET_ANCHORS } from '../app/CheatSheet';
 import { problemNumber } from '../app/problemNumber';
 import { href } from '../app/router';
 import { EXAMPLES } from '../app/sandbox/examples';
-import { SECTION_ANIMATIONS, calloutAnchor, watchAnchor } from '../app/sectionAnimations';
+import { lensKeywords } from '../../content/search-keywords';
+import {
+  SECTION_ANIMATIONS,
+  calloutAnchor,
+  LENS_ANCHOR,
+  watchAnchor,
+} from '../app/sectionAnimations';
 
-export type SearchKind = 'term' | 'section' | 'watch' | 'callout' | 'page' | 'example' | 'problem';
+export type SearchKind =
+  'term' | 'section' | 'watch' | 'callout' | 'lens' | 'page' | 'example' | 'problem';
 
 export interface SearchEntry {
   id: string;
   kind: SearchKind;
   /** What's shown and searched. */
   title: string;
-  /** Other searchable names (glossary aliases). */
+  /** Other searchable names (glossary aliases, lens keywords). */
   aliases?: string[];
   /** Matched only as a whole query, e.g. a problem's number "6.3". */
   code?: string;
@@ -40,10 +47,14 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   section: 'Section',
   watch: 'Watch it',
   callout: 'Callout',
+  lens: 'Lens',
   page: 'Page',
   example: 'Sandbox example',
   problem: 'Problem',
 };
+
+/** Aliases every lens shares, so "lens" lists them all. */
+const GENERIC_ALIASES = new Set(['lens', 'ledger engineers lens']);
 
 const sectionLabel = (s: (typeof sections)[number]) =>
   s.id === 'review' ? s.title : `§${s.number} ${s.title}`;
@@ -92,6 +103,19 @@ export function buildIndex(): SearchEntry[] {
         href: href.section(s.id, calloutAnchor(i)),
       });
     });
+    // Every lens has the same heading, so it's found by its topic and hand-picked keywords
+    // (content/search-keywords.ts) — not its prose. "lens" alone lists them all.
+    const lens = lensKeywords[s.id];
+    if (s.lens && lens) {
+      out.push({
+        id: `lens:${s.id}`,
+        kind: 'lens',
+        title: lens.topic,
+        aliases: [...GENERIC_ALIASES, ...lens.keywords],
+        context: `${label} · Ledger engineer’s lens`,
+        href: href.section(s.id, LENS_ANCHOR),
+      });
+    }
     for (const pid of s.problemIds) {
       const p = problems[pid];
       if (!p) continue;
@@ -165,6 +189,7 @@ const KIND_WEIGHT: Record<SearchKind, number> = {
   section: 5,
   watch: 4,
   callout: 4,
+  lens: 4,
   page: 3,
   example: 2,
   problem: 1,
@@ -199,17 +224,20 @@ export function createSearcher(entries: SearchEntry[]): Searcher {
   const score = (p: Prepared, q: string[], phrase: string, raw: string): number => {
     if (p.entry.code && p.entry.code.toLowerCase() === raw) return 2000;
     let s = 0;
+    let inTitle = false;
     for (const t of q) {
       let best = 0;
       for (const w of p.titleWords) best = Math.max(best, w === t ? 20 : w.startsWith(t) ? 10 : 0);
+      if (best > 0) inTitle = true;
       for (const w of p.aliasWords) best = Math.max(best, w === t ? 16 : w.startsWith(t) ? 8 : 0);
       if (best === 0) return 0; // every query word must match
       s += best;
     }
     if (p.phrases.includes(phrase)) s += 1000;
     else if (p.phrases.some((x) => x.startsWith(phrase))) s += 300;
-    // Prefer short, specific titles; then the kind of thing.
-    return s + KIND_WEIGHT[p.entry.kind] * 3 - p.titleWords.length * 0.5;
+    // Prefer short, specific titles (when the title is what matched); then the kind of thing; ties keep
+    // course order.
+    return s + KIND_WEIGHT[p.entry.kind] * 3 - (inTitle ? p.titleWords.length * 0.5 : 0);
   };
 
   return {
@@ -227,6 +255,19 @@ export function createSearcher(entries: SearchEntry[]): Searcher {
         .map((x) => x.p.entry);
     },
   };
+}
+
+/**
+ * When a result matched through an alias/keyword and not its title, the alias that explains it (so the dialog
+ * can say *matches “idempotency key”*). Undefined when the title itself matches.
+ */
+export function matchedAlias(entry: SearchEntry, query: string): string | undefined {
+  const q = words(query);
+  if (q.length === 0 || !entry.aliases) return undefined;
+  const covers = (ws: string[]) => q.every((t) => ws.some((w) => w.startsWith(t)));
+  if (covers(words(entry.title))) return undefined;
+  // The generic lens aliases ("lens") explain nothing — the kind label already says Lens.
+  return entry.aliases.find((a) => !GENERIC_ALIASES.has(a) && covers(words(a)));
 }
 
 let cached: Searcher | undefined;

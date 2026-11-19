@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from './App';
 import { sections } from '@content';
-import { calloutAnchor, SECTION_ANIMATIONS, watchAnchor } from './sectionAnimations';
+import { calloutAnchor, LENS_ANCHOR, SECTION_ANIMATIONS, watchAnchor } from './sectionAnimations';
 import { buildIndex } from '../search';
 
 // jsdom has no layout: give pages that scroll to a target (Definitions, ?at= links) a no-op.
@@ -68,6 +68,7 @@ describe('search dialog', () => {
       (s.callouts ?? []).forEach((_, i) =>
         expect(document.getElementById(calloutAnchor(i))).toBeTruthy(),
       );
+      if (s.lens) expect(document.getElementById(LENS_ANCHOR), s.id).toBeTruthy();
     }
     await go('#/cheatsheet');
     for (const e of buildIndex().filter((x) => x.href.startsWith('#/cheatsheet?at='))) {

@@ -1,9 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { KIND_LABEL, siteSearch, words, type SearchEntry } from '../search';
+import { KIND_LABEL, matchedAlias, siteSearch, words, type SearchEntry } from '../search';
 import { statusOf, useProgress } from './progress';
 import '../styles/search.css';
 
-const SUGGESTIONS = ['debit', 'loan', 'FBO', 'accrual', 'trial balance', '6.3'];
+const SUGGESTIONS = ['debit', 'loan', 'FBO', 'accrual', 'idempotency', 'lens', '6.3'];
 
 /** Bold the start of each title word that a query word matches. */
 function highlight(title: string, query: string): ReactNode {
@@ -123,7 +123,8 @@ export function SearchDialog({ onClose }: { onClose(): void }) {
         {trimmed === '' ? (
           <div className="search-empty">
             <p className="note">
-              Searches titles: problems, sections, “Watch it” animations, definitions and pages.
+              Searches titles: problems, sections, “Watch it” animations, definitions, pages and the
+              ledger engineer’s lenses.
             </p>
             <p className="note">
               Try:{' '}
@@ -181,6 +182,10 @@ export function SearchDialog({ onClose }: { onClose(): void }) {
                       </span>
                     )}
                   </span>
+                  {(() => {
+                    const via = matchedAlias(r, q);
+                    return via && <span className="search-via">matches “{highlight(via, q)}”</span>;
+                  })()}
                   {r.context && <span className="search-context">{r.context}</span>}
                 </span>
               </li>

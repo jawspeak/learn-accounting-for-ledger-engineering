@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { problems, sections } from '@content';
 import { glossary } from '../../content/glossary';
-import { buildIndex, createSearcher, siteSearch, words } from '.';
+import { lensKeywords } from '../../content/search-keywords';
+import { buildIndex, createSearcher, matchedAlias, siteSearch, words } from '.';
 
 const s = siteSearch();
 const top = (q: string) => s.search(q)[0];
@@ -75,6 +76,65 @@ describe('ranking', () => {
     );
     expect(top('contra accounts')?.id).toMatch(/contra/);
     expect(ids('payroll')).toContain('example:payroll');
+  });
+});
+
+describe('ledger engineer’s lens', () => {
+  const withLens = sections.filter((x) => x.lens);
+
+  it('every lens has keywords, and every keyword entry is a real section with a lens', () => {
+    for (const sec of withLens) expect(lensKeywords[sec.id], sec.id).toBeTruthy();
+    for (const id of Object.keys(lensKeywords))
+      expect(
+        withLens.map((x) => x.id),
+        id,
+      ).toContain(id);
+  });
+
+  it('"lens" lists every lens first, in course order, without a "matches" note', () => {
+    const r = s.search('lens', 100);
+    expect(r.slice(0, withLens.length).map((e) => e.id)).toEqual(
+      withLens.map((x) => `lens:${x.id}`),
+    );
+    expect(r.filter((e) => e.kind === 'lens')).toHaveLength(withLens.length);
+    expect(r.map((e) => matchedAlias(e, 'lens')).filter(Boolean)).toEqual([]);
+  });
+
+  it('"reconcile" and "reconciliation" find every lens about reconciling', () => {
+    for (const q of ['reconcile', 'reconciliation'])
+      expect(ids(q), q).toEqual(
+        expect.arrayContaining([
+          'lens:04-perspectives',
+          'lens:06-loans',
+          'lens:08-accruals',
+          'lens:10-processes',
+          'lens:11-fintech',
+        ]),
+      );
+  });
+
+  it('engineering words find the right lens', () => {
+    expect(ids('idempotency')).toEqual(
+      expect.arrayContaining(['lens:05-journal-entries', 'lens:11-fintech']),
+    );
+    expect(ids('cron')[0]).toBe('lens:08-accruals');
+    expect(ids('signed amount')[0]).toBe('lens:02-debits-credits');
+    expect(ids('sub-ledger')).toContain('lens:04-perspectives');
+    expect(ids('floating point')[0]).toBe('lens:03-t-accounts');
+    expect(ids('schema migration')[0]).toBe('lens:12-capstone');
+    expect(ids('store gross')[0]).toBe('lens:09-contra');
+  });
+
+  it('does not flood common accounting words', () => {
+    expect(s.search('debit', 100).length).toBeLessThan(20);
+    expect(s.search('debit', 100).some((e) => e.kind === 'lens')).toBe(false);
+  });
+
+  it('says which keyword matched when the title did not', () => {
+    const e = s.search('cron')[0]!;
+    expect(matchedAlias(e, 'cron')).toBe('cron job');
+    expect(matchedAlias(s.search('dr')[0]!, 'dr')).toBe('dr');
+    expect(matchedAlias(s.search('accruals are')[0]!, 'accruals are')).toBeUndefined();
   });
 });
 

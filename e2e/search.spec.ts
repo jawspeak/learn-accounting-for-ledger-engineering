@@ -23,6 +23,15 @@ test('⌘K search: type, choose with the keyboard, land on the block', async ({ 
   await expect(page.getByRole('dialog', { name: 'Search' })).toHaveCount(0);
   await expect(page.locator('#callout-1')).toBeInViewport();
 
+  // An engineering keyword finds a lens, says why, and lands on it.
+  await page.keyboard.press('ControlOrMeta+k');
+  await page.getByRole('combobox', { name: /Search/ }).fill('cron');
+  await expect(opts.first()).toContainText('Accruals are scheduled jobs');
+  await expect(opts.first()).toContainText('matches “cron job”');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/#\/s\/08-accruals\?at=lens/);
+  await expect(page.locator('#lens')).toBeInViewport();
+
   // The header button opens it too; "6.3" jumps to that problem.
   await page.getByRole('button', { name: /^Search/ }).click();
   await page.getByRole('combobox', { name: /Search/ }).fill('6.3');

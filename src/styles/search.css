@@ -96,6 +96,16 @@
   color: inherit;
   font-weight: 700;
 }
+.search-via {
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--muted);
+}
+.search-via mark {
+  background: none;
+  color: var(--fg);
+  font-weight: 700;
+}
 .search-done {
   color: var(--ok);
 }
