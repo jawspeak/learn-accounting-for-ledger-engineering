@@ -4,54 +4,55 @@ import { engine } from '@engine';
 import { EXAMPLES } from '../../../content/sandbox-examples';
 import { parseDollars, formatDollars } from '../../components/builder/model';
 import {
+  addAccount,
+  addEntry,
   isManualOrder,
   moveAccountInOrder,
   moveRow,
   orderedAccounts,
   orderedIds,
+  removeAccount,
   removeRow,
   setManualOrder,
-} from '../model';
-import {
-  addAccount,
-  ensureRows,
-  equalsAt,
-  MIN_ROWS,
-  removeAccount,
-  setAmount,
   setOpening,
-  sheetBalance,
   updateAccount,
-  visibleRowCount,
-} from './model';
+} from '../model';
+import { equalsAt, setAmount, sheetBalance } from './model';
 
-const base = (): SandboxEntity => ({
-  id: 'x',
-  name: 'X',
-  accounts: [
-    { id: 'cash', name: 'Cash', type: 'asset' },
-    { id: 'revenue', name: 'Revenue', type: 'revenue' },
-    { id: 'payable', name: 'Payable', type: 'liability' },
-  ],
-  rows: [],
-  showBalanceSheets: false,
-});
+/** Three accounts and two empty entries, as "+ Add entry" makes them in the Grid. */
+const base = (): SandboxEntity =>
+  addEntry(
+    addEntry(
+      {
+        id: 'x',
+        name: 'X',
+        accounts: [
+          { id: 'cash', name: 'Cash', type: 'asset' },
+          { id: 'revenue', name: 'Revenue', type: 'revenue' },
+          { id: 'payable', name: 'Payable', type: 'liability' },
+        ],
+        rows: [],
+        showBalanceSheets: false,
+      },
+      { blankLines: false },
+    ),
+    { blankLines: false },
+  );
 const balanceOf = (bs: { lines: { accountId: string; amount: number }[] }, id: string) =>
   bs.lines.find((l) => l.accountId === id)?.amount ?? 0;
 
-describe('sheet rows', () => {
-  it('shows at least MIN_ROWS and a few spare rows past the last used one', () => {
-    expect(visibleRowCount([])).toBe(MIN_ROWS);
-    const rows = ensureRows([], 14).map((r, i) => (i === 14 ? { ...r, label: 'late' } : r));
-    expect(visibleRowCount(rows)).toBe(18);
-  });
-
-  it('typing into a blank row materialises it and the blanks above, with unique ids', () => {
-    const e = setAmount(base(), 3, 'cash', 'dr', 500);
-    expect(e.rows.map((r) => r.id)).toEqual(['r1', 'r2', 'r3', 'r4']);
-    expect(e.rows[3]!.postings).toEqual([
+describe('grid entries', () => {
+  it('the Grid has exactly the stored entries; "+ Add entry" adds one with no lines', () => {
+    const e = base();
+    expect(e.rows).toEqual([
+      { id: 'r1', postings: [] },
+      { id: 'r2', postings: [] },
+    ]);
+    expect(setAmount(e, 1, 'cash', 'dr', 500).rows[1]!.postings).toEqual([
       { accountId: 'cash', side: 'dr', amount: 500, chosenType: 'asset' },
     ]);
+    // There are no blank padding rows, so nothing past the last entry gets created.
+    expect(setAmount(e, 5, 'cash', 'dr', 500).rows).toHaveLength(2);
   });
 });
 

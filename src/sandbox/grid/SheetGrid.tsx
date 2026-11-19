@@ -3,35 +3,26 @@ import type { Account, AccountType, BalanceSheet, Money, SandboxEntity, Side } f
 import { engine } from '@engine';
 import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
 import {
-  ACCOUNT_TYPES,
+  addAccount,
+  addEntry,
+  entryCheck,
   isManualOrder,
   moveAccountInOrder,
   moveRow,
   orderedAccounts,
   orderedIds,
   removeRow,
-} from '../model';
-import {
-  addAccount,
-  contraBase,
-  contraCandidates,
-  ensureRows,
-  equalsAt,
-  removeAccount,
-  setAmount,
-  setLabel,
   setOpening,
-  sheetBalance,
-  toneOf,
   updateAccount,
-  visibleRowCount,
-} from './model';
+} from '../model';
+import { ContraParentSelect, removeAccountAsking, TypeOptions } from '../PartyPanels';
+import { equalsAt, setAmount, setLabel, sheetBalance, toneOf } from './model';
 
 const SIDES: Side[] = ['dr', 'cr'];
 const SIDE_WORD: Record<Side, string> = { dr: 'debit', cr: 'credit' };
 /** Nav columns: 0 = event label, then two per account (Dr, Cr). */
 const FIRST_AMOUNT_COL = 1;
-/** Frozen left block: #, Event, Dr = Cr? */
+/** Frozen left block: #, Description, Dr = Cr? */
 const LEFT_COLS = 3;
 
 /**
@@ -50,10 +41,11 @@ export function SheetGrid({
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('asset');
 
-  // One account order for both views: auto (A = L + E) or the manual order; ◀ ▶ only in manual.
+  // One account order for every view: auto (A = L + E) or the manual order; ← → only in manual.
   const accounts = orderedAccounts(e);
   const manual = isManualOrder(e);
-  const n = visibleRowCount(e.rows);
+  // The same entries as the Journal — no padding rows; "+ Add entry" adds one.
+  const n = e.rows.length;
   const balance = sheetBalance(e);
   const eqAt = equalsAt(accounts);
   const lastCol = FIRST_AMOUNT_COL + accounts.length * 2 - 1;
@@ -99,9 +91,8 @@ export function SheetGrid({
   };
 
   const remove = (a: Account) => {
-    const used = e.rows.some((r) => r.postings.some((p) => p.accountId === a.id));
-    if (used && !window.confirm(`Remove ${a.name} and its amounts?`)) return;
-    onChange(removeAccount(e, a.id));
+    const next = removeAccountAsking(e, a);
+    if (next) onChange(next);
   };
 
   /** Divider classes: a double rule before the first right-hand account (A ‖ = ‖ L + E), a rule between T's. */
@@ -151,8 +142,8 @@ export function SheetGrid({
     >
       <table className="sh-grid" ref={tableRef} onKeyDown={onNav}>
         <caption className="sr-only">
-          Events are rows; each account has a debit and a credit column. Arrow keys and Enter move
-          between cells.
+          Journal entries are rows; each account has a debit and a credit column. Arrow keys and
+          Enter move between cells.
         </caption>
         <colgroup>
           <col className="sh-w-num" />
@@ -189,7 +180,7 @@ export function SheetGrid({
                         disabled={i === 0}
                         onClick={() => onChange(moveAccountInOrder(e, a.id, -1))}
                       >
-                        <span aria-hidden="true">◀</span>
+                        <span aria-hidden="true">←</span>
                       </button>
                       <button
                         type="button"
@@ -197,7 +188,7 @@ export function SheetGrid({
                         disabled={i === accounts.length - 1}
                         onClick={() => onChange(moveAccountInOrder(e, a.id, 1))}
                       >
-                        <span aria-hidden="true">▶</span>
+                        <span aria-hidden="true">→</span>
                       </button>
                     </>
                   )}
@@ -232,17 +223,7 @@ export function SheetGrid({
                   value={newType}
                   onChange={(ev) => setNewType(ev.target.value as AccountType)}
                 >
-                  {ACCOUNT_TYPES.map((t) => (
-                    <option
-                      key={t.type}
-                      value={t.type}
-                      disabled={
-                        !!contraBase(t.type) && contraCandidates(accounts, t.type).length === 0
-                      }
-                    >
-                      {t.label}
-                    </option>
-                  ))}
+                  <TypeOptions accounts={accounts} />
                 </select>
                 <button type="submit" className="btn" disabled={!newName.trim()}>
                   ＋ Add
@@ -269,35 +250,16 @@ export function SheetGrid({
                   onChange(updateAccount(e, a.id, { type: ev.target.value as AccountType }))
                 }
               >
-                {ACCOUNT_TYPES.map((t) => (
-                  <option
-                    key={t.type}
-                    value={t.type}
-                    disabled={
-                      !!contraBase(t.type) && contraCandidates(accounts, t.type, a.id).length === 0
-                    }
-                  >
-                    {t.label}
-                  </option>
-                ))}
+                <TypeOptions accounts={accounts} self={a.id} />
               </select>
-              {contraBase(a.type) && (
-                <label className="sh-contra">
-                  reduces{' '}
-                  <select
-                    value={a.contraOf ?? ''}
-                    onChange={(ev) =>
-                      onChange(updateAccount(e, a.id, { contraOf: ev.target.value }))
-                    }
-                  >
-                    {contraCandidates(accounts, a.type, a.id).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              <ContraParentSelect
+                label={`Account ${a.name} reduces`}
+                accounts={accounts}
+                type={a.type}
+                self={a.id}
+                value={a.contraOf}
+                onChange={(id) => onChange(updateAccount(e, a.id, { contraOf: id }))}
+              />
             </div>
           ))}
           <tr className="sh-sides">
@@ -305,15 +267,14 @@ export function SheetGrid({
               #
             </th>
             <th scope="col" className="sh-left sh-l2">
-              Event
+              Description
             </th>
             <th scope="col" className="sh-left sh-l4">
               Dr = Cr?
             </th>
             {accounts.map((a, i) =>
               SIDES.map((s) => {
-                // ▲ marks the side that increases this account (its normal side), in place of a
-                // separate "normal balance" row.
+                // "Dr ▲ / Cr", as on every T: ▲ marks the side that increases this account (its normal side).
                 const up = s === engine.normalSide(a.type);
                 return (
                   <th
@@ -323,7 +284,7 @@ export function SheetGrid({
                     title={up ? `${a.name} increases with a ${SIDE_WORD[s]}` : undefined}
                   >
                     <span aria-hidden="true">
-                      {SIDE_WORD[s]}
+                      {s === 'dr' ? 'Dr' : 'Cr'}
                       {up && <span className="sh-up"> ▲</span>}
                     </span>
                     <span className="sr-only">
@@ -359,90 +320,76 @@ export function SheetGrid({
               <td className="sh-add-col" />
             </tr>
           )}
-          <tr className="sh-balance">
-            <th scope="row" colSpan={LEFT_COLS} className="sh-left sh-head-label">
-              Balance
-              <button
-                type="button"
-                className="sh-link"
-                onClick={() => setShowOpening((o) => !o)}
-                aria-pressed={showOpening}
-              >
-                {showOpening ? 'hide opening row' : '+ opening balances'}
-              </button>
-            </th>
-            {balanceCells(balance, 'balance')}
-            <td className="sh-add-col" />
-          </tr>
         </thead>
         <tbody>
-          {Array.from({ length: n }, (_, ri) => {
-            const row = e.rows[ri];
-            const totals = row ? engine.rowTotals(row) : null;
-            const used = !!row && row.postings.length > 0;
+          {e.rows.map((row, ri) => {
+            const n1 = ri + 1;
+            const check = entryCheck(row);
             return (
-              // Keyed by position: typing into a blank row creates it, and the row must not remount (focus would drop).
-              <tr key={ri} data-row={ri}>
+              <tr key={row.id} data-row={ri}>
                 <th scope="row" className="sh-left sh-l1 sh-rownum">
-                  {ri + 1}
+                  {n1}
                 </th>
                 <td className="sh-left sh-l2">
                   <input
                     className="sh-event"
                     data-nav={`${ri}:0`}
-                    aria-label={`Row ${ri + 1} event`}
-                    placeholder={ri === 0 && !row?.label ? 'What happened?' : ''}
-                    value={row?.label ?? ''}
+                    aria-label={`Entry ${n1} description`}
+                    placeholder={row.label ? '' : 'What happened?'}
+                    value={row.label ?? ''}
                     onChange={(ev) => onChange(setLabel(e, ri, ev.target.value))}
                   />
-                  {/* Row tools (same rows as the T-accounts view): move up / down, remove. */}
-                  {row && (row.postings.length > 0 || row.label) && (
-                    <span className="sh-row-tools">
-                      <button
-                        type="button"
-                        aria-label={`Move row ${ri + 1} up`}
-                        disabled={ri === 0}
-                        onClick={() => onChange(moveRow(e, ri, -1))}
-                      >
-                        <span aria-hidden="true">▲</span>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Move row ${ri + 1} down`}
-                        disabled={ri >= e.rows.length - 1}
-                        onClick={() => onChange(moveRow(e, ri, 1))}
-                      >
-                        <span aria-hidden="true">▼</span>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Remove row ${ri + 1}`}
-                        title="Remove this row"
-                        onClick={() => onChange(removeRow(e, ri))}
-                      >
-                        <span aria-hidden="true">×</span>
-                      </button>
-                    </span>
-                  )}
+                  {/* Entry tools (the same entries as the Journal): move up / down, remove. */}
+                  <span className="sh-row-tools">
+                    <button
+                      type="button"
+                      aria-label={`Move entry ${n1} up`}
+                      disabled={ri === 0}
+                      onClick={() => onChange(moveRow(e, ri, -1))}
+                    >
+                      <span aria-hidden="true">↑</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Move entry ${n1} down`}
+                      disabled={ri >= e.rows.length - 1}
+                      onClick={() => onChange(moveRow(e, ri, 1))}
+                    >
+                      <span aria-hidden="true">↓</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Remove entry ${n1}`}
+                      title="Remove this entry"
+                      onClick={() => onChange(removeRow(e, ri))}
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </span>
                 </td>
                 <td className="sh-left sh-l4 sh-check">
-                  {used &&
-                    (totals!.balanced ? (
+                  {check.started &&
+                    (check.balanced ? (
                       <span className="is-ok">
                         <span aria-hidden="true">✓</span>
                         <span className="sr-only">Balanced</span>
                       </span>
+                    ) : check.missingAccount ? (
+                      <span className="is-bad" title="A line has no account yet (see the Journal)">
+                        <span aria-hidden="true">✗</span>
+                        <span className="sr-only"> A line has no account yet</span>
+                      </span>
                     ) : (
                       <span
                         className="is-bad"
-                        title={`Dr ${formatDollars(totals!.dr)} ≠ Cr ${formatDollars(totals!.cr)}`}
+                        title={`Dr ${formatDollars(check.dr)} ≠ Cr ${formatDollars(check.cr)}`}
                       >
                         <span aria-hidden="true">✗</span>{' '}
-                        {formatDollars(Math.abs(totals!.dr - totals!.cr))}
+                        {formatDollars(Math.abs(check.dr - check.cr))}
                         <span className="sr-only">
                           {' '}
-                          Unbalanced: debits {formatDollars(totals!.dr)}, credits{' '}
-                          {formatDollars(totals!.cr)}
+                          Unbalanced: debits {formatDollars(check.dr)}, credits{' '}
+                          {formatDollars(check.cr)}
                         </span>
                       </span>
                     ))}
@@ -452,8 +399,8 @@ export function SheetGrid({
                     <td key={`${a.id}-${s}`} className={`${colCls(i, s)} sh-num`}>
                       <MoneyCell
                         nav={`${ri}:${FIRST_AMOUNT_COL + i * 2 + si}`}
-                        label={`Row ${ri + 1} ${a.name} ${SIDE_WORD[s]}`}
-                        cents={row ? cellAmount(row, a.id, s) : 0}
+                        label={`Entry ${n1} ${a.name} ${SIDE_WORD[s]}`}
+                        cents={cellAmount(row, a.id, s)}
                         onChange={(c) => onChange(setAmount(e, ri, a.id, s, c))}
                       />
                     </td>
@@ -464,17 +411,42 @@ export function SheetGrid({
             );
           })}
         </tbody>
+        {/* Balances at the bottom, like the total under each T: opening (if shown at the top) + every entry. */}
+        <tfoot>
+          <tr className="sh-balance">
+            <th scope="row" colSpan={LEFT_COLS} className="sh-left sh-head-label">
+              Balance
+            </th>
+            {balanceCells(balance, 'balance')}
+            <td className="sh-add-col" />
+          </tr>
+        </tfoot>
       </table>
-      <button
-        type="button"
-        className="sh-add-row"
-        onClick={() => {
-          onChange({ ...e, rows: ensureRows(e.rows, n) });
-          setTimeout(() => focusCell(n, 0));
-        }}
-      >
-        <span aria-hidden="true">＋ </span>Add row
-      </button>
+      <div className="sh-below">
+        <button
+          type="button"
+          className="sh-add-row"
+          onClick={() => {
+            onChange(addEntry(e, { blankLines: false }));
+            setTimeout(() => focusCell(n, 0));
+          }}
+        >
+          <span aria-hidden="true">＋ </span>Add entry
+        </button>
+        <button
+          type="button"
+          className="sh-add-row"
+          onClick={() => setShowOpening((o) => !o)}
+          aria-pressed={showOpening}
+        >
+          {showOpening ? 'Hide opening balances' : '＋ Opening balances'}
+        </button>
+      </div>
+      {n === 0 && accounts.length > 0 && (
+        <p className="sh-empty">
+          No entries yet. Each business event is one entry: its debits and credits must be equal.
+        </p>
+      )}
       {accounts.length === 0 && (
         <p className="sh-empty">
           Add your first account on the right — start with the one you’re sure changes (often{' '}

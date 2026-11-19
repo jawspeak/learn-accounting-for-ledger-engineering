@@ -2,13 +2,12 @@ import { useState } from 'react';
 import type { AccountType, SandboxEntity, Side } from '@contracts';
 import { AmountInput } from '../components/builder/AmountInput';
 import { formatDollars } from '../components/builder/model';
-import { addAccount } from './grid/model';
 import { useScrollToAt } from '../lib/useScrollToAt';
 import {
-  ACCOUNT_TYPES,
+  addAccount,
   addEntry,
   addLine,
-  entryTotals,
+  entryCheck,
   moveRow,
   orderedAccounts,
   removeLine,
@@ -16,7 +15,7 @@ import {
   setLineAccount,
   setLineAmount,
 } from './model';
-import { SECTION_LABEL, sectionOf, type BsSection } from './PartyPanels';
+import { SECTION_LABEL, sectionOf, TypeOptions, type BsSection } from './PartyPanels';
 import './journal.css';
 
 const NEW = '__new';
@@ -57,9 +56,7 @@ export function JournalEditor({
       <ol className="jx-entries">
         {e.rows.map((r, ri) => {
           const n = ri + 1;
-          const t = entryTotals(r);
-          const filled = r.postings.some((p) => p.amount > 0);
-          const balanced = t.dr === t.cr;
+          const t = entryCheck(r);
           return (
             <li key={r.id} id={entryAnchor(n)} className="jx-entry">
               <div className="jx-head">
@@ -85,11 +82,15 @@ export function JournalEditor({
                     })
                   }
                 />
-                {filled && (
-                  <span className={`jx-status ${balanced ? 'is-ok' : 'is-bad'}`}>
-                    {balanced ? (
+                {t.started && (
+                  <span className={`jx-status ${t.balanced ? 'is-ok' : 'is-bad'}`}>
+                    {t.balanced ? (
                       <>
                         <span aria-hidden="true">✓</span> Debits = credits
+                      </>
+                    ) : t.missingAccount ? (
+                      <>
+                        <span aria-hidden="true">✗</span> Choose an account for every line
                       </>
                     ) : (
                       <>
@@ -106,7 +107,7 @@ export function JournalEditor({
                     disabled={ri === 0}
                     onClick={() => onChange(moveRow(e, ri, -1))}
                   >
-                    <span aria-hidden="true">▲</span>
+                    <span aria-hidden="true">↑</span>
                   </button>
                   <button
                     type="button"
@@ -114,7 +115,7 @@ export function JournalEditor({
                     disabled={ri === e.rows.length - 1}
                     onClick={() => onChange(moveRow(e, ri, 1))}
                   >
-                    <span aria-hidden="true">▼</span>
+                    <span aria-hidden="true">↓</span>
                   </button>
                   <button
                     type="button"
@@ -133,10 +134,12 @@ export function JournalEditor({
                   <tr>
                     <th scope="col">Account</th>
                     <th scope="col" className="jx-amt">
-                      Debit
+                      <span aria-hidden="true">Dr</span>
+                      <span className="sr-only">Debit</span>
                     </th>
                     <th scope="col" className="jx-amt">
-                      Credit
+                      <span aria-hidden="true">Cr</span>
+                      <span className="sr-only">Credit</span>
                     </th>
                     <th scope="col">
                       <span className="sr-only">Remove</span>
@@ -177,6 +180,7 @@ export function JournalEditor({
                           </select>
                           {creating === key && (
                             <NewAccountForm
+                              entity={e}
                               onCancel={() => setCreating(null)}
                               onCreate={(name, type) => {
                                 const { entity, id } = addAccount(e, name, type);
@@ -186,16 +190,19 @@ export function JournalEditor({
                             />
                           )}
                         </td>
+                        {/* A debit line has an amount only in Dr; a credit line only in Cr. */}
                         {(['dr', 'cr'] as Side[]).map((s) => (
                           <td key={s} className="jx-amt">
-                            <AmountInput
-                              className="jx-amount jx-quiet"
-                              aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
-                              allowCents
-                              formatAtRest
-                              cents={p.side === s ? p.amount : 0}
-                              onCentsChange={(c) => onChange(setLineAmount(e, ri, li, s, c))}
-                            />
+                            {p.side === s && (
+                              <AmountInput
+                                className="jx-amount jx-quiet"
+                                aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
+                                allowCents
+                                formatAtRest
+                                cents={p.amount}
+                                onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c))}
+                              />
+                            )}
                           </td>
                         ))}
                         <td>
@@ -215,10 +222,10 @@ export function JournalEditor({
               </table>
               <div className="jx-line-tools">
                 <button type="button" onClick={() => onChange(addLine(e, ri, 'dr'))}>
-                  ＋ Debit line
+                  ＋ Dr line
                 </button>
                 <button type="button" onClick={() => onChange(addLine(e, ri, 'cr'))}>
-                  ＋ Credit line
+                  ＋ Cr line
                 </button>
               </div>
             </li>
@@ -234,9 +241,11 @@ export function JournalEditor({
 
 /** Inline "New account": a name and a type, added to this party's accounts and chosen for the line. */
 function NewAccountForm({
+  entity,
   onCreate,
   onCancel,
 }: {
+  entity: SandboxEntity;
   onCreate(name: string, type: AccountType): void;
   onCancel(): void;
 }) {
@@ -265,11 +274,8 @@ function NewAccountForm({
         value={type}
         onChange={(ev) => setType(ev.target.value as AccountType)}
       >
-        {ACCOUNT_TYPES.map((t) => (
-          <option key={t.type} value={t.type}>
-            {t.label}
-          </option>
-        ))}
+        {/* Contra types only when there's something to reduce (the parent is picked; change it in Accounts). */}
+        <TypeOptions accounts={entity.accounts} />
       </select>
       <button type="submit" className="btn" disabled={!name.trim()}>
         Add

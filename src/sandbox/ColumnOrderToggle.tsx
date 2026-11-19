@@ -2,7 +2,7 @@ import './viewSwitch.css';
 
 /**
  * One account order for the whole Sandbox, in both views: Auto = the conventional balance-sheet order
- * (A = L + E, contras right after their parent); Manual = your own order, with ◀ ▶ on every account.
+ * (A = L + E, contras right after their parent); Manual = your own order, with ← → on every account (↑ ↓ in the Accounts list).
  */
 export function ColumnOrderToggle({
   manual,
@@ -29,7 +29,7 @@ export function ColumnOrderToggle({
         type="button"
         aria-pressed={manual}
         disabled={disabled}
-        title="Your own order: move accounts with ◀ ▶ (in either view)"
+        title="Your own order: move accounts with ← → in the Grid or ↑ ↓ in the Accounts list"
         onClick={() => onChange(true)}
       >
         Manual

@@ -83,7 +83,7 @@ test('solution on demand: read-only grid, then open it (with the bank’s side) 
 
   await panel.getByRole('link', { name: 'Open solution in Grid' }).click();
   await expect(page).toHaveURL(/#\/sheet\?d=/);
-  await expect(page.locator('.sbx-summary')).toContainText('Rows balanced');
+  await expect(page.locator('.sbx-summary')).toContainText('Entries balanced');
   // Both parties' books, one tab each.
   await expect(page.getByRole('tablist', { name: 'Whose books' }).getByRole('tab')).toHaveCount(2);
   w.assertClean();

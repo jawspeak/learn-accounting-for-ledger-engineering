@@ -6,7 +6,15 @@ import { engine } from '@engine';
 import { parseHash, type SandboxView } from './router';
 import SandboxRoute, { URL_DEBOUNCE_MS } from './SandboxRoute';
 import { EXAMPLES } from '../../content/sandbox-examples';
-import { addEntry, emptyState, persistable, setLineAccount, setLineAmount } from '../sandbox/model';
+import {
+  addEntry,
+  emptyState,
+  entryCheck,
+  persistable,
+  setLineAccount,
+  setLineAmount,
+  summarize,
+} from '../sandbox/model';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -65,7 +73,7 @@ describe('Journal view (the editor)', () => {
 
   it('half-written lines stay on screen but are left out of the link', () => {
     mount('journal', loan());
-    fireEvent.click(screen.getAllByRole('button', { name: /Credit line/ })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /Cr line/ })[0]!);
     expect(screen.getByLabelText('Entry 1 line 3 account')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Entry 1 description'), { target: { value: 'Borrow' } });
     flush();
@@ -230,18 +238,36 @@ describe('the view switcher', () => {
 });
 
 describe('journal model', () => {
-  it('a line is one posting: typing on the other side moves it; persistable drops half-written lines', () => {
+  it('a line keeps the side it was added on; persistable drops half-written lines', () => {
     let e = addEntry({ ...loan().entities[0]!, rows: [] });
-    e = setLineAccount(e, 0, 0, 'cash');
-    e = setLineAmount(e, 0, 0, 'dr', 1000);
-    expect(e.rows[0]!.postings[0]).toMatchObject({ side: 'dr', amount: 1000, chosenType: 'asset' });
-    e = setLineAmount(e, 0, 0, 'cr', 500);
-    expect(e.rows[0]!.postings[0]).toMatchObject({ side: 'cr', amount: 500 });
-    e = setLineAmount(e, 0, 0, 'dr', 0); // clearing the other side leaves it alone
-    expect(e.rows[0]!.postings[0]).toMatchObject({ side: 'cr', amount: 500 });
+    e = setLineAccount(e, 0, 1, 'cash');
+    e = setLineAmount(e, 0, 1, 1000);
+    expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 1000, chosenType: 'asset' });
+    e = setLineAmount(e, 0, 1, 500);
+    expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 500 });
+    e = setLineAmount(e, 0, 0, 700); // an amount on a line with no account yet
     const s = persistable({ v: 1, scenario: '', entities: [e] });
     expect(s.entities[0]!.rows[0]!.postings).toEqual([
       { accountId: 'cash', side: 'cr', amount: 500, chosenType: 'asset' },
     ]);
+  });
+
+  it('one balance check everywhere: an untouched entry is not flagged; a line with no account never counts', () => {
+    let e = addEntry({ ...loan().entities[0]!, rows: [] });
+    expect(entryCheck(e.rows[0]!)).toMatchObject({ started: false, balanced: false });
+    expect(summarize(e).unbalancedRows).toEqual([]);
+    e = setLineAccount(e, 0, 0, 'cash');
+    e = setLineAmount(e, 0, 0, 300);
+    e = setLineAmount(e, 0, 1, 300); // amount typed, but no account on the credit line
+    expect(entryCheck(e.rows[0]!)).toMatchObject({
+      dr: 300,
+      cr: 0,
+      missingAccount: 1,
+      balanced: false,
+    });
+    expect(summarize(e).unbalancedRows).toEqual([1]);
+    e = setLineAccount(e, 0, 1, 'loan-payable');
+    expect(entryCheck(e.rows[0]!).balanced).toBe(true);
+    expect(summarize(e).rowsBalanced).toBe(true);
   });
 });

@@ -11,28 +11,32 @@ test('Grid: example, ▲ sides, keyboard entry, party tabs, URL restore', async 
   const w = watchErrors(page);
   await page.goto('/#/sheet');
   await loadExample(page, 'payroll');
-  await expect(page.locator('.sbx-summary')).toContainText('Rows balanced');
+  await expect(page.locator('.sbx-summary')).toContainText('Entries balanced');
 
-  // One balance row; ▲ marks the side that increases (no separate normal-balance row).
-  await expect(page.locator('tr.sh-balance td').first()).toHaveText('$20');
-  await expect(page.getByRole('columnheader', { name: 'Cash debit (increases)' })).toContainText(
-    '▲',
+  // One balance row, at the bottom; "Dr ▲ / Cr" as on the T's: ▲ marks the side that increases.
+  await expect(page.locator('tfoot tr.sh-balance td').first()).toHaveText('$20');
+  await expect(page.getByRole('columnheader', { name: 'Cash debit (increases)' })).toHaveText(
+    'Dr ▲Cash debit (increases)',
   );
   await expect(
     page.getByRole('columnheader', { name: 'Cash credit', exact: true }),
   ).not.toContainText('▲');
 
-  // Keyboard: event text → Cash debit → Cash credit; Enter moves down.
-  await page.getByRole('textbox', { name: 'Row 5 event' }).click();
+  // The Grid has the example's entries and no padding rows; "+ Add entry" adds one, ready to type.
+  const entries = await page.locator('.sh-grid tbody tr').count();
+  const next = entries + 1;
+  await page.getByRole('button', { name: /Add entry/ }).click();
+  await expect(page.getByRole('textbox', { name: `Entry ${next} description` })).toBeFocused();
+  // Keyboard: description → Cash debit → Cash credit; ArrowUp moves to the entry above.
   await page.keyboard.type('Fee sweep');
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('textbox', { name: 'Row 5 Cash debit' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: `Entry ${next} Cash debit` })).toBeFocused();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('textbox', { name: 'Row 5 Cash credit' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: `Entry ${next} Cash credit` })).toBeFocused();
   await page.keyboard.type('20');
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('textbox', { name: 'Row 6 Cash credit' })).toBeFocused();
-  await expect(page.locator('.sbx-summary')).toContainText('Unbalanced row: 5');
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByRole('textbox', { name: `Entry ${entries} Cash credit` })).toBeFocused();
+  await expect(page.locator('.sbx-summary')).toContainText(`Unbalanced entry: ${next}`);
 
   // Parties are tabs (shared with the Journal): click or arrow keys; the URL remembers which.
   const tabs = page.getByRole('tablist', { name: 'Whose books' });
@@ -47,7 +51,9 @@ test('Grid: example, ▲ sides, keyboard entry, party tabs, URL restore', async 
 
   await page.waitForTimeout(500); // debounced URL write
   await page.reload();
-  await expect(page.getByRole('textbox', { name: 'Row 5 event' })).toHaveValue('Fee sweep');
+  await expect(page.getByRole('textbox', { name: `Entry ${next} description` })).toHaveValue(
+    'Fee sweep',
+  );
   w.assertClean();
 });
 
@@ -85,10 +91,10 @@ test('Journal → T-accounts → Grid: the same books, three ways', async ({ pag
   await expect(page).toHaveURL(/#\/sandbox\?.*at=entry-3/);
   await expect(page.locator('#entry-3')).toBeInViewport();
 
-  // Grid: the same three rows.
+  // Grid: the same three entries.
   await views(page).getByRole('link', { name: 'Grid' }).click();
-  await expect(page.getByRole('textbox', { name: 'Row 3 event' })).toHaveValue('Bank fee');
-  await expect(page.getByRole('textbox', { name: 'Row 3 Interest Expense debit' })).toHaveValue(
+  await expect(page.getByRole('textbox', { name: 'Entry 3 description' })).toHaveValue('Bank fee');
+  await expect(page.getByRole('textbox', { name: 'Entry 3 Interest Expense debit' })).toHaveValue(
     '$2.50',
   );
   w.assertClean();
@@ -99,17 +105,17 @@ test('one account order and one set of rows across the views', async ({ page }) 
   await page.goto('/#/sheet');
   await loadExample(page, 'payroll');
 
-  // Manual order in the Grid: ◀ ▶ appear; move Cash right.
+  // Manual order in the Grid: ← → appear; move Cash right.
   const order = page.getByRole('group', { name: 'Account order' });
   await expect(page.getByRole('button', { name: 'Move Cash right' })).toHaveCount(0);
   await order.getByRole('button', { name: 'Manual' }).click();
   await page.getByRole('button', { name: 'Move Cash right' }).click();
   await expect(page.locator('.sh-names .sh-name').nth(1)).toHaveValue('Cash');
 
-  // Move row 4 up to row 3.
-  await page.getByRole('textbox', { name: 'Row 4 event' }).hover();
-  await page.getByRole('button', { name: 'Move row 4 up' }).click();
-  await expect(page.getByRole('textbox', { name: 'Row 3 event' })).toHaveValue(
+  // Move entry 4 up to entry 3.
+  await page.getByRole('textbox', { name: 'Entry 4 description' }).hover();
+  await page.getByRole('button', { name: 'Move entry 4 up' }).click();
+  await expect(page.getByRole('textbox', { name: 'Entry 3 description' })).toHaveValue(
     'Credit Foo Employee 2',
   );
 

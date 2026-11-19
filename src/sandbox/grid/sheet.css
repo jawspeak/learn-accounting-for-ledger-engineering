@@ -472,9 +472,11 @@ th.sh-left[colspan='3'] {
   padding: 0 0.45rem !important;
   text-align: right;
 }
+/* The balance row closes the grid, like the total under a T. */
 .sh-balance td,
 .sh-balance th {
-  border-bottom: 2px solid var(--sh-line) !important;
+  border-top: 2px solid var(--fg) !important;
+  background: var(--sh-head-bg);
 }
 .sh-abnormal {
   font-size: 0.7rem;
@@ -561,7 +563,7 @@ tbody tr:hover td:not(.sh-add-col) {
 .sh-opening td {
   color: var(--muted);
 }
-/* Row tools in the event cell: ▲ ▼ × appear on hover / focus (same rows as the T-accounts view).
+/* Entry tools in the description cell: ↑ ↓ × appear on hover / focus (the same entries as the Journal).
    The cell is already position: sticky (frozen column), which anchors this absolute box. */
 .sh-row-tools {
   position: absolute;
@@ -593,9 +595,15 @@ tr:focus-within .sh-row-tools {
   opacity: 0.4;
   cursor: default;
 }
-.sh-add-row {
+.sh-below {
   position: sticky;
   left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  width: max-content;
+}
+.sh-add-row {
   margin: 0.4rem 0.5rem;
   font: inherit;
   font-size: 0.85rem;

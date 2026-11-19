@@ -5,7 +5,6 @@ import { ColumnOrderToggle } from './ColumnOrderToggle';
 import { JournalEditor } from './JournalEditor';
 import { LedgerView } from './LedgerView';
 import {
-  applyAccounts,
   applyTemplate,
   duplicateEntity,
   emptyState,
@@ -290,6 +289,7 @@ export function Sandbox({
             confirmRemove={confirmRemove}
             setConfirmRemove={setConfirmRemove}
             removeParty={removeParty}
+            setStatus={setStatus}
           />
         )}
 
@@ -318,11 +318,7 @@ export function Sandbox({
                 />
                 <details className="sbx-panel">
                   <summary>Accounts ({current.accounts.length})</summary>
-                  <AccountsEditor
-                    entity={current}
-                    onAccounts={(accounts) => setEntity(applyAccounts(current, accounts))}
-                    onChange={setEntity}
-                  />
+                  <AccountsEditor entity={current} onChange={setEntity} />
                 </details>
                 <details className="sbx-panel">
                   <summary>
@@ -359,6 +355,7 @@ function PartyBar({
   confirmRemove,
   setConfirmRemove,
   removeParty,
+  setStatus,
 }: {
   uid: string;
   state: SandboxState;
@@ -374,6 +371,7 @@ function PartyBar({
   confirmRemove: boolean;
   setConfirmRemove(v: boolean): void;
   removeParty(): void;
+  setStatus(msg: string): void;
 }) {
   const summary = summarize(current);
   return (
@@ -419,7 +417,18 @@ function PartyBar({
         {templates && templates.length > 0 && (
           <TemplatePicker
             templates={templates}
-            onPick={(t) => setEntity(applyTemplate(current, t))}
+            onPick={(t) => {
+              const next = applyTemplate(current, t);
+              const added = next.accounts.length - current.accounts.length;
+              setEntity(next);
+              // A template is a chart of accounts, not a scenario: say so, since the Journal and T-accounts
+              // show nothing new until an entry uses the accounts.
+              setStatus(
+                added
+                  ? `Added ${added} account${added > 1 ? 's' : ''} from ${t.name} — choose them on a journal line (no entries are added; “Load an example” has full scenarios).`
+                  : `${current.name} already has every account in ${t.name}.`,
+              );
+            }}
           />
         )}
         <ColumnOrderToggle

@@ -1,17 +1,21 @@
-/** Party-level panels shared by the Sandbox views: checks summary, template picker, accounts list, opening balances. */
+/** Party-level panels shared by the Sandbox views: checks summary, template picker, accounts list, opening balances,
+ *  and the small account controls every view uses (type options, "reduces…", remove-with-confirm). */
 import { Fragment, useId, useState } from 'react';
-import type { Account, AccountType, SandboxEntity } from '@contracts';
+import type { Account, AccountId, AccountType, SandboxEntity } from '@contracts';
 import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
-  accountUsed,
-  applyAccounts,
-  fmtMoney,
+  addAccount,
+  contraBase,
+  contraCandidates,
   isManualOrder,
+  linesUsing,
   moveAccountInOrder,
   orderedAccounts,
+  removeAccount,
   setOpening,
   summarize,
+  updateAccount,
 } from './model';
 
 export const typeLabel = (t: AccountType) => ACCOUNT_TYPES.find((x) => x.type === t)?.label ?? t;
@@ -32,17 +36,18 @@ export function EntitySummaryLine({
   rows: number;
 }) {
   const eq = summary.equation;
+  const bad = summary.unbalancedRows;
   return (
     <p className="sbx-summary" aria-live="polite">
       <span>
         <Mark ok={summary.rowsBalanced} />{' '}
         {summary.rowsBalanced
-          ? `Rows balanced (${rows})`
-          : `Unbalanced row${summary.unbalancedRows.length > 1 ? 's' : ''}: ${summary.unbalancedRows.join(', ')}`}
+          ? `Entries balanced (${rows})`
+          : `Unbalanced entr${bad.length > 1 ? 'ies' : 'y'}: ${bad.join(', ')}`}
       </span>
       <span>
-        <Mark ok={eq.balanced} /> A = L + E: {fmtMoney(eq.assets)} {eq.balanced ? '=' : '≠'}{' '}
-        {fmtMoney(eq.liabilities)} + {fmtMoney(eq.equity)}
+        <Mark ok={eq.balanced} /> A = L + E: {formatDollars(eq.assets)} {eq.balanced ? '=' : '≠'}{' '}
+        {formatDollars(eq.liabilities)} + {formatDollars(eq.equity)}
       </span>
       {summary.opening && !summary.opening.balanced && (
         <span className="sbx-err">Opening balances don’t satisfy A = L + E</span>
@@ -80,40 +85,112 @@ export function TemplatePicker({
   );
 }
 
+// ---- Account controls shared by every view (Grid header, Journal "New account…", Accounts panel) ----
+
+/** The account types; a contra type is offered only when there's an account for it to reduce. */
+export function TypeOptions({ accounts, self }: { accounts: Account[]; self?: AccountId }) {
+  return (
+    <>
+      {ACCOUNT_TYPES.map((t) => (
+        <option
+          key={t.type}
+          value={t.type}
+          disabled={!!contraBase(t.type) && contraCandidates(accounts, t.type, self).length === 0}
+        >
+          {t.label}
+        </option>
+      ))}
+    </>
+  );
+}
+
+/** "reduces [Equipment]" for a contra type: only same-family accounts are offered. */
+export function ContraParentSelect({
+  accounts,
+  type,
+  self,
+  value,
+  onChange,
+  label,
+}: {
+  accounts: Account[];
+  type: AccountType;
+  self?: AccountId;
+  value: AccountId | undefined;
+  onChange(id: AccountId): void;
+  label: string;
+}) {
+  if (!contraBase(type)) return null;
+  return (
+    <label className="sh-contra">
+      reduces{' '}
+      <select aria-label={label} value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
+        {contraCandidates(accounts, type, self).map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Remove an account everywhere — asking first when entries post to it (its lines go too). */
+export function removeAccountAsking(e: SandboxEntity, a: Account): SandboxEntity | null {
+  const n = linesUsing(e, a.id);
+  if (n > 0 && !window.confirm(`Remove ${a.name} and its ${n} line${n > 1 ? 's' : ''}?`))
+    return null;
+  return removeAccount(e, a.id);
+}
+
+/** An account name field: free editing (it may be blank while retyping); only non-blank names are saved. */
+function AccountNameInput({
+  name,
+  onCommit,
+  label,
+}: {
+  name: string;
+  onCommit(name: string): void;
+  label: string;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      aria-label={label}
+      value={draft ?? name}
+      onFocus={() => setDraft(name)}
+      onBlur={() => setDraft(null)}
+      onChange={(ev) => {
+        setDraft(ev.target.value);
+        if (ev.target.value.trim()) onCommit(ev.target.value);
+      }}
+    />
+  );
+}
+
+/** The Accounts panel (Journal view): the same accounts, order, add and remove as the Grid's columns. */
 export function AccountsEditor({
   entity,
-  onAccounts,
   onChange,
 }: {
   entity: SandboxEntity;
-  onAccounts(a: Account[]): void;
   onChange(e: SandboxEntity): void;
 }) {
   const uid = useId();
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('asset');
-  const [contraOf, setContraOf] = useState('');
-  const isContra = type.startsWith('contra-');
+  const [contraOf, setContraOf] = useState<AccountId>();
   const manual = isManualOrder(entity);
-  const byId = new Map(entity.accounts.map((a) => [a.id, a]));
-  // The same order as the columns: balance-sheet order (auto) or the manual order.
+  // The same order as the Grid's columns: balance-sheet order (auto) or the manual order.
   const listed = orderedAccounts(entity);
 
   const add = () => {
     const n = name.trim();
     if (!n) return;
-    const acct: Account = { id: `new-${Date.now()}`, name: n, type };
-    if (type === 'equity') acct.equityGroup = 'paid-in';
-    if (isContra && contraOf) acct.contraOf = contraOf;
-    const next = applyAccounts(entity, [...entity.accounts, acct]);
-    if (next.columnOrder)
-      next.columnOrder = [...next.columnOrder, next.accounts[next.accounts.length - 1]!.id];
-    onChange(next);
+    onChange(addAccount(entity, n, type, contraOf).entity);
     setName('');
-    setContraOf('');
+    setContraOf(undefined);
   };
-  const update = (id: string, patch: Partial<Account>) =>
-    onAccounts(entity.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)));
 
   return (
     <div className="sbx-accounts">
@@ -145,18 +222,38 @@ export function AccountsEditor({
                 )}
                 <tr>
                   <td>
-                    <input
-                      aria-label={`Name of ${a.name}`}
-                      value={a.name}
-                      title={a.description}
-                      onChange={(e) => update(a.id, { name: e.target.value })}
+                    <AccountNameInput
+                      label={`Name of ${a.name}`}
+                      name={a.name}
+                      onCommit={(n) => onChange(updateAccount(entity, a.id, { name: n }))}
                     />
                   </td>
-                  <td>
-                    {typeLabel(a.type)}
-                    {a.type === 'equity' &&
-                      ` (${a.equityGroup === 'retained' ? 'retained' : 'paid-in'})`}
-                    {a.contraOf && ` of ${byId.get(a.contraOf)?.name ?? a.contraOf}`}
+                  <td className="sbx-type-cell">
+                    <select
+                      aria-label={`${a.name} account type`}
+                      value={a.type}
+                      onChange={(ev) =>
+                        onChange(
+                          updateAccount(entity, a.id, { type: ev.target.value as AccountType }),
+                        )
+                      }
+                    >
+                      <TypeOptions accounts={entity.accounts} self={a.id} />
+                    </select>
+                    <ContraParentSelect
+                      label={`Account ${a.name} reduces`}
+                      accounts={entity.accounts}
+                      type={a.type}
+                      self={a.id}
+                      value={a.contraOf}
+                      onChange={(id) => onChange(updateAccount(entity, a.id, { contraOf: id }))}
+                    />
+                    {a.type === 'equity' && (
+                      <span className="note">
+                        {' '}
+                        ({a.equityGroup === 'retained' ? 'retained' : 'paid-in'})
+                      </span>
+                    )}
                   </td>
                   <td className="sbx-row-actions">
                     {manual && (
@@ -187,16 +284,14 @@ export function AccountsEditor({
                     <button
                       type="button"
                       className="btn"
-                      aria-label={`Delete ${a.name}`}
-                      disabled={accountUsed(entity, a.id)}
-                      title={
-                        accountUsed(entity, a.id)
-                          ? 'Used in a row (or as a contra parent) — remove those first'
-                          : undefined
-                      }
-                      onClick={() => onAccounts(entity.accounts.filter((x) => x.id !== a.id))}
+                      aria-label={`Remove ${a.name}`}
+                      title="Remove this account (and its lines)"
+                      onClick={() => {
+                        const next = removeAccountAsking(entity, a);
+                        if (next) onChange(next);
+                      }}
                     >
-                      Delete
+                      Remove
                     </button>
                   </td>
                 </tr>
@@ -229,26 +324,15 @@ export function AccountsEditor({
           value={type}
           onChange={(e) => setType(e.target.value as AccountType)}
         >
-          {ACCOUNT_TYPES.map((t) => (
-            <option key={t.type} value={t.type}>
-              {t.label}
-            </option>
-          ))}
+          <TypeOptions accounts={entity.accounts} />
         </select>
-        {isContra && (
-          <select
-            aria-label="Reduces account"
-            value={contraOf}
-            onChange={(e) => setContraOf(e.target.value)}
-          >
-            <option value="">Reduces…</option>
-            {entity.accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <ContraParentSelect
+          label="New account reduces"
+          accounts={entity.accounts}
+          type={type}
+          value={contraOf ?? contraCandidates(entity.accounts, type)[0]?.id}
+          onChange={setContraOf}
+        />
         <button type="submit" className="btn" disabled={!name.trim()}>
           Add account
         </button>
@@ -285,7 +369,10 @@ export function OpeningEditor({
   const amountOf = (id: string) => entity.opening?.lines.find((l) => l.accountId === id)?.amount;
   return (
     <div>
-      <p className="note">On each account’s normal side (cents allowed). Leave blank for zero.</p>
+      <p className="note">
+        On each account’s normal side (cents allowed; negative = abnormal). Blank or 0 means no
+        opening balance.
+      </p>
       <table className="sbx-table">
         <tbody>
           {orderedAccounts(entity).map((a) => {
@@ -320,7 +407,7 @@ export function OpeningEditor({
   );
 }
 
-/** Opening balance: dollars and cents, negative allowed (an abnormal balance); blank clears the line. */
+/** Opening balance: dollars and cents, negative allowed (an abnormal balance); blank or 0 clears the line. */
 function OpeningInput({
   label,
   cents,

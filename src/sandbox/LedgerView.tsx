@@ -7,7 +7,15 @@ import { useScrollToAt } from '../lib/useScrollToAt';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
 import { SandboxLink } from './nav';
 import { entryAnchor } from './JournalEditor';
-import { isManualOrder, orderedAccounts, setManualOrder, summarize, typeResolver } from './model';
+import {
+  isManualOrder,
+  isPosted,
+  orderedAccounts,
+  postedRows,
+  setManualOrder,
+  summarize,
+  typeResolver,
+} from './model';
 import { EntitySummaryLine, typeLabel } from './PartyPanels';
 import './journal.css';
 
@@ -49,9 +57,9 @@ function PartyLedger({
   onChange(e: SandboxEntity): void;
 }) {
   const typeOf = typeResolver(e);
-  const balances = engine.computeBalances(e.rows, typeOf, e.opening);
+  const balances = engine.computeBalances(postedRows(e.rows), typeOf, e.opening);
   const used = new Set<AccountId>([
-    ...e.rows.flatMap((r) => r.postings.filter((p) => p.amount > 0).map((p) => p.accountId)),
+    ...e.rows.flatMap((r) => r.postings.filter(isPosted).map((p) => p.accountId)),
     ...(e.opening?.lines ?? []).filter((l) => l.amount !== 0).map((l) => l.accountId),
   ]);
   const shown = orderedAccounts(e).filter((a) => used.has(a.id));
@@ -66,7 +74,7 @@ function PartyLedger({
     opening: shown.some(
       (a) => (e.opening?.lines.find((l) => l.accountId === a.id)?.amount ?? 0) !== 0,
     ),
-    entries: e.rows.flatMap((r, ri) => (r.postings.some((p) => p.amount > 0) ? [ri] : [])),
+    entries: e.rows.flatMap((r, ri) => (r.postings.some(isPosted) ? [ri] : [])),
   };
 
   const band = (label: string, list: Account[]) =>

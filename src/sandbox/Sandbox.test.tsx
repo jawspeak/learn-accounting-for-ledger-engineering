@@ -52,9 +52,18 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
     expect(
       onState.mock.calls.at(-1)![0].entities[0].accounts.map((a: { id: string }) => a.id),
     ).toEqual(['cash', 'sales']);
+    // A template is a chart of accounts only — the status line says so (no entries appear).
+    expect(screen.getByRole('status').textContent).toMatch(
+      /Added 2 accounts from Lemonade stand .*no entries are added/,
+    );
 
     // Write an entry: sell lemonade for $3.
     fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
+    // An untouched entry isn't flagged as unbalanced anywhere.
+    expect(screen.getByText(/Entries balanced \(1\)/)).toBeTruthy();
+    // A debit line has only a debit amount; a credit line only a credit amount.
+    expect(screen.queryByLabelText('Entry 1 line 1 credit')).toBeNull();
+    expect(screen.queryByLabelText('Entry 1 line 2 debit')).toBeNull();
     fireEvent.change(screen.getByLabelText('Entry 1 line 1 account'), {
       target: { value: 'cash' },
     });
