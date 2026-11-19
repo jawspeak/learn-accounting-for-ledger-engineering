@@ -71,6 +71,15 @@ function PartyLedger({
   const eq = shown.filter((a) => !left.includes(a) && !liab.includes(a));
   const nameOf = (id: AccountId) => e.accounts.find((a) => a.id === id)?.name ?? id;
   const journalLink = (n: number) => href.sandbox(data, index, entryAnchor(n));
+  // The same rows in every T of this party, so a row means the same thing everywhere: the opening balance
+  // (if any T has one), then one row per entry, in order (blank where the entry doesn't touch the account),
+  // then the ending balance.
+  const layout: Layout = {
+    opening: shown.some(
+      (a) => (e.opening?.lines.find((l) => l.accountId === a.id)?.amount ?? 0) !== 0,
+    ),
+    entries: e.rows.flatMap((r, ri) => (r.postings.some((p) => p.amount > 0) ? [ri] : [])),
+  };
 
   const band = (label: string, list: Account[]) =>
     list.length > 0 && (
@@ -83,6 +92,7 @@ function PartyLedger({
               entity={e}
               account={a}
               balance={balances}
+              layout={layout}
               journalLink={journalLink}
             />
           ))}
@@ -156,30 +166,38 @@ function PartyLedger({
   );
 }
 
-/** One real T: opening balance, then each entry that touches the account (numbered), then the balance. */
+/** The row structure shared by every T in a party: an opening row (if any T has one), then these entries. */
+interface Layout {
+  opening: boolean;
+  /** Row indices of the entries that post anything. */
+  entries: number[];
+}
+
+/** One real T: the opening balance at the top, a row per entry (numbered; blank if untouched), the balance. */
 function TAccount({
   entity: e,
   account: a,
   balance,
+  layout,
   journalLink,
 }: {
   entity: SandboxEntity;
   account: Account;
   balance: { lines: { accountId: AccountId; amount: number }[] };
+  layout: Layout;
   journalLink(n: number): string;
 }) {
   const normal = engine.normalSide(a.type);
   const bal = balance.lines.find((l) => l.accountId === a.id)?.amount ?? 0;
   const balSide = bal >= 0 ? normal : other(normal);
   const opening = e.opening?.lines.find((l) => l.accountId === a.id)?.amount ?? 0;
-  const lines = e.rows.flatMap((r, ri) => {
+  const lines = layout.entries.map((ri) => {
+    const r = e.rows[ri]!;
     const sum = (s: Side) =>
       r.postings
         .filter((p) => p.accountId === a.id && p.side === s)
         .reduce((t, p) => t + p.amount, 0);
-    const dr = sum('dr');
-    const cr = sum('cr');
-    return dr || cr ? [{ n: ri + 1, label: r.label, dr, cr }] : [];
+    return { n: ri + 1, label: r.label, dr: sum('dr'), cr: sum('cr') };
   });
 
   return (
@@ -189,7 +207,9 @@ function TAccount({
       aria-label={`${a.name}, ${typeLabel(a.type).toLowerCase()} T-account (increases on the ${normal === 'dr' ? 'debit' : 'credit'} side), balance ${formatDollars(Math.abs(bal))} ${balSide === 'dr' ? 'debit' : 'credit'}`}
     >
       <div className="tacct__head">
-        <span className="tacct__name">{a.name}</span>
+        <span className="tacct__name" title={a.name}>
+          {a.name}
+        </span>
         <span className="tacct__type">{typeLabel(a.type)}</span>
       </div>
       <div className="tacct__t">
@@ -202,10 +222,10 @@ function TAccount({
           ))}
         </div>
         <ul className="tacct__body">
-          {opening !== 0 && (
-            <li className="tacct__row is-opening">
+          {layout.opening && (
+            <li className={`tacct__row is-opening${opening === 0 ? ' is-blank' : ''}`}>
               {SIDES.map((s) =>
-                s === (opening > 0 ? normal : other(normal)) ? (
+                opening !== 0 && s === (opening > 0 ? normal : other(normal)) ? (
                   <span key={s} className={`tacct__cell tacct__${s}`}>
                     <span className="tacct__ref">Bal</span>
                     <span className="tacct__amt">{formatDollars(Math.abs(opening))}</span>
@@ -221,7 +241,7 @@ function TAccount({
             </li>
           )}
           {lines.map((l) => (
-            <li key={l.n} className="tacct__row">
+            <li key={l.n} className={`tacct__row${l.dr || l.cr ? '' : ' is-blank'}`}>
               {SIDES.map((s) =>
                 l[s] ? (
                   <span key={s} className={`tacct__cell tacct__${s}`}>

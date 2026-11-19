@@ -258,6 +258,31 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: var(--space-2);
 }
+/* Every T in a party has the same rows (opening, one per entry, total), so rows line up across T's: the
+   header is a fixed two-line block (a long name wraps without pushing its T down) and each row has one height. */
+.lv .tacct__head {
+  /* Two lines of name + the type line, always — so every T's top bar sits at the same height. */
+  height: calc(0.85rem * 1.25 * 2 + 0.72rem * 1.25 + 0.2rem);
+  justify-content: flex-end;
+  box-sizing: content-box;
+}
+.lv .tacct__name {
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.lv .tacct__type {
+  line-height: 1.25;
+}
+.lv .tacct__row {
+  min-height: 1.35rem;
+}
+.lv .tacct__cell {
+  align-items: center;
+}
 .lv .tacct {
   border: 1px solid var(--border);
   border-radius: 0.35rem;

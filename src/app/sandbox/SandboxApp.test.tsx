@@ -151,6 +151,23 @@ describe('T-accounts view (the ledger)', () => {
     expect(screen.getByRole('region', { name: 'First Example Bank’s ledger' })).toBeTruthy();
   });
 
+  it('every T in a party has the same rows: opening, one per entry, total (so row n is entry n everywhere)', () => {
+    mount('taccounts', loan());
+    const bank = screen.getByRole('region', { name: 'First Example Bank’s ledger' });
+    const rows = within(bank)
+      .getAllByRole('group', { name: /T-account/ })
+      .map((t) =>
+        [...t.querySelectorAll('.tacct__row')].map(
+          (r) => r.textContent!.match(/\((\d)\)|Bal/)?.[0] ?? '',
+        ),
+      );
+    // Opening row, entry 1, entry 2, total — in the same place in every T (blank where untouched).
+    for (const r of rows) expect(r).toHaveLength(4);
+    expect(rows.map((r) => r[0])).toContain('Bal');
+    expect(rows.every((r) => r[1] === '' || r[1] === '(1)')).toBe(true);
+    expect(rows.every((r) => r[2] === '' || r[2] === '(2)')).toBe(true);
+  });
+
   it('balance sheets per party', () => {
     mount('taccounts', loan());
     const you = screen.getByRole('region', { name: 'You’s ledger' });
