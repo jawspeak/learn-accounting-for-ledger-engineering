@@ -192,10 +192,17 @@ export function App() {
           className="search-btn"
           onClick={() => setSearchOpen(true)}
           aria-haspopup="dialog"
+          aria-label="Search"
           aria-keyshortcuts="Meta+K Control+K /"
           title="Search titles (⌘K or /)"
         >
-          Search<kbd className="hide-narrow">⌘K</kbd>
+          {/* Phones: just the magnifier (the header is full). */}
+          <svg className="search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="4.75" fill="none" stroke="currentColor" strokeWidth="1.75" />
+            <path d="M10 10l4.25 4.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+          <span className="hide-narrow">Search</span>
+          <kbd className="hide-narrow">⌘K</kbd>
         </button>
         <button type="button" onClick={() => setDrawer(true)} aria-haspopup="dialog">
           Cheat sheet
@@ -207,7 +214,8 @@ export function App() {
           aria-label="Dark theme"
           title="Toggle light / dark theme"
         >
-          {theme === 'dark' ? '☾ Dark' : '☀ Light'}
+          {theme === 'dark' ? '☾' : '☀'}
+          <span className="hide-narrow">{theme === 'dark' ? ' Dark' : ' Light'}</span>
         </button>
         <ProgressBar currentSectionId={currentSectionId} />
       </header>

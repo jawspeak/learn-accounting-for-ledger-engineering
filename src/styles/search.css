@@ -112,6 +112,32 @@
   border-top: 1px solid var(--border);
   font-size: 0.75rem;
 }
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.search-icon {
+  flex: none;
+}
+@media (max-width: 860px) {
+  /* The header is full on phones: tighter gaps so ☰, Sandbox, 🔍, Cheat sheet and ☀ fit at 375px. */
+  .app-header {
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+  }
+  /* Already squeezed to zero width here; hiding it frees its gap. Home is in the section list. */
+  .app-header .brand {
+    display: none;
+  }
+  .app-header > button,
+  .app-header > .btn {
+    padding-inline: 0.55rem;
+  }
+  .app-header > .search-btn {
+    margin-left: auto;
+  }
+}
 .search-btn kbd {
   font-family: var(--font-sans);
   font-size: 0.75rem;

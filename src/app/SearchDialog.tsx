@@ -9,7 +9,9 @@ const SUGGESTIONS = ['debit', 'loan', 'FBO', 'accrual', 'trial balance', '6.3'];
 function highlight(title: string, query: string): ReactNode {
   const toks = words(query).filter((t) => t !== '§');
   if (toks.length === 0) return title;
-  const esc = toks.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).sort((a, b) => b.length - a.length);
+  const esc = toks
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .sort((a, b) => b.length - a.length);
   const re = new RegExp(`(^|[^\\p{L}\\p{N}])(${esc.join('|')})`, 'giu');
   const out: ReactNode[] = [];
   let last = 0;
@@ -81,7 +83,13 @@ export function SearchDialog({ onClose }: { onClose(): void }) {
   return (
     <>
       <div className="search-backdrop" onClick={onClose} />
-      <div className="search-dialog" role="dialog" aria-modal="true" aria-label="Search" onKeyDown={onKeyDown}>
+      <div
+        className="search-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
+        onKeyDown={onKeyDown}
+      >
         <div className="search-head">
           <input
             ref={inputRef}
@@ -102,14 +110,21 @@ export function SearchDialog({ onClose }: { onClose(): void }) {
               setActive(0);
             }}
           />
-          <button type="button" className="search-close" onClick={onClose} aria-label="Close search (Esc)">
+          <button
+            type="button"
+            className="search-close"
+            onClick={onClose}
+            aria-label="Close search (Esc)"
+          >
             Esc
           </button>
         </div>
 
         {trimmed === '' ? (
           <div className="search-empty">
-            <p className="note">Searches titles: problems, sections, “Watch it” animations, definitions and pages.</p>
+            <p className="note">
+              Searches titles: problems, sections, “Watch it” animations, definitions and pages.
+            </p>
             <p className="note">
               Try:{' '}
               {SUGGESTIONS.map((s) => (
@@ -130,11 +145,18 @@ export function SearchDialog({ onClose }: { onClose(): void }) {
           </div>
         ) : results.length === 0 ? (
           <p className="search-empty note" role="status">
-            Nothing is titled “{trimmed}”. Try a shorter word, or look in <a href="#/definitions">Definitions</a>.
+            Nothing is titled “{trimmed}”. Try a shorter word, or look in{' '}
+            <a href="#/definitions">Definitions</a>.
           </p>
         ) : null}
 
-        <ul ref={listRef} id={listId} role="listbox" aria-label="Results" className="search-results">
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          aria-label="Results"
+          className="search-results"
+        >
           {results.map((r, i) => {
             const st = r.problemId ? statusOf(progress, r.problemId) : undefined;
             return (

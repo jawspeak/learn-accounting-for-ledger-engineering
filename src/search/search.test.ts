@@ -17,7 +17,8 @@ describe('search index', () => {
   });
 
   it('indexes every problem, section and glossary term', () => {
-    for (const id of Object.keys(problems)) expect(ids(problems[id]!.title)).toContain(`problem:${id}`);
+    for (const id of Object.keys(problems))
+      expect(ids(problems[id]!.title)).toContain(`problem:${id}`);
     for (const sec of sections) expect(index.some((e) => e.id === `section:${sec.id}`)).toBe(true);
     for (const t of glossary) expect(index.some((e) => e.id === `term:${t.id}`)).toBe(true);
   });
@@ -69,7 +70,9 @@ describe('ranking', () => {
 
   it('finds pages, cheat-sheet blocks and sandbox examples', () => {
     expect(top('sandbox')?.id).toBe('page:sandbox');
-    expect(ids('dealer').slice(0, 2)).toEqual(expect.arrayContaining(['page:cheatsheet:dealer', 'problem:00-dealer']));
+    expect(ids('dealer').slice(0, 2)).toEqual(
+      expect.arrayContaining(['page:cheatsheet:dealer', 'problem:00-dealer']),
+    );
     expect(top('contra accounts')?.id).toMatch(/contra/);
     expect(ids('payroll')).toContain('example:payroll');
   });

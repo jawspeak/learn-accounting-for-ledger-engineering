@@ -63,8 +63,11 @@ describe('search dialog', () => {
     render(<App />);
     for (const s of sections) {
       await go(`#/s/${s.id}`);
-      for (const aid of SECTION_ANIMATIONS[s.id] ?? []) expect(document.getElementById(watchAnchor(aid)), aid).toBeTruthy();
-      (s.callouts ?? []).forEach((_, i) => expect(document.getElementById(calloutAnchor(i))).toBeTruthy());
+      for (const aid of SECTION_ANIMATIONS[s.id] ?? [])
+        expect(document.getElementById(watchAnchor(aid)), aid).toBeTruthy();
+      (s.callouts ?? []).forEach((_, i) =>
+        expect(document.getElementById(calloutAnchor(i))).toBeTruthy(),
+      );
     }
     await go('#/cheatsheet');
     for (const e of buildIndex().filter((x) => x.href.startsWith('#/cheatsheet?at='))) {
