@@ -422,14 +422,26 @@ export function TAccountBuilder(props: TAccountBuilderProps) {
         </tr>
         <tr className="tab-sides">
           {placed.map((c) =>
-            SIDES.map((s) => (
-              <th key={`${c.accountId}-${s}`} scope="col" className={colCls(c, `tab-${s}`)}>
-                <span aria-hidden="true">{SIDE_LABEL[s]}</span>
-                <span className="sr-only">
-                  {nameOf(c.accountId)} {s === 'dr' ? 'debit' : 'credit'}
-                </span>
-              </th>
-            )),
+            SIDES.map((s) => {
+              // Sandbox: no Dr / Cr labels (the T's left/right already says it) — just ▲ on the side that
+              // increases the account. Problems keep Dr / Cr: learning that vocabulary is part of the exercise.
+              const up = sandbox && s === engine.normalSide(c.type);
+              const word = s === 'dr' ? 'debit' : 'credit';
+              return (
+                <th
+                  key={`${c.accountId}-${s}`}
+                  scope="col"
+                  className={colCls(c, `tab-${s}`, sandbox && 'tab-side-up')}
+                  title={up ? `Increases with a ${word}` : sandbox ? `Decreases with a ${word}` : undefined}
+                >
+                  <span aria-hidden="true">{sandbox ? (up ? '▲' : '') : SIDE_LABEL[s]}</span>
+                  <span className="sr-only">
+                    {nameOf(c.accountId)} {word}
+                    {up ? ' (increases)' : ''}
+                  </span>
+                </th>
+              );
+            }),
           )}
         </tr>
       </thead>

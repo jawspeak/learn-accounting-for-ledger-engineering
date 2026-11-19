@@ -183,7 +183,7 @@ export function App() {
         <a
           className="btn"
           href={href.sandbox()}
-          aria-current={route.name === 'sandbox' ? 'page' : undefined}
+          aria-current={route.name === 'sandbox' || route.name === 'sheet' ? 'page' : undefined}
         >
           Sandbox
         </a>

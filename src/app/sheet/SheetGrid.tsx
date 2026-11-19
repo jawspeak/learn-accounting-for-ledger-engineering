@@ -1,21 +1,19 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Account, AccountType, BalanceSheet, Money, SandboxEntity, Side } from '@contracts';
 import { engine } from '@engine';
-import { cellAmount, formatDollars, parseDollars, typeLabel } from '../../components/builder/model';
+import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
 import { ACCOUNT_TYPES } from '../sandbox/model';
 import {
   addAccount,
   contraBase,
   contraCandidates,
   equalsAt,
-  metadataError,
   moveAccount,
   removeAccount,
   setAmount,
   setLabel,
   setOpening,
-  setPending,
-  sheetBalances,
+  sheetBalance,
   toneOf,
   updateAccount,
   visibleRowCount,
@@ -23,8 +21,10 @@ import {
 
 const SIDES: Side[] = ['dr', 'cr'];
 const SIDE_WORD: Record<Side, string> = { dr: 'debit', cr: 'credit' };
-/** Nav columns: 0 = event label, 1 = pending, then two per account (Dr, Cr). */
-const FIRST_AMOUNT_COL = 2;
+/** Nav columns: 0 = event label, then two per account (Dr, Cr). */
+const FIRST_AMOUNT_COL = 1;
+/** Frozen left block: #, Event, Dr = Cr? */
+const LEFT_COLS = 3;
 
 /**
  * The grid itself. Every editable cell carries `data-nav="row:col"`; arrow keys / Enter move between them like a
@@ -44,7 +44,7 @@ export function SheetGrid({
 
   const accounts = e.accounts;
   const n = visibleRowCount(e.rows);
-  const { posted, pending, hasPending } = sheetBalances(e);
+  const balance = sheetBalance(e);
   const eqAt = equalsAt(accounts);
   const lastCol = FIRST_AMOUNT_COL + accounts.length * 2 - 1;
 
@@ -120,7 +120,7 @@ export function SheetGrid({
 
   const headRow = (label: string, cells: (a: Account, i: number) => ReactNode, className = '') => (
     <tr className={className}>
-      <th scope="row" colSpan={4} className="sh-left sh-head-label">
+      <th scope="row" colSpan={LEFT_COLS} className="sh-left sh-head-label">
         {label}
       </th>
       {accounts.map((a, i) => (
@@ -147,14 +147,13 @@ export function SheetGrid({
         <colgroup>
           <col className="sh-w-num" />
           <col className="sh-w-event" />
-          <col className="sh-w-pending" />
           <col className="sh-w-check" />
           {accounts.map((a) => SIDES.map((s) => <col key={`${a.id}-${s}`} className="sh-w-amt" />))}
           <col className="sh-w-add" />
         </colgroup>
         <thead>
           <tr className="sh-names">
-            <th scope="col" colSpan={4} className="sh-left sh-corner">
+            <th scope="col" colSpan={LEFT_COLS} className="sh-left sh-corner">
               <span className="sh-corner-title">Accounts</span>
             </th>
             {accounts.map((a, i) => (
@@ -199,7 +198,8 @@ export function SheetGrid({
                 </div>
               </th>
             ))}
-            <th rowSpan={6} className="sh-add-col sh-add">
+            {/* spans the name, label, type and debit/credit header rows */}
+            <th rowSpan={4} className="sh-add-col sh-add">
               <form
                 onSubmit={(ev) => {
                   ev.preventDefault();
@@ -286,38 +286,6 @@ export function SheetGrid({
               )}
             </div>
           ))}
-          {headRow('Attributes (JSON)', (a) => {
-            const err = metadataError(a.metadata);
-            return (
-              <>
-                <textarea
-                  className={`sh-meta${err ? ' is-bad' : ''}`}
-                  aria-label={`${a.name} attributes (JSON)`}
-                  aria-invalid={!!err}
-                  spellCheck={false}
-                  rows={3}
-                  placeholder="optional JSON"
-                  value={a.metadata ?? ''}
-                  onChange={(ev) => onChange(updateAccount(e, a.id, { metadata: ev.target.value }))}
-                />
-                {err && (
-                  <span className="sh-meta-err" role="status">
-                    <span aria-hidden="true">✗ </span>Not valid JSON
-                  </span>
-                )}
-              </>
-            );
-          })}
-          {headRow(
-            'Normal balance',
-            (a) => (
-              <span className={`sh-normal sh-normal-${engine.normalSide(a.type)}`}>
-                {SIDE_WORD[engine.normalSide(a.type)]} normal{' '}
-                <span className="sh-normal-type">({typeLabel(a.type).toLowerCase()})</span>
-              </span>
-            ),
-            'sh-normal-row',
-          )}
           <tr className="sh-sides">
             <th scope="col" className="sh-left sh-l1">
               #
@@ -325,30 +293,37 @@ export function SheetGrid({
             <th scope="col" className="sh-left sh-l2">
               Event
             </th>
-            <th
-              scope="col"
-              className="sh-left sh-l3"
-              title="Pending = sent but not settled yet; counted in the pending balance only"
-            >
-              Pending
-            </th>
             <th scope="col" className="sh-left sh-l4">
               Dr = Cr?
             </th>
             {accounts.map((a, i) =>
-              SIDES.map((s) => (
-                <th key={`${a.id}-${s}`} scope="col" className={colCls(i, s)}>
-                  <span aria-hidden="true">{SIDE_WORD[s]}</span>
-                  <span className="sr-only">
-                    {a.name} {SIDE_WORD[s]}
-                  </span>
-                </th>
-              )),
+              SIDES.map((s) => {
+                // ▲ marks the side that increases this account (its normal side), in place of a
+                // separate "normal balance" row.
+                const up = s === engine.normalSide(a.type);
+                return (
+                  <th
+                    key={`${a.id}-${s}`}
+                    scope="col"
+                    className={colCls(i, s)}
+                    title={up ? `${a.name} increases with a ${SIDE_WORD[s]}` : undefined}
+                  >
+                    <span aria-hidden="true">
+                      {SIDE_WORD[s]}
+                      {up && <span className="sh-up"> ▲</span>}
+                    </span>
+                    <span className="sr-only">
+                      {a.name} {SIDE_WORD[s]}
+                      {up ? ' (increases)' : ''}
+                    </span>
+                  </th>
+                );
+              }),
             )}
           </tr>
           {showOpening && (
             <tr className="sh-opening">
-              <th scope="row" colSpan={4} className="sh-left sh-head-label">
+              <th scope="row" colSpan={LEFT_COLS} className="sh-left sh-head-label">
                 Opening balance
               </th>
               {accounts.map((a, i) => {
@@ -371,8 +346,8 @@ export function SheetGrid({
             </tr>
           )}
           <tr className="sh-balance">
-            <th scope="row" colSpan={4} className="sh-left sh-head-label">
-              {hasPending ? 'Posted balance' : 'Balance'}
+            <th scope="row" colSpan={LEFT_COLS} className="sh-left sh-head-label">
+              Balance
               <button
                 type="button"
                 className="sh-link"
@@ -382,23 +357,9 @@ export function SheetGrid({
                 {showOpening ? 'hide opening row' : '+ opening balances'}
               </button>
             </th>
-            {balanceCells(posted, 'posted')}
+            {balanceCells(balance, 'balance')}
             <td className="sh-add-col" />
           </tr>
-          {hasPending && (
-            <tr className="sh-balance sh-balance-pending">
-              <th
-                scope="row"
-                colSpan={4}
-                className="sh-left sh-head-label"
-                title="Posted plus pending rows"
-              >
-                Pending balance
-              </th>
-              {balanceCells(pending, 'pending')}
-              <td className="sh-add-col" />
-            </tr>
-          )}
         </thead>
         <tbody>
           {Array.from({ length: n }, (_, ri) => {
@@ -407,7 +368,7 @@ export function SheetGrid({
             const used = !!row && row.postings.length > 0;
             return (
               // Keyed by position: typing into a blank row creates it, and the row must not remount (focus would drop).
-              <tr key={ri} className={row?.pending ? 'is-pending' : undefined} data-row={ri}>
+              <tr key={ri} data-row={ri}>
                 <th scope="row" className="sh-left sh-l1 sh-rownum">
                   {ri + 1}
                 </th>
@@ -419,15 +380,6 @@ export function SheetGrid({
                     placeholder={ri === 0 && !row?.label ? 'What happened?' : ''}
                     value={row?.label ?? ''}
                     onChange={(ev) => onChange(setLabel(e, ri, ev.target.value))}
-                  />
-                </td>
-                <td className="sh-left sh-l3 sh-center">
-                  <input
-                    type="checkbox"
-                    data-nav={`${ri}:1`}
-                    aria-label={`Row ${ri + 1} pending`}
-                    checked={!!row?.pending}
-                    onChange={(ev) => onChange(setPending(e, ri, ev.target.checked))}
                   />
                 </td>
                 <td className="sh-left sh-l4 sh-check">

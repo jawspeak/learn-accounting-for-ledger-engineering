@@ -84,8 +84,8 @@ test('solution on demand: read-only grid, then open it (with the bank’s side) 
   await panel.getByRole('link', { name: 'Open solution in Spreadsheet' }).click();
   await expect(page).toHaveURL(/#\/sheet\?d=/);
   await expect(page.locator('.sh-checks')).toContainText('Every row balances');
-  const books = await page.locator('.sh-books select option').allTextContents();
-  expect(books).toHaveLength(2);
+  // Both parties' books, one tab each.
+  await expect(page.getByRole('tablist', { name: 'Whose books' }).getByRole('tab')).toHaveCount(2);
   w.assertClean();
 });
 

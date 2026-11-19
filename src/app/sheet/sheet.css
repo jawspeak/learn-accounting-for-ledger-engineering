@@ -14,7 +14,6 @@
   /* Frozen column widths (also used for the sticky offsets). */
   --sh-w1: 2.6rem;
   --sh-w2: 15rem;
-  --sh-w3: 4.6rem;
   --sh-w4: 4.6rem;
   display: flex;
   flex-direction: column;
@@ -50,12 +49,6 @@
 }
 
 /* ---------- top bar ---------- */
-.sh-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
-}
 .sh-title {
   font: inherit;
   font-family: var(--font-serif, inherit);
@@ -72,13 +65,67 @@
 .sh-title:focus {
   border-color: var(--border);
 }
-.sh-books {
+/* Party tabs: whose books the grid shows. The selected tab joins the grid frame below it. */
+.sh-tabbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: -0.5rem; /* close the flex gap so the selected tab sits on the grid's frame */
 }
-.sh-books select,
+.sh-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.sh-tab {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--sh-head-bg);
+  border: 1px solid var(--sh-line);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  position: relative;
+  top: 1px;
+}
+.sh-tab:hover {
+  color: var(--fg);
+}
+.sh-tab[aria-selected='true'] {
+  color: var(--fg);
+  background: var(--surface);
+  box-shadow: inset 0 3px 0 var(--accent);
+  z-index: 1;
+}
+.sh-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.sh-tab-add {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0.35rem 0.25rem;
+  cursor: pointer;
+}
+.sh-rename {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding-bottom: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.sh-panel {
+  min-height: 0;
+}
 .sh-entity-name,
 .sh-inline select {
   font: inherit;
@@ -205,7 +252,7 @@
   background: var(--sh-head-bg);
 }
 .sh-l1,
-th.sh-left[colspan='4'] {
+th.sh-left[colspan='3'] {
   left: 0;
 }
 .sh-l1 {
@@ -217,19 +264,14 @@ th.sh-left[colspan='4'] {
   width: var(--sh-w2);
   min-width: var(--sh-w2);
 }
-.sh-l3 {
-  left: calc(var(--sh-w1) + var(--sh-w2));
-  width: var(--sh-w3);
-  min-width: var(--sh-w3);
-}
 .sh-l4 {
-  left: calc(var(--sh-w1) + var(--sh-w2) + var(--sh-w3));
+  left: calc(var(--sh-w1) + var(--sh-w2));
   width: var(--sh-w4);
   min-width: var(--sh-w4);
   /* the edge of the frozen block */
   box-shadow: 3px 0 4px -3px color-mix(in srgb, var(--fg) 30%, transparent);
 }
-th.sh-left[colspan='4'] {
+th.sh-left[colspan='3'] {
   box-shadow: 3px 0 4px -3px color-mix(in srgb, var(--fg) 30%, transparent);
 }
 .sh-head-label {
@@ -389,50 +431,17 @@ th.sh-left[colspan='4'] {
   font-size: 0.75rem !important;
   max-width: 8rem;
 }
-.sh-meta {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  resize: vertical;
-  font-family: var(--font-mono, ui-monospace, monospace) !important;
-  font-size: 0.75rem !important;
-  line-height: 1.35;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--sh-grid);
-  border-radius: 4px;
-  padding: 0.2rem 0.3rem;
-}
-.sh-meta.is-bad {
-  border-color: var(--err);
-  outline: 1px solid var(--err);
-}
-.sh-meta-err {
-  display: block;
-  color: var(--err);
-  font-size: 0.72rem;
-  text-align: left;
-}
-.sh-normal {
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-.sh-normal-dr {
-  color: var(--sh-asset);
-}
-.sh-normal-cr {
-  color: var(--sh-liability);
-}
-.sh-normal-type {
-  font-weight: 400;
-  color: var(--muted);
-}
 .sh-sides th {
   font-size: 0.78rem;
   font-weight: 650;
   color: var(--muted);
   text-align: center;
   border-bottom: 2px solid var(--fg) !important;
+}
+/* ▲ = the side that increases this account (its normal side). */
+.sh-up {
+  color: var(--accent);
+  font-size: 0.7rem;
 }
 .sh-sides th.sh-left {
   text-align: left;
@@ -445,11 +454,6 @@ th.sh-left[colspan='4'] {
 .sh-bal {
   padding: 0 0.45rem !important;
   text-align: right;
-}
-.sh-balance-pending td {
-  font-weight: 600;
-  font-style: italic;
-  color: var(--muted);
 }
 .sh-balance td,
 .sh-balance th {
@@ -533,16 +537,6 @@ th.sh-left[colspan='4'] {
   text-align: center;
   font-size: 0.82rem;
   white-space: nowrap;
-}
-tbody tr.is-pending td,
-tbody tr.is-pending th {
-  background-image: linear-gradient(
-    color-mix(in srgb, var(--warn) 8%, transparent),
-    color-mix(in srgb, var(--warn) 8%, transparent)
-  );
-}
-tbody tr.is-pending .sh-amt {
-  font-style: italic;
 }
 tbody tr:hover td:not(.sh-add-col) {
   background-color: color-mix(in srgb, var(--accent) 4%, var(--surface));

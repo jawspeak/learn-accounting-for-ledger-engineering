@@ -318,6 +318,12 @@
   border-bottom: 2px solid var(--tab-line);
   font-weight: 600;
 }
+/* Sandbox: the ▲ on the side that increases the account (no Dr / Cr words). */
+.tab-sides th.tab-side-up {
+  color: var(--accent);
+  font-size: 0.85rem;
+  line-height: 1;
+}
 .tab-grid .tab-dr {
   border-right: 2px solid var(--tab-line);
   text-align: right;

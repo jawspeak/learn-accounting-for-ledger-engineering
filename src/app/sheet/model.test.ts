@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SandboxEntity } from '@contracts';
+import type { SandboxEntity, SandboxState } from '@contracts';
 import { engine } from '@engine';
 import { EXAMPLES } from '../sandbox/examples';
 import { parseHash, href } from '../router';
@@ -7,14 +7,12 @@ import {
   addAccount,
   ensureRows,
   equalsAt,
-  metadataError,
   MIN_ROWS,
   moveAccount,
   removeAccount,
   setAmount,
   setOpening,
-  setPending,
-  sheetBalances,
+  sheetBalance,
   sortCanonical,
   updateAccount,
   visibleRowCount,
@@ -50,23 +48,20 @@ describe('sheet rows', () => {
   });
 });
 
-describe('posted vs pending balances', () => {
-  it('posted excludes pending rows; pending includes everything', () => {
+describe('balances', () => {
+  it('every row counts (there is no pending state), on each account’s normal side', () => {
     let e = setAmount(base(), 0, 'cash', 'dr', 2000);
     e = setAmount(e, 0, 'payable', 'cr', 2000);
     e = setAmount(e, 1, 'payable', 'dr', 1200);
     e = setAmount(e, 1, 'cash', 'cr', 1200);
-    e = setPending(e, 1, true);
-    const { posted, pending, hasPending } = sheetBalances(e);
-    expect(hasPending).toBe(true);
-    expect(balanceOf(posted, 'cash')).toBe(2000);
-    expect(balanceOf(pending, 'cash')).toBe(800);
-    expect(setPending(e, 1, false).rows[1]!.pending).toBeUndefined();
+    const bal = sheetBalance(e);
+    expect(balanceOf(bal, 'cash')).toBe(800);
+    expect(balanceOf(bal, 'payable')).toBe(800);
   });
 
-  it('opening balances feed both, and a 0 removes the line', () => {
+  it('opening balances feed the balance, and a 0 removes the line', () => {
     let e = setOpening(base(), 'cash', 10000);
-    expect(balanceOf(sheetBalances(e).posted, 'cash')).toBe(10000);
+    expect(balanceOf(sheetBalance(e), 'cash')).toBe(10000);
     e = setOpening(e, 'cash', 0);
     expect(e.opening).toBeUndefined();
   });
@@ -90,7 +85,7 @@ describe('accounts', () => {
     expect(e.accounts.find((a) => a.id === 'payable')!.contraOf).toBeUndefined();
   });
 
-  it('blank subtitle/metadata are dropped rather than stored', () => {
+  it('a blank subtitle is dropped rather than stored', () => {
     const e = updateAccount(updateAccount(base(), 'cash', { subtitle: 'Bank' }), 'cash', {
       subtitle: '',
     });
@@ -116,22 +111,23 @@ describe('accounts', () => {
   });
 });
 
-describe('metadata JSON', () => {
-  it('accepts empty or valid JSON and reports invalid JSON', () => {
-    expect(metadataError(undefined)).toBeNull();
-    expect(metadataError('  ')).toBeNull();
-    expect(metadataError('{ "type": "cash" }')).toBeNull();
-    expect(metadataError('{ "type": ')).not.toBeNull();
-  });
-});
-
 describe('URL state', () => {
-  it('round-trips subtitle, metadata and pending through the sandbox codec', () => {
+  it('round-trips subtitles through the sandbox codec', () => {
     const s = EXAMPLES.find((x) => x.id === 'payroll')!.build();
     const back = engine.decodeSandbox(engine.encodeState(s));
     expect(back).toEqual(s);
-    expect(back!.entities[0]!.accounts[0]!.metadata).toBe('{ "type": "cash" }');
-    expect(back!.entities[0]!.rows[2]!.pending).toBe(true);
+    expect(back!.entities[0]!.accounts[0]!.subtitle).toBe('Bank account');
+  });
+
+  it('old links with the removed attributes JSON and pending flags still open (those fields are dropped)', () => {
+    const s = EXAMPLES.find((x) => x.id === 'payroll')!.build();
+    const old = structuredClone(s) as unknown as {
+      entities: { accounts: Record<string, unknown>[]; rows: Record<string, unknown>[] }[];
+    };
+    old.entities[0]!.accounts[0]!.metadata = '{ "type": "cash" }';
+    old.entities[0]!.rows[2]!.pending = true;
+    const back = engine.decodeSandbox(engine.encodeState(old as unknown as SandboxState));
+    expect(back).toEqual(s);
   });
 
   it('routes #/sheet with data and entity index', () => {

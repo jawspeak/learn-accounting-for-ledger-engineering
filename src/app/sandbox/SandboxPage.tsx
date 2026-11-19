@@ -6,6 +6,7 @@ import { EntityCard } from './EntityCard';
 import { EXAMPLES } from './examples';
 import { duplicateEntity, emptyState, newEntity, URL_WARN_LENGTH } from './model';
 import { SafeMarkdown } from './safeMarkdown';
+import { ViewSwitch } from './ViewSwitch';
 import './sandbox.css';
 
 /** Debounce for writing state into the URL. */
@@ -111,7 +112,7 @@ export function SandboxPage({ data }: { data?: string }) {
 
   return (
     <article className="sbx">
-      <p className="note sbx-kicker">Sandbox · Scenario Board — ungraded; only structural checks.</p>
+      <ViewSwitch current="taccounts" data={engine.encodeState(state)} />
       <label htmlFor={`${uid}-title`} className="sr-only">
         Board title
       </label>
@@ -149,9 +150,6 @@ export function SandboxPage({ data }: { data?: string }) {
             New / Clear
           </button>
         )}
-        <a className="btn" href={href.sheet(engine.encodeState(state))} title="Same scenario as a wide grid (desktop)">
-          Spreadsheet view
-        </a>
         <label className="sbx-inline">
           Example scenarios:
           <select value="" onChange={(e) => loadExample(e.target.value)}>

@@ -5,6 +5,7 @@ import { href, parseHash, replaceHash } from '../router';
 import { EXAMPLES } from '../sandbox/examples';
 import { emptyState, newEntity, typeResolver, URL_WARN_LENGTH } from '../sandbox/model';
 import { SheetGrid } from './SheetGrid';
+import { ViewSwitch } from '../sandbox/ViewSwitch';
 import { sortCanonical } from './model';
 import { formatDollars } from '../../components/builder/model';
 import './sheet.css';
@@ -29,9 +30,9 @@ function load(data: string | undefined, epoch: number): Board {
 const clampEntity = (i: number, s: SandboxState) => Math.max(0, Math.min(i, s.entities.length - 1));
 
 /**
- * Spreadsheet view of a sandbox board (#/sheet): one entity's books as a wide grid — events down the left,
- * one T (Dr | Cr) per account across, account attributes and balances in the header. Same URL state as the
- * Sandbox, so a link opens in either view. Desktop-first.
+ * The Sandbox's Spreadsheet view (#/sheet): one party's books at a time (tabs across the top) as a wide grid —
+ * events down the left, one T (debit | credit) per account across, names, labels, types and balances in the
+ * header. Same URL state as the T-accounts view, so a link opens in either. Desktop-first.
  */
 export function SheetPage({ data, entity }: { data?: string; entity: number }) {
   const uid = useId();
@@ -42,7 +43,6 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
   const loaded = useRef<SandboxState>(board.state);
   const [urlLength, setUrlLength] = useState(0);
   const [status, setStatus] = useState('');
-  const [newBooks, setNewBooks] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
 
   const current = state.entities[clampEntity(ei, state)];
@@ -100,7 +100,7 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
     const h = writeUrl(state, ei);
     try {
       await navigator.clipboard.writeText(`${window.location.href.split('#')[0]}${h}`);
-      setStatus('Link copied — it opens in the sandbox too.');
+      setStatus('Link copied — it opens in either view.');
     } catch {
       setStatus('Couldn’t access the clipboard — copy the address bar instead.');
     }
@@ -109,80 +109,61 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
   if (!current) return null;
 
   const typeOf = typeResolver(current);
-  const posted = engine.computeBalances(
-    current.rows.filter((r) => !r.pending),
-    typeOf,
-    current.opening,
-  );
-  const eq = engine.checkEquation(posted, typeOf);
+  const balance = engine.computeBalances(current.rows, typeOf, current.opening);
+  const eq = engine.checkEquation(balance, typeOf);
+  const sel = clampEntity(ei, state);
+  const tabId = (i: number) => `${uid}-tab-${i}`;
+  const selectParty = (i: number) => {
+    setEi(i);
+    writeUrl(state, i);
+  };
+  const addParty = () => {
+    const next = newEntity(state.entities, 'Other party');
+    const s2 = { ...state, entities: [...state.entities, next] };
+    setBoard((b) => ({ ...b, state: s2 }));
+    setEi(s2.entities.length - 1);
+    setStatus(`Added ${next.name}.`);
+  };
+  // Tabs: ←/→ (and Home/End) move between parties, like any tab list.
+  const onTabKey = (ev: KeyboardEvent<HTMLButtonElement>) => {
+    const last = state.entities.length - 1;
+    const to =
+      ev.key === 'ArrowRight'
+        ? sel === last
+          ? 0
+          : sel + 1
+        : ev.key === 'ArrowLeft'
+          ? sel === 0
+            ? last
+            : sel - 1
+          : ev.key === 'Home'
+            ? 0
+            : ev.key === 'End'
+              ? last
+              : null;
+    if (to === null) return;
+    ev.preventDefault();
+    selectParty(to);
+    document.getElementById(tabId(to))?.focus();
+  };
   const unbalanced = current.rows.flatMap((r, i) =>
     r.postings.length && !engine.rowTotals(r).balanced ? [i + 1] : [],
   );
 
   return (
     <article className="sh">
-      <div className="sh-top">
-        <label htmlFor={`${uid}-title`} className="sr-only">
-          Scenario title
-        </label>
-        <input
-          id={`${uid}-title`}
-          className="sh-title"
-          size={Math.min(60, Math.max(14, (state.title ?? '').length + 1))}
-          value={state.title ?? ''}
-          placeholder="Untitled scenario"
-          onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
-        />
-        <div className="sh-books" role="group" aria-label="Whose books">
-          <label>
-            Books of{' '}
-            <select
-              value={clampEntity(ei, state)}
-              onChange={(e) => {
-                const i = Number(e.target.value);
-                setEi(i);
-                writeUrl(state, i);
-              }}
-            >
-              {state.entities.map((x, i) => (
-                <option key={x.id} value={i}>
-                  {x.name || `Entity ${i + 1}`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
-            className="sh-entity-name"
-            aria-label="Rename these books"
-            value={current.name}
-            onChange={(e) => setEntity({ ...current, name: e.target.value })}
-          />
-          {newBooks ? (
-            <span className="sh-confirm">
-              Add another party’s books?
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  const next = newEntity(state.entities, 'Other party');
-                  update((s) => ({ ...s, entities: [...s.entities, next] }));
-                  setEi(state.entities.length);
-                  setNewBooks(false);
-                }}
-              >
-                Add
-              </button>
-              <button type="button" className="btn" onClick={() => setNewBooks(false)}>
-                Cancel
-              </button>
-            </span>
-          ) : (
-            <button type="button" className="btn" onClick={() => setNewBooks(true)}>
-              + Books
-            </button>
-          )}
-        </div>
-      </div>
+      <ViewSwitch current="sheet" data={engine.encodeState(state)} entity={sel} />
+      <label htmlFor={`${uid}-title`} className="sr-only">
+        Scenario title
+      </label>
+      <input
+        id={`${uid}-title`}
+        className="sh-title"
+        size={Math.min(60, Math.max(14, (state.title ?? '').length + 1))}
+        value={state.title ?? ''}
+        placeholder="Untitled scenario"
+        onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
+      />
 
       {board.invalidLink && (
         <p className="sh-notice sh-warn" role="alert">
@@ -190,17 +171,14 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
         </p>
       )}
       <p className="sh-notice sh-narrow-note">
-        The spreadsheet view is built for a wide desktop screen. On a small screen, the{' '}
-        <a href={href.sandbox(engine.encodeState(state))}>sandbox</a> is easier to use.
+        The Spreadsheet view is built for a wide desktop screen. On a small screen, the{' '}
+        <a href={href.sandbox(engine.encodeState(state))}>T-accounts view</a> is easier to use.
       </p>
 
       <div className="sh-toolbar">
         <button type="button" className="btn primary" onClick={copyLink}>
           Copy link
         </button>
-        <a className="btn" href={href.sandbox(engine.encodeState(state))}>
-          Open in Sandbox
-        </a>
         <label className="sh-inline">
           <span className="sr-only">Load an example</span>
           <select
@@ -262,7 +240,7 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
           </span>
           <span className={eq.balanced ? 'is-ok' : 'is-bad'}>
             <span aria-hidden="true">{eq.balanced ? '✓' : '✗'}</span> A {eq.balanced ? '=' : '≠'} L
-            + E (posted): {formatDollars(eq.assets)} {eq.balanced ? '=' : '≠'}{' '}
+            + E: {formatDollars(eq.assets)} {eq.balanced ? '=' : '≠'}{' '}
             {formatDollars(eq.liabilities)} + {formatDollars(eq.equity)}
           </span>
         </span>
@@ -289,7 +267,47 @@ export function SheetPage({ data, entity }: { data?: string; entity: number }) {
         />
       </details>
 
-      <SheetGrid key={`${epoch}:${current.id}`} entity={current} onChange={setEntity} />
+      {/* One tab per party: whose books the grid shows. */}
+      <div className="sh-tabbar">
+        <div className="sh-tabs" role="tablist" aria-label="Whose books">
+          {state.entities.map((x, i) => (
+            <button
+              key={x.id}
+              id={tabId(i)}
+              type="button"
+              role="tab"
+              className="sh-tab"
+              aria-selected={i === sel}
+              aria-controls={`${uid}-panel`}
+              tabIndex={i === sel ? 0 : -1}
+              onClick={() => selectParty(i)}
+              onKeyDown={onTabKey}
+            >
+              {x.name || `Party ${i + 1}`}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="sh-tab-add"
+          onClick={addParty}
+          title="Add another party’s books"
+        >
+          + Add party
+        </button>
+        <label className="sh-rename">
+          <span>Name</span>
+          <input
+            className="sh-entity-name"
+            aria-label="Rename this party"
+            value={current.name}
+            onChange={(e) => setEntity({ ...current, name: e.target.value })}
+          />
+        </label>
+      </div>
+      <div id={`${uid}-panel`} role="tabpanel" aria-labelledby={tabId(sel)} className="sh-panel">
+        <SheetGrid key={`${epoch}:${current.id}`} entity={current} onChange={setEntity} />
+      </div>
     </article>
   );
 }

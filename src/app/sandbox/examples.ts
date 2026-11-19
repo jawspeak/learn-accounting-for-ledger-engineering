@@ -216,31 +216,28 @@ function fboTopUp(): SandboxState {
   };
 }
 
-// ---------- 4. Payroll — a payroll provider's ledger (spreadsheet view) ----------
+// ---------- 4. Payroll — a payroll provider's ledger (best in the Spreadsheet view) ----------
 function payroll(): SandboxState {
   const accounts: Account[] = [
-    { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Bank account', metadata: '{ "type": "cash" }' },
-    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Income', metadata: '{ "type": "revenue" }' },
+    { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Bank account' },
+    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Income' },
     {
       id: 'employer-foo-receivable',
       name: 'Employer Foo Receivable',
       type: 'asset',
       subtitle: 'Employer receivables',
-      metadata: '{ "type": "employer_receivables", "employer_id": "foo" }',
     },
     {
       id: 'foo-employee-1-payable',
       name: 'Foo Employee 1 Payable',
       type: 'liability',
       subtitle: 'Employee payables',
-      metadata: '{ "type": "employee_payables", "employer_id": "foo", "employee_id": "EE1" }',
     },
     {
       id: 'foo-employee-2-payable',
       name: 'Foo Employee 2 Payable',
       type: 'liability',
       subtitle: 'Employee payables',
-      metadata: '{ "type": "employee_payables", "employer_id": "foo", "employee_id": "EE2" }',
     },
   ];
   const fooAccounts: Account[] = [
@@ -257,8 +254,8 @@ function payroll(): SandboxState {
       'A payroll provider runs **$2,000** of payroll for **Employer Foo** (Employee 1: $1,200, Employee 2: $800) and charges a **$20** fee.\n\n' +
       '1. Running payroll: Foo now owes us $2,020; we owe each employee their pay; we earned the fee.\n' +
       '2. We pull $2,020 from Foo’s bank account.\n' +
-      '3–4. We pay each employee. These payouts are still **pending** (sent, not yet settled) — compare the posted and pending balances.\n\n' +
-      'Switch to **Employer Foo**’s books to see the same events from the employer’s side: an expense and a payable, then the cash leaves.',
+      '3–4. We pay each employee; Cash ends at the $20 fee we kept.\n\n' +
+      '**Employer Foo**’s books (the second tab in the Spreadsheet view) show the same events from the employer’s side: an expense and a payable, then the cash leaves.',
     entities: [
       {
         id: 'payroll-provider',
@@ -283,13 +280,11 @@ function payroll(): SandboxState {
           {
             id: 'r3',
             label: 'Credit Foo Employee 1',
-            pending: true,
             postings: [post(accounts, 'foo-employee-1-payable', 'dr', 1200), post(accounts, 'cash', 'cr', 1200)],
           },
           {
             id: 'r4',
             label: 'Credit Foo Employee 2',
-            pending: true,
             postings: [post(accounts, 'foo-employee-2-payable', 'dr', 800), post(accounts, 'cash', 'cr', 800)],
           },
         ],

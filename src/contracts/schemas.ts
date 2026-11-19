@@ -30,7 +30,7 @@ export const accountSchema = z
     equityGroup: z.enum(['paid-in', 'retained']).optional(),
     description: z.string().optional(),
     subtitle: z.string().optional(),
-    metadata: z.string().optional(),
+    // (Old sandbox links may carry `metadata`; z.object drops unknown keys, so they still load.)
   })
   .refine((a) => !a.type.startsWith('contra-') || !!a.contraOf, 'contra accounts need contraOf');
 
@@ -52,7 +52,7 @@ export const rowSchema = z.object({
   id: z.string().min(1),
   label: z.string().optional(),
   postings: z.array(postingSchema),
-  pending: z.boolean().optional(),
+  // (Old sandbox links may carry `pending`; dropped on load like any unknown key — every row counts.)
 });
 export const balanceSheetSchema = z.object({
   lines: z.array(z.object({ accountId: id, amount: money })),

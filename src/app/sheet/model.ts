@@ -60,7 +60,7 @@ export function contraCandidates(accounts: Account[], t: AccountType, self?: Acc
 export function visibleRowCount(rows: TransactionRow[]): number {
   let lastUsed = -1;
   rows.forEach((r, i) => {
-    if (r.postings.length || r.label || r.pending) lastUsed = i;
+    if (r.postings.length || r.label) lastUsed = i;
   });
   return Math.max(MIN_ROWS, rows.length, lastUsed + 1 + SPARE_ROWS);
 }
@@ -101,15 +101,6 @@ export function setLabel(e: SandboxEntity, i: number, label: string): SandboxEnt
   });
 }
 
-export function setPending(e: SandboxEntity, i: number, pending: boolean): SandboxEntity {
-  return updateRow(e, i, (r) => {
-    const next = { ...r };
-    if (pending) next.pending = true;
-    else delete next.pending;
-    return next;
-  });
-}
-
 /** Opening balance for one account, on its normal side (negative = abnormal). 0 removes the line. */
 export function setOpening(e: SandboxEntity, accountId: AccountId, cents: Money): SandboxEntity {
   const lines = (e.opening?.lines ?? []).filter((l) => l.accountId !== accountId);
@@ -124,33 +115,9 @@ export function setOpening(e: SandboxEntity, accountId: AccountId, cents: Money)
   return out;
 }
 
-/**
- * Balances per account on the normal side: `posted` counts only rows that aren't pending; `pending` counts
- * every row (posted + in flight) — the same split a production ledger exposes as posted vs. pending balance.
- */
-export function sheetBalances(e: SandboxEntity): {
-  posted: BalanceSheet;
-  pending: BalanceSheet;
-  hasPending: boolean;
-} {
-  const typeOf = typeResolver(e);
-  const postedRows = e.rows.filter((r) => !r.pending);
-  return {
-    posted: engine.computeBalances(postedRows, typeOf, e.opening),
-    pending: engine.computeBalances(e.rows, typeOf, e.opening),
-    hasPending: postedRows.length !== e.rows.length,
-  };
-}
-
-/** `null` when the text is empty or valid JSON; otherwise a short error message. */
-export function metadataError(text: string | undefined): string | null {
-  if (!text || !text.trim()) return null;
-  try {
-    JSON.parse(text);
-    return null;
-  } catch (err) {
-    return err instanceof Error ? err.message.replace(/^JSON\.parse: /, '') : 'Invalid JSON';
-  }
+/** Balance per account on its normal side (opening + every row) — the same numbers the T-accounts view shows. */
+export function sheetBalance(e: SandboxEntity): BalanceSheet {
+  return engine.computeBalances(e.rows, typeResolver(e), e.opening);
 }
 
 export function addAccount(
@@ -179,8 +146,7 @@ export function updateAccount(
   const accounts = e.accounts.map((a) => {
     if (a.id !== id) return a;
     const next: Account = { ...a, ...patch };
-    for (const k of ['subtitle', 'metadata', 'description'] as const)
-      if (next[k] === '') delete next[k];
+    for (const k of ['subtitle', 'description'] as const) if (next[k] === '') delete next[k];
     if (contraBase(next.type)) {
       const ok = contraCandidates(e.accounts, next.type, id).some((c) => c.id === next.contraOf);
       if (!ok) {
