@@ -1,6 +1,5 @@
 import { sections, sectionProblems } from '@content';
 import { href } from '../router';
-import { ProgressSummary } from '../ProgressSummary';
 
 export function HomePage() {
   return (
@@ -26,8 +25,6 @@ export function HomePage() {
           Spreadsheet view
         </a>
       </div>
-
-      <ProgressSummary />
 
       <section aria-labelledby="how">
         <h2 id="how">How to use this</h2>

@@ -30,11 +30,10 @@ test('progress: tried then solved shows in the nav, the bar and the problem; res
     /Your progress: 1 of \d+/,
   );
 
-  // Home: summary + reset.
-  await page.goto('./#/');
+  // Bottom of the nav: summary + a small Reset.
   await expect(page.locator('.progress-summary')).toContainText(/1 of \d+/);
   page.once('dialog', (d) => d.accept());
-  await page.getByRole('button', { name: 'Reset progress' }).click();
+  await page.locator('.progress-summary').getByRole('button', { name: 'Reset' }).click();
   await expect(page.locator('.progress-summary')).toContainText(/0 of \d+/);
   await expect(page.locator('.progress-bar .progress-slot.is-solved')).toHaveCount(0);
 });

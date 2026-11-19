@@ -1218,30 +1218,27 @@ textarea {
   color: var(--warn);
 }
 .progress-summary {
-  margin: var(--space-5) 0;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  max-width: 40rem;
+  margin: var(--space-4) 0 var(--space-2);
+  padding: var(--space-3) 0.4rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
 }
-.progress-summary h2 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-lg);
-}
-.progress-summary__sections {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.15rem var(--space-3);
-  margin: var(--space-2) 0 var(--space-3);
-  font-size: var(--text-sm);
-}
-.progress-summary__sections .num {
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  text-align: right;
+.progress-summary p {
+  margin: 0 0 0.2rem;
 }
 .progress-summary__note {
   color: var(--muted);
-  font-size: var(--text-sm);
+  font-size: 0.75rem;
+}
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover {
+  color: var(--fg);
 }

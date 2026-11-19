@@ -16,6 +16,7 @@ import { useTheme } from './theme';
 import { AskGemini, type AskContext } from './AskGemini';
 import { problemNumber } from './problemNumber';
 import { ProgressBar } from './ProgressBar';
+import { ProgressSummary } from './ProgressSummary';
 import { statusOf, useProgress } from './progress';
 
 /** Sandbox gets the full width; booking problems with balance sheets get room for Before | grid | After. */
@@ -292,6 +293,7 @@ export function App() {
               </a>
             </li>
           </ol>
+          <ProgressSummary />
         </nav>
         <main className={mainClass(route)} id="main" tabIndex={-1}>
           {route.name === 'home' && <HomePage />}
