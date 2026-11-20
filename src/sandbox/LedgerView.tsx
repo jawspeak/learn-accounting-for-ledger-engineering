@@ -77,24 +77,24 @@ function PartyLedger({
     entries: e.rows.flatMap((r, ri) => (r.postings.some(isPosted) ? [ri] : [])),
   };
 
-  const band = (label: string, list: Account[]) =>
-    list.length > 0 && (
-      <div className="lv-band">
-        <h4 className="lv-band-label">{label}</h4>
-        <div className="lv-taccts">
-          {list.map((a) => (
-            <TAccount
-              key={a.id}
-              entity={e}
-              account={a}
-              balance={balances}
-              layout={layout}
-              party={index}
-            />
-          ))}
-        </div>
-      </div>
-    );
+  // One flow of T's per side of the equation. Each section's label sits above its first T (the other T's keep
+  // an empty label slot so every T starts at the same height); the flow wraps only when it runs out of room.
+  const flow = (sections: [string, Account[]][]) => (
+    <div className="lv-taccts">
+      {sections.flatMap(([label, list]) =>
+        list.map((a, i) => (
+          <div key={a.id} className="lv-titem">
+            {i === 0 ? (
+              <h4 className="lv-band-label">{label}</h4>
+            ) : (
+              <span className="lv-band-label" aria-hidden="true" />
+            )}
+            <TAccount entity={e} account={a} balance={balances} layout={layout} party={index} />
+          </div>
+        )),
+      )}
+    </div>
+  );
 
   return (
     <section
@@ -130,16 +130,48 @@ function PartyLedger({
           use gets a T here.
         </p>
       ) : (
-        <div className="lv-ledger">
-          <div className="lv-side">{band('Assets', left)}</div>
-          <div className="lv-eq" aria-hidden="true">
-            =
+        <>
+          {/* The key to the (n) on every T: one line per entry, linking to it in the Journal. */}
+          <ol className="lv-entries" aria-label="Entries">
+            {layout.entries.map((ri) => {
+              const r = e.rows[ri]!;
+              const n = ri + 1;
+              return (
+                <li key={r.id}>
+                  <SandboxLink
+                    className="lv-ref"
+                    to={{ view: 'journal', party: index, at: entryAnchor(n) }}
+                    title={`Entry ${n} — open in the Journal`}
+                  >
+                    ({n})
+                  </SandboxLink>{' '}
+                  {r.label || <span className="note">No description</span>}
+                  <span className="lv-entry-lines">
+                    {r.postings
+                      .filter(isPosted)
+                      .map(
+                        (p) =>
+                          `${p.side === 'dr' ? 'Dr' : 'Cr'} ${nameOf(p.accountId)} ${formatDollars(p.amount)}`,
+                      )
+                      .join(' · ')}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="lv-ledger">
+            <div className="lv-side">{flow([['Assets', left]])}</div>
+            <div className="lv-eq" aria-hidden="true">
+              =
+            </div>
+            <div className="lv-side">
+              {flow([
+                ['Liabilities', liab],
+                ['Equity', eq],
+              ])}
+            </div>
           </div>
-          <div className="lv-side">
-            {band('Liabilities', liab)}
-            {band('Equity', eq)}
-          </div>
-        </div>
+        </>
       )}
       {e.showBalanceSheets && (
         <div className="lv-bs">

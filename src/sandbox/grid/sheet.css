@@ -286,6 +286,34 @@ th.sh-left[colspan='3'] {
   text-align: left !important;
   padding: 0.3rem 0.6rem !important;
 }
+/* The Description column's draggable right edge. */
+.sh-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+.sh-resizer::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+.sh-resizer:hover::after,
+.sh-resizer:focus-visible::after {
+  background: var(--accent);
+}
+.sh-resizer:focus-visible {
+  outline: none;
+}
 /* A plain heading, not link-styled (it isn't clickable). */
 .sh-corner-title {
   font-size: 1.1rem;

@@ -302,7 +302,33 @@
   font-weight: 700;
   color: var(--muted);
 }
+/* The entry key above the T's: "(1) Borrow $500   Dr Checking $500 · Cr Loan Payable $500", one per line. */
+.lv-entries {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.lv-entries .lv-ref {
+  font-variant-numeric: tabular-nums;
+}
+.lv-entry-lines {
+  margin-left: var(--space-3);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+/* One T in a flow, with its section label (or an empty slot of the same height) above it. */
+.lv-titem {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 .lv-band-label {
+  display: block;
+  min-height: 1.2em;
   margin: 0 0 var(--space-1);
   font-size: 0.75rem;
   letter-spacing: 0.05em;

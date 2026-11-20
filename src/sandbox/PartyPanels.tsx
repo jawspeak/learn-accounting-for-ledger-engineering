@@ -59,18 +59,26 @@ export function EntitySummaryLine({
 // ---- Account controls shared by every view (Grid header, Journal "New account…", Accounts panel) ----
 
 /** The account types; a contra type is offered only when there's an account for it to reduce. */
+const NEEDS: Partial<Record<AccountType, string>> = {
+  asset: 'an asset',
+  liability: 'a liability',
+  equity: 'an equity account',
+  revenue: 'a revenue account',
+};
+
 export function TypeOptions({ accounts, self }: { accounts: Account[]; self?: AccountId }) {
   return (
     <>
-      {ACCOUNT_TYPES.map((t) => (
-        <option
-          key={t.type}
-          value={t.type}
-          disabled={!!contraBase(t.type) && contraCandidates(accounts, t.type, self).length === 0}
-        >
-          {t.label}
-        </option>
-      ))}
+      {ACCOUNT_TYPES.map((t) => {
+        // A contra account reduces one account of its family, so it needs one to exist first — say so.
+        const base = contraBase(t.type);
+        const blocked = !!base && contraCandidates(accounts, t.type, self).length === 0;
+        return (
+          <option key={t.type} value={t.type} disabled={blocked}>
+            {blocked ? `${t.label} (add ${NEEDS[base!]} first)` : t.label}
+          </option>
+        );
+      })}
     </>
   );
 }

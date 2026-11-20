@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import type { Account, AccountType, BalanceSheet, Money, SandboxEntity, Side } from '@contracts';
 import { engine } from '@engine';
 import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
@@ -38,6 +38,7 @@ export function SheetGrid({
   onChange(e: SandboxEntity): void;
 }) {
   const tableRef = useRef<HTMLTableElement>(null);
+  const [descWidth, setDescWidth] = useStoredWidth();
   const [showOpening, setShowOpening] = useState(() => !!e.opening);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('asset');
@@ -145,6 +146,8 @@ export function SheetGrid({
       role="region"
       aria-label="Spreadsheet: events and T-accounts"
       tabIndex={0}
+      // The Description column's width (drag its edge); every sticky offset follows the variable.
+      style={descWidth ? ({ '--sh-w2': `${descWidth}px` } as CSSProperties) : undefined}
     >
       <table className="sh-grid" ref={tableRef} onKeyDown={onNav}>
         <caption className="sr-only">
@@ -274,6 +277,7 @@ export function SheetGrid({
             </th>
             <th scope="col" className="sh-left sh-l2">
               Description
+              <ColumnResizer width={descWidth} onWidth={setDescWidth} />
             </th>
             <th scope="col" className="sh-left sh-l4">
               Dr = Cr?
@@ -463,6 +467,84 @@ export function SheetGrid({
         </p>
       )}
     </div>
+  );
+}
+
+// ---- Description column width: drag (or ← →) its right edge; remembered in this browser only ----
+
+const WIDTH_KEY = 'sbx-grid-description-width';
+const MIN_W = 120;
+const MAX_W = 640;
+const clampW = (w: number) => Math.round(Math.max(MIN_W, Math.min(MAX_W, w)));
+
+/** The Description width in px, or null for the default. A viewer convenience: storage may be unavailable. */
+function useStoredWidth(): [number | null, (w: number | null) => void] {
+  const [w, setW] = useState<number | null>(() => {
+    try {
+      const v = Number(localStorage.getItem(WIDTH_KEY));
+      return v ? clampW(v) : null;
+    } catch {
+      return null;
+    }
+  });
+  const set = (next: number | null) => {
+    setW(next);
+    try {
+      if (next === null) localStorage.removeItem(WIDTH_KEY);
+      else localStorage.setItem(WIDTH_KEY, String(next));
+    } catch {
+      // storage blocked: the width just isn't remembered
+    }
+  };
+  return [w, set];
+}
+
+/** The draggable right edge of the Description header. Double-click resets to the default width. */
+function ColumnResizer({
+  width,
+  onWidth,
+}: {
+  width: number | null;
+  onWidth(w: number | null): void;
+}) {
+  const current = (el: HTMLElement) => width ?? el.parentElement!.getBoundingClientRect().width;
+  return (
+    <span
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize the Description column"
+      aria-valuemin={MIN_W}
+      aria-valuemax={MAX_W}
+      aria-valuenow={width ?? undefined}
+      tabIndex={0}
+      className="sh-resizer"
+      title="Drag to widen the Description column (double-click resets)"
+      onPointerDown={(ev) => {
+        ev.preventDefault();
+        const el = ev.currentTarget;
+        el.setPointerCapture(ev.pointerId);
+        const startX = ev.clientX;
+        const startW = current(el);
+        const move = (m: PointerEvent) => onWidth(clampW(startW + m.clientX - startX));
+        const up = () => {
+          el.removeEventListener('pointermove', move);
+          el.removeEventListener('pointerup', up);
+          el.removeEventListener('pointercancel', up);
+        };
+        el.addEventListener('pointermove', move);
+        el.addEventListener('pointerup', up);
+        el.addEventListener('pointercancel', up);
+      }}
+      onDoubleClick={() => onWidth(null)}
+      onKeyDown={(ev) => {
+        const step = ev.shiftKey ? 64 : 16;
+        if (ev.key === 'ArrowRight') onWidth(clampW(current(ev.currentTarget) + step));
+        else if (ev.key === 'ArrowLeft') onWidth(clampW(current(ev.currentTarget) - step));
+        else return;
+        ev.preventDefault();
+        ev.stopPropagation(); // not the grid's cell navigation
+      }}
+    />
   );
 }
 

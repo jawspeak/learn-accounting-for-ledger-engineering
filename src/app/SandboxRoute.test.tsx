@@ -157,6 +157,24 @@ describe('party bar (Journal and Grid)', () => {
 });
 
 describe('T-accounts view (the ledger)', () => {
+  it('lists the entries above the T’s, one per line, as the key to their (n)', () => {
+    mount('taccounts', loan());
+    const you = screen.getByRole('region', { name: 'You’s ledger' });
+    const items = within(within(you).getByRole('list', { name: 'Entries' })).getAllByRole(
+      'listitem',
+    );
+    expect(items.map((li) => li.textContent)).toEqual([
+      '(1) Borrow $500Dr Checking Account $500 · Cr Loan Payable $500',
+      '(2) Pay $5 interestDr Interest Expense $5 · Cr Checking Account $5',
+    ]);
+    // Liabilities and equity share one flow, each labelled above its first T.
+    expect(
+      within(you.querySelector<HTMLElement>('.lv-ledger')!)
+        .getAllByRole('heading', { level: 4 })
+        .map((h) => h.textContent),
+    ).toEqual(['Assets', 'Liabilities', 'Equity']);
+  });
+
   it('every party side by side; a T only for accounts in use; entries numbered and linked to the Journal', () => {
     mount('taccounts', loan());
     expect(screen.queryByRole('tablist')).toBeNull();
@@ -214,6 +232,21 @@ describe('Grid view', () => {
     mount('grid', loan(), 1);
     expect(screen.getByRole('tab', { selected: true }).textContent).toBe('First Example Bank');
     expect(screen.getByRole('region', { name: /Spreadsheet/ })).toBeTruthy();
+  });
+
+  it('a contra type says what it needs first; the Description column resizes with ← →', () => {
+    const s = emptyState();
+    mount('grid', s);
+    const contra = screen.getByRole('option', { name: /^Contra-asset/ }) as HTMLOptionElement;
+    expect(contra.disabled).toBe(true);
+    expect(contra.textContent).toBe('Contra-asset (add an asset first)');
+    const edge = screen.getByRole('separator', { name: 'Resize the Description column' });
+    const region = screen.getByRole('region', { name: /Spreadsheet/ });
+    fireEvent.keyDown(edge, { key: 'ArrowRight' }); // jsdom has no layout: from 0 → the 120px minimum
+    fireEvent.keyDown(edge, { key: 'ArrowRight' });
+    expect(region.style.getPropertyValue('--sh-w2')).toBe('136px');
+    fireEvent.doubleClick(edge);
+    expect(region.style.getPropertyValue('--sh-w2')).toBe('');
   });
 
   it('starts with one blank entry that is saved only once you type in it', () => {
