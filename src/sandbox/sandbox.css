@@ -500,7 +500,8 @@
 .sbx-allsc {
   margin-top: var(--space-4);
   padding-top: 0.35rem;
-  border-top: 2px solid var(--fg); /* one strong rule above each scenario */
+  /* one strong rule above each scenario — a touch softer than the text colour */
+  border-top: 2px solid color-mix(in srgb, var(--fg) 55%, var(--bg));
 }
 .sbx-allsc:first-of-type {
   margin-top: var(--space-2);
