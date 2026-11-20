@@ -43,6 +43,7 @@ Export / Import), so a person or an agent can write one by hand and open it in t
   "name": "Cash: Checking",
   "type": "asset", // see the table below
   "number": "1010", // optional: a GL account number, any format
+  "tags": ["GL Acct", "review"], // optional: short free-form tags for discussion (shown as their first 10 characters)
   "subtitle": "At First Example Bank", // optional: a short second line (the Grid's "Label")
   "description": "…", // optional: shown on hover
   "contraOf": "equipment", // required for contra-* types: the account it reduces (same entity)

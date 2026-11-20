@@ -3,6 +3,7 @@ import type { Account, SandboxState } from '@contracts';
 import { orderedAccounts, scenarioNumber, usageByScenario } from './model';
 import { SECTION_LABEL, sectionOf, typeLabel } from './EntityPanels';
 import { entityLabel, useShowCodes } from './codes';
+import { TagChips } from './tags';
 
 const SECTIONS = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'] as const;
 
@@ -112,6 +113,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
                             {parent ? ` of ${parent.name}` : ''}
                           </span>
                         )}
+                        <TagChips tags={a.tags} />
                       </th>
                       <td>{a.subtitle ?? ''}</td>
                       {used.map((x, si) => (

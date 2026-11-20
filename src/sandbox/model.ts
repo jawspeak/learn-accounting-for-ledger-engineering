@@ -366,6 +366,12 @@ export function updateAccount(
     const next: Account = { ...a, ...patch };
     for (const k of ['subtitle', 'description', 'number'] as const)
       if (next[k] !== undefined && !next[k]!.trim()) delete next[k];
+    if (next.tags) {
+      // Trimmed, no blanks, no repeats; none at all → no field.
+      const tags = [...new Set(next.tags.map((t) => t.trim()).filter(Boolean))];
+      if (tags.length) next.tags = tags;
+      else delete next.tags;
+    }
     if (contraBase(next.type)) {
       const ok = contraCandidates(e.accounts, next.type, id).some((c) => c.id === next.contraOf);
       if (!ok) {

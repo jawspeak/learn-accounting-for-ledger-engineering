@@ -6,6 +6,7 @@ import '../components/animations/animations.css';
 import { useScrollToAt } from '../lib/useScrollToAt';
 import { accountLabel, entityLabel, useShowCodes } from './codes';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
+import { TagChips } from './tags';
 import { SandboxLink } from './nav';
 import { entryAnchor } from './JournalEditor';
 import {
@@ -248,7 +249,10 @@ function TAccount({
         <span className="tacct__name" title={a.name}>
           {accountLabel(a, show)}
         </span>
-        <span className="tacct__type">{typeLabel(a.type)}</span>
+        <span className="tacct__type">
+          {typeLabel(a.type)}
+          <TagChips tags={a.tags} />
+        </span>
       </div>
       <div className="tacct__t">
         <div className="tacct__sides" aria-hidden="true">

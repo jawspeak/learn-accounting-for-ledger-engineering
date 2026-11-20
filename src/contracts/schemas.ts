@@ -31,6 +31,7 @@ export const accountSchema = z
     description: z.string().optional(),
     subtitle: z.string().optional(),
     number: z.string().optional(),
+    tags: z.array(z.string()).optional(),
   })
   .refine((a) => !a.type.startsWith('contra-') || !!a.contraOf, 'contra accounts need contraOf');
 

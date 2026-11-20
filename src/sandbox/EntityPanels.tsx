@@ -4,6 +4,7 @@ import { createContext, Fragment, useContext, useId, useState } from 'react';
 import type { Account, AccountId, AccountType, EntityBooks } from '@contracts';
 import { engine } from '@engine';
 import { accountLabel, useShowCodes } from './codes';
+import { TagChips, TagsInput } from './tags';
 import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
@@ -217,6 +218,7 @@ export function AccountsEditor({
               {show && <th scope="col">GL number</th>}
               <th scope="col">Name</th>
               <th scope="col">Type</th>
+              <th scope="col">Tags</th>
               <th scope="col">
                 <span className="sr-only">Actions</span>
               </th>
@@ -227,7 +229,7 @@ export function AccountsEditor({
               <Fragment key={a.id}>
                 {sections && (i === 0 || sectionOf(listed[i - 1]!.type) !== sectionOf(a.type)) && (
                   <tr className="sbx-section-row">
-                    <th scope="rowgroup" colSpan={show ? 4 : 3}>
+                    <th scope="rowgroup" colSpan={show ? 5 : 4}>
                       {SECTION_LABEL[sectionOf(a.type)]}
                     </th>
                   </tr>
@@ -282,6 +284,14 @@ export function AccountsEditor({
                         ({a.equityGroup === 'retained' ? 'retained' : 'paid-in'})
                       </span>
                     )}
+                  </td>
+                  <td>
+                    <TagsInput
+                      className="sbx-tags-input"
+                      label={`Tags of ${a.name}`}
+                      tags={a.tags}
+                      onTags={(tags) => onChange(updateAccount(entity, a.id, { tags }))}
+                    />
                   </td>
                   <td className="sbx-row-actions">
                     {manual && (
@@ -416,6 +426,7 @@ export function OpeningEditor({
     <tr key={a.id} className="sbx-bs-acct">
       <th scope="row">
         {accountLabel(a, show)}
+        <TagChips tags={a.tags} />
         {(a.type.startsWith('contra-') || a.type === 'dividend' || a.type === 'expense') && (
           <span className="note"> ({typeLabel(a.type).toLowerCase()})</span>
         )}

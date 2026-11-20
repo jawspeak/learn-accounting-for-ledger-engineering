@@ -41,6 +41,8 @@ export interface Account {
   subtitle?: string;
   /** Sandbox: an optional GL account number (any format the user likes — no convention is imposed). */
   number?: string;
+  /** Sandbox: short free-form tags for discussion ("GL Acct", "review"…), shown beside the account everywhere. */
+  tags?: string[];
 }
 
 export interface EntityCoA {

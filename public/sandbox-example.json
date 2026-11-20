@@ -13,7 +13,8 @@
           "name": "Cash: Checking",
           "type": "asset",
           "number": "1010",
-          "subtitle": "At First Example Bank"
+          "subtitle": "At First Example Bank",
+          "tags": ["operating"]
         },
         {
           "id": "equipment",
@@ -31,7 +32,8 @@
           "id": "loan-payable",
           "name": "Loan Payable",
           "type": "liability",
-          "number": "2100"
+          "number": "2100",
+          "tags": ["bank loan", "review terms"]
         },
         {
           "id": "owner-capital",

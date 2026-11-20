@@ -569,3 +569,30 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Account tags: short labels for discussion ("GL Acct"…), each shown as its first 10 characters (tooltip: all). */
+.sbx-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0 0.35rem;
+  vertical-align: baseline;
+}
+.sbx-tag {
+  padding: 0 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: help;
+}
+.sbx-tags-input {
+  min-width: 9rem;
+}
+/* The Grid: tags under the account name. */
+.sh-head .sbx-tags {
+  margin: 0.1rem 0 0;
+  justify-content: center;
+}

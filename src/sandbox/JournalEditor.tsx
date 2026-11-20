@@ -24,6 +24,7 @@ import {
 import { SECTION_LABEL, sectionOf, TypeOptions, typeLabel, type BsSection } from './EntityPanels';
 import { accountLabel, useShowCodes } from './codes';
 import { Menu } from './Menu';
+import { TagChips } from './tags';
 import { SandboxLink } from './nav';
 import './journal.css';
 
@@ -432,7 +433,10 @@ export function JournalEditor({
                           {(() => {
                             const a = accounts.find((x) => x.id === p.accountId);
                             return a ? (
-                              <span className="jx-acct-type">{typeLabel(a.type)}</span>
+                              <span className="jx-acct-type">
+                                <TagChips tags={a.tags} />
+                                {typeLabel(a.type)}
+                              </span>
                             ) : null;
                           })()}
                         </span>

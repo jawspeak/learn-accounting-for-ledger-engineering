@@ -15,6 +15,7 @@ The Sandbox imports one JSON file (⋯ Sandbox menu → Import). The format is d
 2. **Model the entities**: one per set of books (each company, bank, person). Give each its accounts once — `id`,
    `name`, `type` (asset, liability, equity, revenue, expense, dividend, or contra-* with `contraOf`). Entity `code`
    and account `number` are optional; use the user's numbering if they have one — don't invent a convention.
+   Accounts can also carry short free-form `tags` (["GL Acct", "review"]) for discussion.
 3. **Write the scenarios**: a `title`, a markdown `text` telling the story, each entity's `opening` balances (cents,
    on the account's normal side), and `events` in order.
 4. **Book each event in every entity it touches** — `lines[entityId]` is that entity's journal entry: `{ accountId,

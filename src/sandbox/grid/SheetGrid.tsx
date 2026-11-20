@@ -25,6 +25,7 @@ import {
   updateAccount,
 } from '../model';
 import { useShowCodes } from '../codes';
+import { TagChips, TagsInput } from '../tags';
 import { ContraParentSelect, TypeOptions, useRemoveAccount } from '../EntityPanels';
 import { equalsAt, setAmount, setLabel, sheetBalance, toneOf } from './model';
 
@@ -193,6 +194,7 @@ export function SheetGrid({
                     onCommit={(name) => onChange(updateAccount(e, a.id, { name }))}
                   />
                 </div>
+                <TagChips tags={a.tags} />
                 <div className="sh-col-tools">
                   {manual && (
                     <>
@@ -226,7 +228,7 @@ export function SheetGrid({
               </th>
             ))}
             {/* spans the name, label, type and debit/credit header rows */}
-            <th rowSpan={show ? 5 : 4} className="sh-add-col sh-add">
+            <th rowSpan={show ? 6 : 5} className="sh-add-col sh-add">
               <form
                 onSubmit={(ev) => {
                   ev.preventDefault();
@@ -278,6 +280,16 @@ export function SheetGrid({
               placeholder="label"
               value={a.subtitle ?? ''}
               onChange={(ev) => onChange(updateAccount(e, a.id, { subtitle: ev.target.value }))}
+            />
+          ))}
+          {/* Tags: short labels for discussion, edited here; their chips show under the account's name. */}
+          {headRow('Tags', (a) => (
+            <TagsInput
+              className="sh-subtitle"
+              label={`${a.name} tags`}
+              placeholder="tags"
+              tags={a.tags}
+              onTags={(tags) => onChange(updateAccount(e, a.id, { tags }))}
             />
           ))}
           {headRow('Account type', (a) => (

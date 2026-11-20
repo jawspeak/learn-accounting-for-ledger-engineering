@@ -234,9 +234,11 @@ describe('Accounts panel', () => {
       screen.queryByRole('button', { name: /^Move (?!entry|scenario).* (left|right)$/ }),
     ).toBeNull();
     const names = () =>
-      [...document.querySelectorAll<HTMLInputElement>('.sbx-accounts tbody input')].map(
-        (i) => i.value,
-      );
+      [
+        ...document.querySelectorAll<HTMLInputElement>(
+          '.sbx-accounts tbody input[aria-label^="Name of"]',
+        ),
+      ].map((i) => i.value);
     const before = names();
     fireEvent.click(screen.getByRole('button', { name: `Move ${before[1]} up` }));
     expect(names().slice(0, 2)).toEqual([before[1], before[0]]);
@@ -423,6 +425,58 @@ describe('scenarios', () => {
       within(you2).getByRole('rowheader', { name: 'Savings' }).closest('tr')!.textContent,
     ).toBe('Savingsunused');
     expect(within(you2).getByText(/1 unused/)).toBeTruthy();
+  });
+});
+
+describe('account tags', () => {
+  /** "You and your bank", with tags on Checking Account. */
+  const tagged = () => {
+    const s = bank();
+    s.entities[0]!.accounts.find((a) => a.id === 'checking')!.tags = [
+      'GL Acct',
+      'Interest-bearing deposit',
+    ];
+    return s;
+  };
+  const chips = (root: HTMLElement) =>
+    [...root.querySelectorAll('.sbx-tag')].map((t) => [t.textContent, t.getAttribute('title')]);
+  const expected = [
+    ['GL Acct', 'GL Acct'],
+    ['Interest-b…', 'Interest-bearing deposit'], // the first 10 characters, the rest in the tooltip
+  ];
+
+  it('show beside the account in the Journal, the T-accounts, the Grid and the chart of accounts', () => {
+    mount('journal', tagged()); // S1: Checking is entry 1's debit
+    const line = screen.getByLabelText('Entry 1 line 1 account').closest('td')!;
+    expect(chips(line)).toEqual(expected);
+    const chart = screen.getByRole('table', { name: /^Chart of accounts/ });
+    expect(chips(within(chart).getByRole('rowheader', { name: /^Checking Account/ }))).toEqual(
+      expected,
+    );
+    cleanup();
+    mount('taccounts', tagged());
+    const t = screen.getByRole('group', { name: /^Checking Account, asset T-account/ });
+    expect(chips(t)).toEqual(expected);
+    cleanup();
+    mount('grid', tagged());
+    const head = screen.getByLabelText('Account name: Checking Account').closest('th')!;
+    expect(chips(head)).toEqual(expected);
+  });
+
+  it('are edited as comma-separated text, and saved tidy (trimmed, no blanks or repeats)', () => {
+    mount('journal', bank());
+    fireEvent.change(screen.getByLabelText('Tags of Cash'), {
+      target: { value: ' GL Acct, , petty cash,GL Acct' },
+    });
+    flush();
+    expect(urlState()!.entities[0]!.accounts.find((a) => a.id === 'cash')!.tags).toEqual([
+      'GL Acct',
+      'petty cash',
+    ]);
+    // Clearing them leaves no field at all.
+    fireEvent.change(screen.getByLabelText('Tags of Cash'), { target: { value: '' } });
+    flush();
+    expect('tags' in urlState()!.entities[0]!.accounts.find((a) => a.id === 'cash')!).toBe(false);
   });
 });
 
