@@ -1,0 +1,13 @@
+# Accounting for Ledger Engineers
+
+> A course on double-entry accounting for software engineers who build ledgers, plus a Sandbox: a double-entry
+> workbench where you model entities (each with its own chart of accounts) and scenarios made of events, each
+> booked as a journal entry in every entity it touches. The Sandbox imports and exports a JSON file; an agent can
+> write one by hand and the user opens it with ⋯ Sandbox menu → Import.
+
+## Sandbox files
+
+- [Sandbox file format](sandbox-format.md): every field, the conventions (amounts in cents, dr/cr, events shared
+  across entities, "none" for no entry), the checks the Sandbox runs, and tips for modelling.
+- [JSON Schema](sandbox.schema.json): the file's schema (draft 2020-12), generated from the app's validator.
+- [Example file](sandbox-example.json): a complete, valid Sandbox file — a coffee cart and its bank.

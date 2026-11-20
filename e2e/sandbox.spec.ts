@@ -27,6 +27,10 @@ test('Export a .json file, then Import it into an empty Sandbox', async ({ page 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByRole('button', { name: 'Export' }).click();
+  // The title, then the UTC time it was saved.
+  expect((await download).suggestedFilename()).toMatch(
+    /^zap-a-wallet-on-an-fbo-account-\d{8}-\d{6}Z\.json$/,
+  );
   const file = info.outputPath('zap.json');
   await (await download).saveAs(file);
 
@@ -73,4 +77,28 @@ test('malicious scenario is inert', async ({ page }) => {
   await expect(page.locator('img[onerror]')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Sandbox title' })).toBeVisible();
   expect(dialogs).toEqual([]);
+});
+
+test('a file that isn’t valid says where; the format docs are published for agents', async ({
+  page,
+}, info) => {
+  const w = watchErrors(page);
+  await page.goto('/#/sandbox');
+  const bad = info.outputPath('bad.json');
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(bad, JSON.stringify({ v: 3, entities: [], scenarios: [] }));
+  await page.getByLabel('Import a Sandbox file').setInputFiles(bad);
+  const alert = page.getByRole('alert').filter({ hasText: 'isn’t a valid Sandbox file' });
+  await expect(alert).toContainText('scenarios: Too small');
+  await expect(alert.getByRole('link', { name: 'sandbox-format.md' })).toBeVisible();
+  for (const f of [
+    'llms.txt',
+    'sandbox-format.md',
+    'sandbox.schema.json',
+    'sandbox-example.json',
+  ]) {
+    const res = await page.request.get(`/${f}`);
+    expect(res.ok(), f).toBe(true);
+  }
+  w.assertClean();
 });

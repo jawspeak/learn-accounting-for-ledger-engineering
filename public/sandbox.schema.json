@@ -1,0 +1,257 @@
+{
+  "title": "Sandbox file (version 3)",
+  "description": "A Sandbox export: entities with their charts of accounts, and scenarios of events booked in each entity. See sandbox-format.md.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "v": {
+      "type": "number",
+      "const": 3
+    },
+    "title": {
+      "type": "string"
+    },
+    "showCodes": {
+      "type": "boolean"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "asset",
+                    "contra-asset",
+                    "liability",
+                    "contra-liability",
+                    "equity",
+                    "contra-equity",
+                    "revenue",
+                    "contra-revenue",
+                    "expense",
+                    "dividend"
+                  ]
+                },
+                "contraOf": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "equityGroup": {
+                  "type": "string",
+                  "enum": [
+                    "paid-in",
+                    "retained"
+                  ]
+                },
+                "description": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": "string"
+                },
+                "number": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "showBalanceSheets": {
+            "type": "boolean"
+          },
+          "columnOrder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sortByNumber": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "accounts",
+          "showBalanceSheets"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "scenarios": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string"
+                },
+                "lines": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "accountId": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9-]*$"
+                        },
+                        "side": {
+                          "type": "string",
+                          "enum": [
+                            "dr",
+                            "cr"
+                          ]
+                        },
+                        "amount": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "chosenType": {
+                          "type": "string",
+                          "enum": [
+                            "asset",
+                            "contra-asset",
+                            "liability",
+                            "contra-liability",
+                            "equity",
+                            "contra-equity",
+                            "revenue",
+                            "contra-revenue",
+                            "expense",
+                            "dividend"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "accountId",
+                        "side",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "none": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "lines"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "opening": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "accountId": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9-]*$"
+                      },
+                      "amount": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "accountId",
+                      "amount"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "lines"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text",
+          "events",
+          "opening"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "v",
+    "entities",
+    "scenarios"
+  ],
+  "additionalProperties": false
+}

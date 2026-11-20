@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
+    "check:sandbox": "vitest run src/sandbox/checkFile.test.ts",
     "test:watch": "vitest",
     "e2e": "playwright test",
     "lint": "eslint .",

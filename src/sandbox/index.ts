@@ -15,4 +15,5 @@ export { Sandbox } from './Sandbox';
 export type { SandboxExample, SandboxProps } from './Sandbox';
 export type { SandboxNav, SandboxTarget, SandboxView } from './nav';
 export { emptyState, persistable, stateFromBooks } from './model';
+export { checkSandbox, exportFileName, parseSandboxFile } from './fileFormat';
 export type { EntityBooks, SandboxEntity, SandboxScenario, SandboxState } from '@contracts';

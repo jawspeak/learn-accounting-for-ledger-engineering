@@ -1,0 +1,297 @@
+{
+  "v": 3,
+  "title": "Coffee cart and its bank",
+  "entities": [
+    {
+      "id": "cart",
+      "name": "Bean Cart",
+      "code": "1000",
+      "showBalanceSheets": true,
+      "accounts": [
+        {
+          "id": "checking",
+          "name": "Cash: Checking",
+          "type": "asset",
+          "number": "1010",
+          "subtitle": "At First Example Bank"
+        },
+        {
+          "id": "equipment",
+          "name": "Equipment",
+          "type": "asset",
+          "number": "1500"
+        },
+        {
+          "id": "accounts-payable",
+          "name": "Accounts Payable",
+          "type": "liability",
+          "number": "2000"
+        },
+        {
+          "id": "loan-payable",
+          "name": "Loan Payable",
+          "type": "liability",
+          "number": "2100"
+        },
+        {
+          "id": "owner-capital",
+          "name": "Owner Capital",
+          "type": "equity",
+          "equityGroup": "paid-in",
+          "number": "3000"
+        },
+        {
+          "id": "sales",
+          "name": "Coffee Sales",
+          "type": "revenue",
+          "number": "4000"
+        },
+        {
+          "id": "interest-expense",
+          "name": "Interest Expense",
+          "type": "expense",
+          "number": "6100"
+        },
+        {
+          "id": "repairs-expense",
+          "name": "Repairs Expense",
+          "type": "expense",
+          "number": "6200"
+        }
+      ]
+    },
+    {
+      "id": "bank",
+      "name": "First Example Bank",
+      "code": "2000",
+      "showBalanceSheets": true,
+      "accounts": [
+        {
+          "id": "reserves-fed",
+          "name": "Reserves at the Federal Reserve",
+          "type": "asset"
+        },
+        {
+          "id": "loans-receivable",
+          "name": "Loans Receivable",
+          "type": "asset"
+        },
+        {
+          "id": "deposits-business",
+          "name": "Business Deposits",
+          "type": "liability"
+        },
+        {
+          "id": "paid-in-capital",
+          "name": "Paid-in Capital",
+          "type": "equity",
+          "equityGroup": "paid-in"
+        },
+        {
+          "id": "interest-income",
+          "name": "Interest Income",
+          "type": "revenue"
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "borrow-and-buy",
+      "title": "Borrow, buy a cart, sell coffee",
+      "text": "Bean Cart borrows **$2,000** from its bank, buys a **$1,500** cart, and sells **$300** of coffee (paid by card into its checking account). A month later it pays **$10** of interest.",
+      "opening": {
+        "cart": {
+          "lines": [
+            {
+              "accountId": "checking",
+              "amount": 50000
+            },
+            {
+              "accountId": "owner-capital",
+              "amount": 50000
+            }
+          ]
+        },
+        "bank": {
+          "lines": [
+            {
+              "accountId": "reserves-fed",
+              "amount": 1000000
+            },
+            {
+              "accountId": "deposits-business",
+              "amount": 500000
+            },
+            {
+              "accountId": "paid-in-capital",
+              "amount": 500000
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "id": "e1",
+          "label": "Borrow $2,000",
+          "lines": {
+            "cart": [
+              {
+                "accountId": "checking",
+                "side": "dr",
+                "amount": 200000
+              },
+              {
+                "accountId": "loan-payable",
+                "side": "cr",
+                "amount": 200000
+              }
+            ],
+            "bank": [
+              {
+                "accountId": "loans-receivable",
+                "side": "dr",
+                "amount": 200000
+              },
+              {
+                "accountId": "deposits-business",
+                "side": "cr",
+                "amount": 200000
+              }
+            ]
+          }
+        },
+        {
+          "id": "e2",
+          "label": "Buy the cart (paid to a vendor at another bank)",
+          "lines": {
+            "cart": [
+              {
+                "accountId": "equipment",
+                "side": "dr",
+                "amount": 150000
+              },
+              {
+                "accountId": "checking",
+                "side": "cr",
+                "amount": 150000
+              }
+            ],
+            "bank": [
+              {
+                "accountId": "deposits-business",
+                "side": "dr",
+                "amount": 150000
+              },
+              {
+                "accountId": "reserves-fed",
+                "side": "cr",
+                "amount": 150000
+              }
+            ]
+          }
+        },
+        {
+          "id": "e3",
+          "label": "Sell $300 of coffee by card",
+          "lines": {
+            "cart": [
+              {
+                "accountId": "checking",
+                "side": "dr",
+                "amount": 30000
+              },
+              {
+                "accountId": "sales",
+                "side": "cr",
+                "amount": 30000
+              }
+            ],
+            "bank": [
+              {
+                "accountId": "reserves-fed",
+                "side": "dr",
+                "amount": 30000
+              },
+              {
+                "accountId": "deposits-business",
+                "side": "cr",
+                "amount": 30000
+              }
+            ]
+          }
+        },
+        {
+          "id": "e4",
+          "label": "Pay $10 interest",
+          "lines": {
+            "cart": [
+              {
+                "accountId": "interest-expense",
+                "side": "dr",
+                "amount": 1000
+              },
+              {
+                "accountId": "checking",
+                "side": "cr",
+                "amount": 1000
+              }
+            ],
+            "bank": [
+              {
+                "accountId": "deposits-business",
+                "side": "dr",
+                "amount": 1000
+              },
+              {
+                "accountId": "interest-income",
+                "side": "cr",
+                "amount": 1000
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "repair-bill",
+      "title": "A repair bill, not yet paid",
+      "text": "A mechanic fixes the cart's grinder and sends a **$50** bill, due next month. Bean Cart owes it now (an expense, and a payable), but no money has moved — so **the bank has no entry**: `\"none\": [\"bank\"]`.",
+      "opening": {
+        "cart": {
+          "lines": [
+            {
+              "accountId": "checking",
+              "amount": 50000
+            },
+            {
+              "accountId": "owner-capital",
+              "amount": 50000
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "id": "e1",
+          "label": "Receive the $50 repair bill",
+          "lines": {
+            "cart": [
+              {
+                "accountId": "repairs-expense",
+                "side": "dr",
+                "amount": 5000
+              },
+              {
+                "accountId": "accounts-payable",
+                "side": "cr",
+                "amount": 5000
+              }
+            ]
+          },
+          "none": ["bank"]
+        }
+      ]
+    }
+  ]
+}

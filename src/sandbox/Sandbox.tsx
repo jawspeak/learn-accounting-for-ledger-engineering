@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
-import { schemas, type EntityBooks, type SandboxState } from '@contracts';
+import type { EntityBooks, SandboxState } from '@contracts';
 import { ChartOfAccounts } from './ChartOfAccounts';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
 import { SheetGrid } from './grid/SheetGrid';
@@ -22,7 +22,6 @@ import {
   scenarioNumber,
   scenarioStatus,
   setOrderMode,
-  slugify,
   storyLine,
   summarize,
   updateScenario,
@@ -30,6 +29,7 @@ import {
   withBooks,
 } from './model';
 import { entityLabel, ShowCodes } from './codes';
+import { checkSandbox, exportFileName, parseSandboxFile } from './fileFormat';
 import { Menu } from './Menu';
 import { SandboxLink, SandboxNavProvider, type SandboxNav, type SandboxView } from './nav';
 import { AccountsEditor, AccountUsage, EntitySummaryLine, OpeningEditor } from './EntityPanels';
@@ -73,6 +73,15 @@ interface Pending {
   question: string;
   build(): SandboxState;
   done: string;
+  /** After replacing (e.g. show an import's warnings). */
+  after?(): void;
+}
+
+/** The outcome of an import worth showing: located errors (it didn't open), or warnings (it did). */
+interface ImportReport {
+  file: string;
+  errors?: string[];
+  warnings?: string[];
 }
 
 /**
@@ -105,6 +114,7 @@ export function Sandbox({
   const [epoch, setEpoch] = useState(0);
   const [status, setStatus] = useState('');
   const [pending, setPending] = useState<Pending | null>(null);
+  const [report, setReport] = useState<ImportReport | null>(null);
   const [confirmRemoveEntity, setConfirmRemoveEntity] = useState(false);
   const [confirmRemoveScenario, setConfirmRemoveScenario] = useState(false);
   /** Journal: this scenario only, or every scenario one after another (for the selected entity). */
@@ -184,24 +194,27 @@ export function Sandbox({
     const json = JSON.stringify(persistable(state), null, 2);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    a.download = `${slugify(state.title || 'sandbox', 'sandbox')}.json`;
+    // The title, then the UTC time: "zap-…-20261120-061530Z.json".
+    a.download = exportFileName(state.title, new Date());
     a.click();
     URL.revokeObjectURL(a.href);
     setStatus(`Exported ${a.download}.`);
   };
   const importFile = async (file: File) => {
-    try {
-      const parsed = schemas.sandboxStateSchema.safeParse(JSON.parse(await file.text()));
-      if (!parsed.success) throw new Error('not a sandbox file');
-      const s = parsed.data as SandboxState;
-      setPending({
-        question: `Replace everything in the Sandbox with ${file.name} (${s.scenarios.length} scenario${s.scenarios.length > 1 ? 's' : ''})?`,
-        build: () => s,
-        done: `Imported ${file.name}.`,
-      });
-    } catch {
-      setStatus(`Couldn’t read ${file.name} — it isn’t a Sandbox export.`);
+    const result = parseSandboxFile(await file.text());
+    if (!result.ok) {
+      setReport({ file: file.name, errors: result.errors });
+      return;
     }
+    const s = result.state;
+    const warnings = checkSandbox(s);
+    setReport(null);
+    setPending({
+      question: `Replace everything in the Sandbox with ${file.name} (${s.scenarios.length} scenario${s.scenarios.length > 1 ? 's' : ''}, ${s.entities.length} entit${s.entities.length > 1 ? 'ies' : 'y'})?`,
+      build: () => s,
+      done: `Imported ${file.name}.`,
+      after: warnings.length ? () => setReport({ file: file.name, warnings }) : undefined,
+    });
   };
 
   const oneEntityView = view !== 'taccounts';
@@ -341,7 +354,10 @@ export function Sandbox({
               <button
                 type="button"
                 className="btn"
-                onClick={() => replaceAll(pending.build(), pending.done)}
+                onClick={() => {
+                  replaceAll(pending.build(), pending.done);
+                  pending.after?.();
+                }}
               >
                 Yes, replace
               </button>
@@ -349,6 +365,33 @@ export function Sandbox({
                 Cancel
               </button>
             </p>
+          )}
+          {/* An import that didn't validate (located errors), or opened with things to check (warnings). */}
+          {report && (
+            <div
+              className={`sbx-notice ${report.errors ? 'sbx-notice-warn' : ''} sbx-report`}
+              role={report.errors ? 'alert' : 'status'}
+            >
+              <p>
+                {report.errors
+                  ? `Couldn’t import ${report.file} — it isn’t a valid Sandbox file:`
+                  : `Imported ${report.file}. Worth checking:`}
+              </p>
+              <ul>
+                {(report.errors ?? report.warnings ?? []).map((m, i) => (
+                  <li key={i}>
+                    <code>{m}</code>
+                  </li>
+                ))}
+              </ul>
+              <p className="note">
+                The format is documented in <a href="sandbox-format.md">sandbox-format.md</a> (and{' '}
+                <a href="llms.txt">llms.txt</a> for agents).{' '}
+                <button type="button" className="btn" onClick={() => setReport(null)}>
+                  Dismiss
+                </button>
+              </p>
+            </div>
           )}
 
           {/* ---- Scenarios ---- */}
