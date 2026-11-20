@@ -17,9 +17,13 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
   const cols = 3 + names.length;
   return (
     <div className="coa">
+      <p className="note coa-legend">
+        <span aria-hidden="true">✓</span> = the scenario uses the account, in an entry or as an
+        opening balance. “Used in” counts the scenarios.
+      </p>
       <table className="coa-table">
         <caption className="sr-only">
-          Chart of accounts: each entity’s accounts, and the lines each scenario posts to them
+          Chart of accounts: each entity’s accounts, and which scenarios use them
         </caption>
         <colgroup>
           <col className="coa-c-name" />
@@ -44,7 +48,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
               </th>
             ))}
             <th scope="col" className="coa-num">
-              Total
+              Used in
             </th>
           </tr>
         </thead>
@@ -73,7 +77,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
               )}
               {accounts.map((a, i) => {
                 const used = usageByScenario(state, e.id, a.id);
-                const total = used.reduce((t, x) => t + x, 0);
+                const usedIn = used.filter((x) => x > 0).length;
                 const section = sectionOf(a.type);
                 const parent = a.contraOf && e.accounts.find((x) => x.id === a.contraOf);
                 return (
@@ -100,14 +104,19 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
                       {used.map((x, si) => (
                         <td
                           key={si}
-                          className={`coa-num${si === scenario ? ' is-current' : ''}`}
-                          title={`${names[si]}: ${x} line${x === 1 ? '' : 's'}`}
+                          className={`coa-mark${si === scenario ? ' is-current' : ''}`}
+                          title={x ? `Used in “${names[si]}”` : `Not used in “${names[si]}”`}
                         >
-                          {x || ''}
+                          {x > 0 && (
+                            <>
+                              <span aria-hidden="true">✓</span>
+                              <span className="sr-only">used in {names[si]}</span>
+                            </>
+                          )}
                         </td>
                       ))}
-                      <td className={`coa-num${total ? '' : ' coa-unused'}`}>
-                        {total || 'unused'}
+                      <td className={`coa-num${usedIn ? '' : ' coa-unused'}`}>
+                        {usedIn ? `${usedIn} of ${names.length}` : 'unused'}
                       </td>
                     </tr>
                   </Fragment>

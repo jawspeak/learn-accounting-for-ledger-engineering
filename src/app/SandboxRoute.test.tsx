@@ -285,23 +285,23 @@ describe('scenarios', () => {
       'Deposit cash',
       'Borrow, then pay interest',
       'Repay the loan',
-      'Total',
+      'Used in',
     ]);
     const you = within(table).getByRole('rowgroup', { name: 'You chart of accounts' });
+    // ✓ where a scenario uses the account (an entry or an opening balance); "Used in" counts the scenarios.
     const cells = (name: string) =>
-      [...within(you).getByRole('rowheader', { name }).closest('tr')!.children].map(
-        (c) => c.textContent,
+      [...within(you).getByRole('rowheader', { name }).closest('tr')!.children].map((c) =>
+        c.querySelector('[aria-hidden="true"]')?.textContent === '✓' ? '✓' : c.textContent,
       );
-    // Checking: 1 line in "Deposit cash", 2 in the loan, 2 when repaying (its opening balance counts too).
     expect(cells('Checking Account')).toEqual([
       'Checking Account',
       'At the bank',
-      '1',
-      '2',
-      '2',
-      '5',
+      '✓',
+      '✓',
+      '✓',
+      '3 of 3',
     ]);
-    expect(cells('Cash')).toEqual(['Cash', 'In your wallet', '2', '', '', '2']);
+    expect(cells('Cash')).toEqual(['Cash', 'In your wallet', '✓', '', '', '1 of 3']);
     expect(within(you).getByText(/5 accounts/)).toBeTruthy();
     // An account no scenario posts to is marked.
     const s = bank();

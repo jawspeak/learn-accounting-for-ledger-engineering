@@ -129,7 +129,7 @@
   width: 7.5rem;
 }
 .coa-c-total {
-  width: 4.5rem;
+  width: 6rem;
 }
 .coa-c-sc.is-current {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
@@ -168,8 +168,10 @@
 .coa-table tbody:first-of-type .coa-entity th {
   border-top: 0;
 }
+/* Three levels, indented: entity, then section (Assets, Liabilities, …), then its accounts. */
 .coa-section th {
   padding-top: 0.3rem;
+  padding-left: 1.25rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -178,6 +180,15 @@
 }
 .coa-row th {
   font-weight: 500;
+  padding-left: 2.5rem;
+}
+.coa-mark {
+  text-align: center !important;
+  color: var(--ok);
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.coa-legend {
+  margin: 0 0 var(--space-1);
 }
 .coa-num {
   text-align: right !important;
