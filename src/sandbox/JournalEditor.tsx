@@ -22,6 +22,7 @@ import {
   type EventPart,
 } from './model';
 import { SECTION_LABEL, sectionOf, TypeOptions, typeLabel, type BsSection } from './EntityPanels';
+import { Menu } from './Menu';
 import { SandboxLink } from './nav';
 import './journal.css';
 
@@ -29,6 +30,66 @@ const NEW = '__new';
 const SECTIONS: BsSection[] = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'];
 const SIDES: Side[] = ['dr', 'cr'];
 export const entryAnchor = (n: number) => `entry-${n}`;
+
+/**
+ * An event's other sides, behind one linked-event button. The button says how many other entities book the event
+ * ("⇄ 2"), or "⇄ ✗" when one of them still has to; it opens the list — each entity, its part (✓ entry, — no
+ * entry, ✗ to do), and a link to its entry.
+ */
+function LinkedSides({
+  event,
+  anchor,
+  others,
+}: {
+  event: string;
+  anchor: string;
+  others: { entity: string; index: number; part: EventPart }[];
+}) {
+  const posted = others.filter((o) => o.part === 'posted').length;
+  const todo = others.some((o) => o.part === 'todo');
+  const summary = others.map((o) => `${o.entity}: ${PART_WORD[o.part]}`).join(' · ');
+  return (
+    <Menu
+      label={`${event} in other entities`}
+      align="end"
+      title={`${event} in other entities — ${summary}`}
+      buttonClass={`jx-linked${todo ? ' is-todo' : ''}`}
+      button={
+        <>
+          <span aria-hidden="true">⇄ {todo ? '✗' : posted}</span>
+          <span className="sr-only">
+            {' '}
+            (
+            {todo
+              ? 'a side is still to do'
+              : `${posted} other ${posted === 1 ? 'entity' : 'entities'}`}
+            )
+          </span>
+        </>
+      }
+    >
+      {(close) => (
+        <>
+          <p className="jx-linked-head">{event} is the same event in every entity’s books</p>
+          {others.map((o) => (
+            <SandboxLink
+              key={o.index}
+              className={`jx-linked-row is-${o.part}`}
+              to={{ view: 'journal', entity: o.index, at: anchor }}
+              onClick={close}
+            >
+              <span className="jx-linked-mark" aria-hidden="true">
+                {PART_MARK[o.part]}
+              </span>
+              <span className="jx-linked-name">{o.entity}</span>
+              <span className="jx-linked-part">{PART_WORD[o.part]}</span>
+            </SandboxLink>
+          ))}
+        </>
+      )}
+    </Menu>
+  );
+}
 
 const PART_MARK: Record<EventPart, string> = { posted: '✓', none: '—', todo: '✗' };
 const PART_WORD: Record<EventPart, string> = {
@@ -331,24 +392,14 @@ export function JournalEditor({
                         )}
                       </span>
                     )}
-                    {/* The same event in the other entities' books: ✓ posted, — no entry, ✗ still to do. */}
+                    {/* The same event in the other entities' books, behind one "linked" button: "⇄ 2" (how
+                        many other entities post it), "⇄ ✗" when one is still to do. Click for the list. */}
                     {others.length > 0 && (
-                      <span
-                        className="jx-parts"
-                        aria-label={`${eventNumber(ri)} in other entities`}
-                      >
-                        {others.map((o) => (
-                          <SandboxLink
-                            key={o.index}
-                            className={`jx-part is-${o.part}`}
-                            to={{ view: 'journal', entity: o.index, at: entryAnchor(n) }}
-                            title={`${eventNumber(ri)} in ${o.entity}’s books: ${PART_WORD[o.part]}`}
-                          >
-                            {o.entity} <span aria-hidden="true">{PART_MARK[o.part]}</span>
-                            <span className="sr-only">({PART_WORD[o.part]})</span>
-                          </SandboxLink>
-                        ))}
-                      </span>
+                      <LinkedSides
+                        event={eventNumber(ri)}
+                        anchor={entryAnchor(n)}
+                        others={others}
+                      />
                     )}
                     {narrow && !r.none && <span className="jx-add">{addLineButton(ri, n)}</span>}
                     {narrow && tools}

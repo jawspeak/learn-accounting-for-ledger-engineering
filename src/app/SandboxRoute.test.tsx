@@ -192,8 +192,17 @@ describe('Journal view (the editor)', () => {
 
   it('every event shows the other side, can be marked "No entry", and flags a missing side', () => {
     mount('journal', EXAMPLES.find((x) => x.id === 'fbo')!.build(), 0, 1); // S2 "Alice pays Bob"
-    // Zap's E1: the bank has no entry (the money never leaves the FBO account).
-    expect(screen.getByRole('link', { name: /First Example Bank\s*\(no entry\)/ })).toBeTruthy();
+    // Zap's E1: one linked-event button — no other entity books it ("⇄ 0"); click it for the list.
+    const linked = screen.getByRole('button', { name: /^E1 in other entities/ });
+    expect(linked.textContent).toMatch(/^⇄ 0/);
+    fireEvent.click(linked);
+    const list = screen.getByRole('group', { name: 'E1 in other entities' });
+    expect(
+      within(list)
+        .getAllByRole('link')
+        .map((a) => a.textContent),
+    ).toEqual(['—First Example Bankno entry', '—Bob’s Bankno entry']);
+    fireEvent.keyDown(document, { key: 'Escape' });
     // In the bank's journal, E1 is "No entry"; add one, and the scenario flags the missing side until filled.
     fireEvent.click(
       within(screen.getByRole('tablist', { name: 'Entities' })).getByRole('tab', {

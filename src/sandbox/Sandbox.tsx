@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { schemas, type EntityBooks, type SandboxState } from '@contracts';
 import { ChartOfAccounts } from './ChartOfAccounts';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
@@ -29,6 +29,7 @@ import {
   usageByScenario,
   withBooks,
 } from './model';
+import { Menu } from './Menu';
 import { SandboxLink, SandboxNavProvider, type SandboxNav, type SandboxView } from './nav';
 import { AccountsEditor, AccountUsage, EntitySummaryLine, OpeningEditor } from './EntityPanels';
 import { SafeMarkdown } from './safeMarkdown';
@@ -712,54 +713,6 @@ function ScenarioBody({
         </>
       )}
     </>
-  );
-}
-
-/** A "⋯" menu for occasional actions: opens below its button; Escape or a click outside closes it. */
-function Menu({
-  label,
-  align = 'start',
-  children,
-}: {
-  label: string;
-  align?: 'start' | 'end';
-  children(close: () => void): ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-  return (
-    <div className="sbx-menu" ref={ref}>
-      <button
-        type="button"
-        className="btn sbx-menu-button"
-        aria-label={label}
-        aria-expanded={open}
-        title={label}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <span aria-hidden="true">⋯</span>
-      </button>
-      {open && (
-        <div className={`sbx-menu-panel is-${align}`} role="group" aria-label={label}>
-          {children(() => setOpen(false))}
-        </div>
-      )}
-    </div>
   );
 }
 
