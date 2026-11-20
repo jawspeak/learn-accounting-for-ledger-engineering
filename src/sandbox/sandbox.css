@@ -50,9 +50,19 @@
   border: 1px solid var(--warn);
 }
 /* Scenarios: a tab per scenario; the current one's title, tools and story. */
+/* Scenario and entity tabs sit on one rule (the tab bar's bottom border), like folder tabs; the heading and
+   "+ Add" are centred beside them. (The Grid's own tab bar overlaps its frame instead — not here.) */
 .sbx-scenarios .sh-tabbar,
 .sbx-partybar .sh-tabbar {
-  align-items: center;
+  align-items: flex-end;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+.sbx-scenarios .sh-tabbar .sbx-tabs-heading,
+.sbx-partybar .sh-tabbar .sbx-tabs-heading,
+.sbx-scenarios .sh-tab-add,
+.sbx-partybar .sh-tab-add {
+  align-self: center;
 }
 .sbx-tabs-heading {
   margin: 0 var(--space-2) 0 0;
@@ -61,7 +71,6 @@
 .sbx-scenario {
   margin-bottom: var(--space-3);
   padding-top: var(--space-2);
-  border-top: 1px solid var(--border);
 }
 .sbx-scenario-head {
   display: flex;
