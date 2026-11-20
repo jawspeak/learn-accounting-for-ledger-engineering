@@ -27,7 +27,7 @@ export const entryAnchor = (n: number) => `entry-${n}`;
  * (account, debit or credit) that must balance. This is how a ledger is written to: one transaction, N postings.
  */
 export function JournalEditor({
-  entity: e,
+  entity: stored,
   onChange,
   at,
 }: {
@@ -35,6 +35,11 @@ export function JournalEditor({
   onChange(e: EntityBooks): void;
   at?: string;
 }) {
+  // With no entries yet, show one blank entry (a debit line and a credit line) so it's clear how to start. It
+  // isn't in the state (or a link) until you type in it: every edit below starts from `e`, so the first one
+  // stores exactly this entry.
+  const placeholder = stored.rows.length === 0;
+  const e = placeholder ? addEntry(stored) : stored;
   useScrollToAt(at, e.id);
   /** The line whose "New account…" form is open: `${row}:${line}`. */
   const [creating, setCreating] = useState<string | null>(null);
@@ -48,9 +53,10 @@ export function JournalEditor({
 
   return (
     <div className="jx">
-      {e.rows.length === 0 && (
+      {placeholder && (
         <p className="note">
-          No entries yet. Each business event is one entry: its debits and credits must be equal.
+          Write your first entry: what happened, then the accounts it debits and credits. Each
+          business event is one entry, and its debits must equal its credits.
         </p>
       )}
       <ol className="jx-entries">
@@ -100,7 +106,8 @@ export function JournalEditor({
                     )}
                   </span>
                 )}
-                <span className="jx-tools">
+                {/* Nothing to move or remove until the blank first entry is written. */}
+                <span className="jx-tools" hidden={placeholder}>
                   <button
                     type="button"
                     aria-label={`Move entry ${n} up`}
@@ -199,6 +206,8 @@ export function JournalEditor({
                                 aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
                                 allowCents
                                 formatAtRest
+                                // A faint "$0.00" shows where the amount goes before one is typed.
+                                placeholder="$0.00"
                                 cents={p.amount}
                                 onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c))}
                               />

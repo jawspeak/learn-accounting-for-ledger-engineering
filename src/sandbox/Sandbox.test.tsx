@@ -59,10 +59,12 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
       onState.mock.calls.at(-1)![0].entities[0].accounts.map((a: { id: string }) => a.id),
     ).toEqual(['cash', 'sales']);
 
-    // Write an entry: sell lemonade for $3.
-    fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
-    // An untouched entry isn't flagged as unbalanced anywhere.
-    expect(screen.getByText(/Entries balanced \(1\)/)).toBeTruthy();
+    // The Journal starts with a blank entry (one Dr line, one Cr line) to show how to begin. It isn't saved
+    // until you type in it, and an untouched entry isn't flagged as unbalanced anywhere.
+    expect(screen.getByLabelText('Entry 1 line 1 account')).toBeTruthy();
+    expect(screen.getByText(/Entries balanced \(0\)/)).toBeTruthy();
+    expect(onState.mock.calls.at(-1)![0].scenarios[0].books.you.rows).toEqual([]);
+    // Write it: sell lemonade for $3.
     // A debit line has only a debit amount; a credit line only a credit amount.
     expect(screen.queryByLabelText('Entry 1 line 1 credit')).toBeNull();
     expect(screen.queryByLabelText('Entry 1 line 2 debit')).toBeNull();

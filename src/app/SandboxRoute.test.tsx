@@ -60,7 +60,9 @@ describe('Journal view (the editor)', () => {
       { id: 'checking', name: 'Checking Account', type: 'asset' },
     ];
     mount('journal', s);
-    fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
+    // No entries yet: a blank first entry is there to write into (no need for "+ Add entry").
+    expect(screen.getByText(/Write your first entry/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove entry 1' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Entry 1 description'), {
       target: { value: 'Deposit cash' },
     });
@@ -198,7 +200,9 @@ describe('scenarios', () => {
     // A new scenario: the same entities and accounts, empty books.
     fireEvent.click(screen.getByRole('button', { name: '+ Add scenario' }));
     expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Scenario 4');
-    expect(screen.queryByLabelText('Entry 1 description')).toBeNull();
+    // Its Journal shows only the blank first entry.
+    expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe('');
+    expect(screen.queryByLabelText('Entry 2 description')).toBeNull();
     expect(screen.getByText(/^Accounts \(5\)/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Scenario title'), { target: { value: 'Overdraft' } });
     expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Overdraft');

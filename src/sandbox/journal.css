@@ -90,6 +90,9 @@
   gap: 0.15rem;
   margin-left: auto;
 }
+.jx-tools[hidden] {
+  display: none;
+}
 .jx-tools button,
 .jx-remove-line {
   font-size: 0.7rem;
@@ -130,6 +133,11 @@
   width: 7.5rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+/* Where the amount goes, before one is typed — a hint, never read as data. */
+.jx-amount::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
 }
 .jx-acct select {
   max-width: 100%;
