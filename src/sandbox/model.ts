@@ -439,12 +439,43 @@ export function setLineAccount(
   );
 }
 
-/** Type a line's amount. A line is a debit line or a credit line (chosen when it's added), so its amount
- *  stays on that side; clearing it leaves an empty line (kept while editing, not saved in links). */
-export function setLineAmount(e: EntityBooks, ri: number, li: number, cents: Money): EntityBooks {
+/** Type a line's amount in its Dr or Cr cell. A line is one posting, so typing in the other column moves it
+ *  there (debit ↔ credit); clearing the side it's on leaves an empty line (kept while editing, not saved in
+ *  links). With no `side`, the amount stays where the line is. */
+export function setLineAmount(
+  e: EntityBooks,
+  ri: number,
+  li: number,
+  cents: Money,
+  side?: Side,
+): EntityBooks {
   return updateLines(e, ri, (ps) =>
-    ps.map((p, j) => (j === li ? { ...p, amount: Math.max(0, cents) } : p)),
+    ps.map((p, j) => {
+      if (j !== li) return p;
+      const s = side ?? p.side;
+      if (cents > 0) return { ...p, side: s, amount: cents };
+      return s === p.side ? { ...p, amount: 0 } : p;
+    }),
   );
+}
+
+/** A new line on the side that's short, so it reads as the next step: a credit when debits are ahead, else a
+ *  debit. (Typing in the other column switches it.) */
+export function nextLineSide(r: TransactionRow): Side {
+  let dr = 0;
+  let cr = 0;
+  for (const p of r.postings)
+    if (p.side === 'dr') dr += p.amount;
+    else cr += p.amount;
+  return dr > cr ? 'cr' : 'dr';
+}
+
+/** Journal convention: an entry's debits first, then its credits (each in the order written). Unchanged
+ *  (the same object) when already in order. */
+export function debitsFirst(e: EntityBooks, ri: number): EntityBooks {
+  const ps = e.rows[ri]?.postings ?? [];
+  const sorted = [...ps.filter((p) => p.side === 'dr'), ...ps.filter((p) => p.side === 'cr')];
+  return sorted.every((p, i) => p === ps[i]) ? e : updateLines(e, ri, () => sorted);
 }
 
 // ---- One definition of "what an entry posts", shared by every view ----

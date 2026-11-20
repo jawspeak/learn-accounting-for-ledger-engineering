@@ -26,7 +26,7 @@
 
 /* ---------- Journal: a general journal on ledger paper ---------- */
 /* One ruled sheet: # | Account | Dr | Cr. Each entry is a <tbody>: a heading row (number, description, check),
-   its lines (credits indented), and a slim row with "+ Dr" / "+ Cr" under their columns. Compact by spacing
+   its lines (credits indented; a line becomes a credit when its amount goes under Cr). "+ Line" adds one. Compact by spacing
    and rules, not by smaller type. */
 .jx {
   --jx-rule: color-mix(in srgb, var(--border) 70%, transparent);
@@ -176,7 +176,11 @@
   color: var(--muted);
   opacity: 0.55;
 }
-/* "+ Dr" / "+ Cr" in the entry's heading row, each in its own column. */
+/* "+ Line" in the entry's heading row. */
+/* "+ Line" sits across the Dr | Cr columns of the entry's heading row. */
+td.jx-add {
+  text-align: center;
+}
 .jx-add button,
 .jx-add-entry {
   font: inherit;
@@ -192,7 +196,7 @@
 }
 /* Read like a journal, edit like the Grid: with a mouse, a chosen account and an amount look like plain text
    (no border, no dropdown arrow) until you hover the line or focus the field; the entry / line tools and the
-   "+ Dr / + Cr" row appear on hover or focus too. Touch screens can't hover, so there everything stays visible. */
+   "+ Line" button appear on hover or focus too. Touch screens can't hover, so there everything stays visible. */
 @media (hover: hover) and (pointer: fine) {
   .jx .jx-quiet:not(.is-empty) {
     border-color: transparent;
@@ -260,7 +264,7 @@
   .jx-line.is-cr .jx-acct {
     padding-left: 0.9rem;
   }
-  /* The description takes the first line; the check, "+ Dr / + Cr" and the tools the second. */
+  /* The description takes the first line; the check, "+ Line" and the tools the second. */
   .jx-head-cell {
     flex-wrap: wrap;
     gap: 0 var(--space-2);

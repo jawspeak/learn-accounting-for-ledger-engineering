@@ -65,9 +65,9 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
     expect(screen.getByText(/Entries balanced \(0\)/)).toBeTruthy();
     expect(onState.mock.calls.at(-1)![0].scenarios[0].books.you.rows).toEqual([]);
     // Write it: sell lemonade for $3.
-    // A debit line has only a debit amount; a credit line only a credit amount.
-    expect(screen.queryByLabelText('Entry 1 line 1 credit')).toBeNull();
-    expect(screen.queryByLabelText('Entry 1 line 2 debit')).toBeNull();
+    // Every line takes an amount under Dr or Cr; the column you type in decides which it is.
+    expect(screen.getByLabelText('Entry 1 line 1 credit')).toBeTruthy();
+    expect(screen.getByLabelText('Entry 1 line 2 debit')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Entry 1 line 1 account'), {
       target: { value: 'cash' },
     });

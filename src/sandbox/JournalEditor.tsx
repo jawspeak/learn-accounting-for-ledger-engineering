@@ -7,8 +7,10 @@ import {
   addAccount,
   addEntry,
   addLine,
+  debitsFirst,
   entryCheck,
   moveRow,
+  nextLineSide,
   orderedAccounts,
   removeLine,
   removeRow,
@@ -63,15 +65,15 @@ export function JournalEditor({
   const accounts = orderedAccounts(e);
   const narrow = useNarrow();
 
-  const addButton = (ri: number, n: number, s: Side) => (
+  /** "+ Line": a new line, on the side that's short (type in the other column to switch it). */
+  const addLineButton = (ri: number, n: number) => (
     <button
-      key={s}
       type="button"
-      aria-label={`Add a ${s === 'dr' ? 'Dr' : 'Cr'} line to entry ${n}`}
-      title={`Add a ${s === 'dr' ? 'debit' : 'credit'} line`}
-      onClick={() => onChange(addLine(e, ri, s))}
+      aria-label={`Add a line to entry ${n}`}
+      title="Add a line — type its amount under Dr or Cr"
+      onClick={() => onChange(addLine(e, ri, nextLineSide(e.rows[ri]!)))}
     >
-      ＋ {s === 'dr' ? 'Dr' : 'Cr'}
+      ＋ Line
     </button>
   );
 
@@ -161,13 +163,24 @@ export function JournalEditor({
           const n = ri + 1;
           const t = entryCheck(r);
           return (
-            <tbody key={r.id} id={entryAnchor(n)} className="jx-entry">
+            <tbody
+              key={r.id}
+              id={entryAnchor(n)}
+              className="jx-entry"
+              // Leaving the entry puts its debits first (the journal convention) — not while typing, so
+              // the line you're in never jumps.
+              onBlur={(ev) => {
+                if (ev.currentTarget.contains(ev.relatedTarget as Node | null)) return;
+                const sorted = debitsFirst(e, ri);
+                if (sorted !== e) onChange(sorted);
+              }}
+            >
               {/* The entry's first row: its number, what happened, and whether it balances. */}
               <tr className="jx-head">
                 <th scope="row" className="jx-num">
                   {n}
                 </th>
-                {/* On a phone the description gets the whole row, with "+ Dr / + Cr" in it. */}
+                {/* On a phone the description gets the whole row, with "+ Line" in it. */}
                 <td colSpan={narrow ? 3 : 1}>
                   <div className="jx-head-cell">
                     <input
@@ -196,9 +209,7 @@ export function JournalEditor({
                         )}
                       </span>
                     )}
-                    {narrow && (
-                      <span className="jx-add">{SIDES.map((s) => addButton(ri, n, s))}</span>
-                    )}
+                    {narrow && <span className="jx-add">{addLineButton(ri, n)}</span>}
                     {/* Nothing to move or remove until the blank first entry is written. */}
                     <span className="jx-tools" hidden={placeholder}>
                       <button
@@ -228,13 +239,11 @@ export function JournalEditor({
                     </span>
                   </div>
                 </td>
-                {/* Add a line where it goes: "+ Dr" in the Dr column, "+ Cr" in the Cr column. */}
-                {!narrow &&
-                  SIDES.map((s) => (
-                    <td key={s} className="jx-amt jx-add">
-                      {addButton(ri, n, s)}
-                    </td>
-                  ))}
+                {!narrow && (
+                  <td colSpan={2} className="jx-add">
+                    {addLineButton(ri, n)}
+                  </td>
+                )}
                 <td />
               </tr>
               {r.postings.map((p, li) => {
@@ -256,21 +265,19 @@ export function JournalEditor({
                         />
                       )}
                     </td>
-                    {/* A debit line has an amount only in Dr; a credit line only in Cr. */}
+                    {/* Type in Dr or Cr: that makes it a debit (flush left) or a credit (indented). The
+                        faint "$0.00" marks the side the line is on until an amount is typed. */}
                     {SIDES.map((s) => (
                       <td key={s} className="jx-amt">
-                        {p.side === s && (
-                          <AmountInput
-                            className="jx-amount jx-quiet"
-                            aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
-                            allowCents
-                            formatAtRest
-                            // A faint "$0.00" shows where the amount goes before one is typed.
-                            placeholder="$0.00"
-                            cents={p.amount}
-                            onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c))}
-                          />
-                        )}
+                        <AmountInput
+                          className="jx-amount jx-quiet"
+                          aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
+                          allowCents
+                          formatAtRest
+                          placeholder={p.side === s && p.amount === 0 ? '$0.00' : ''}
+                          cents={p.side === s ? p.amount : 0}
+                          onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c, s))}
+                        />
                       </td>
                     ))}
                     <td className="jx-tools-cell">

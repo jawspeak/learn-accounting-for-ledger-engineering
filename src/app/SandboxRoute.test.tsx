@@ -88,9 +88,31 @@ describe('Journal view (the editor)', () => {
     ]);
   });
 
+  it('type under Dr or Cr: the line becomes a debit or a credit, and leaving the entry puts debits first', () => {
+    mountLoan('journal');
+    // Entry 1 is "Dr Checking $500 / Cr Loan Payable $500". Retype the debit under Cr…
+    const dr = screen.getByLabelText('Entry 1 line 1 debit') as HTMLInputElement;
+    fireEvent.focus(dr);
+    fireEvent.change(dr, { target: { value: '' } });
+    const cr = screen.getByLabelText('Entry 1 line 1 credit') as HTMLInputElement;
+    fireEvent.change(cr, { target: { value: '500' } });
+    expect(cr.closest('tr')!.className).toMatch(/is-cr/);
+    // …and add a line, type its debit: still in the order written while you're in the entry.
+    fireEvent.click(screen.getByRole('button', { name: 'Add a line to entry 1' }));
+    fireEvent.change(screen.getByLabelText('Entry 1 line 3 debit'), { target: { value: '1000' } });
+    const sides = () =>
+      [...document.querySelectorAll('#entry-1 tr.jx-line')].map((tr) =>
+        tr.classList.contains('is-cr') ? 'cr' : 'dr',
+      );
+    expect(sides()).toEqual(['cr', 'cr', 'dr']);
+    // Leaving the entry sorts it: debits first.
+    fireEvent.blur(document.querySelector('#entry-1')!, { relatedTarget: document.body });
+    expect(sides()).toEqual(['dr', 'cr', 'cr']);
+  });
+
   it('half-written lines stay on screen but are left out of the link', () => {
     mountLoan('journal');
-    fireEvent.click(screen.getAllByRole('button', { name: /Cr line/ })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a line to entry 1' }));
     expect(screen.getByLabelText('Entry 1 line 3 account')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Entry 1 description'), { target: { value: 'Borrow' } });
     flush();
@@ -457,13 +479,17 @@ describe('the view switcher', () => {
 describe('journal model', () => {
   const youInLoan = () => ({ ...booksOf(bank(), LOAN, 0), rows: [] });
 
-  it('a line keeps the side it was added on; persistable drops half-written lines', () => {
+  it('the column you type in makes a line a debit or a credit; persistable drops half-written lines', () => {
     let e = addEntry(youInLoan());
     e = setLineAccount(e, 0, 1, 'cash');
-    e = setLineAmount(e, 0, 1, 1000);
+    e = setLineAmount(e, 0, 1, 1000, 'cr');
     expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 1000, chosenType: 'asset' });
-    e = setLineAmount(e, 0, 1, 500);
-    expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 500 });
+    // Typing under Dr instead makes it a debit; clearing the other column leaves it alone.
+    e = setLineAmount(e, 0, 1, 500, 'dr');
+    expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'dr', amount: 500 });
+    e = setLineAmount(e, 0, 1, 0, 'cr');
+    expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'dr', amount: 500 });
+    e = setLineAmount(e, 0, 1, 500, 'cr');
     e = setLineAmount(e, 0, 0, 700); // an amount on a line with no account yet
     const s = persistable(withBooks(bank(), LOAN, 0, e));
     expect(s.scenarios[LOAN]!.books.you!.rows[0]!.postings).toEqual([
