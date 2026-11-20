@@ -110,19 +110,22 @@ describe('Journal view (the editor)', () => {
     expect(sides()).toEqual(['dr', 'cr', 'cr']);
   });
 
-  it('each line reminds you of its account’s type and increasing side, and what the line does to it', () => {
-    mountLoan('journal'); // Entry 1: Dr Checking $500 / Cr Loan Payable $500
-    const hint = (label: string) =>
-      screen.getByLabelText(label).closest('td')!.querySelector('.jx-acct-type')!;
-    expect(hint('Entry 1 line 1 account').textContent).toMatch(/^Asset ▲Dr/);
-    expect(hint('Entry 1 line 2 account').textContent).toMatch(/^Liability ▲Cr/);
-    expect(hint('Entry 1 line 1 account').getAttribute('title')).toBe(
-      'This debit increases Checking Account',
+  it('beside each amount: ▲ (green) when it increases the account, ▼ (red) when it decreases it', () => {
+    mountLoan('journal'); // Entry 1: Dr Checking $500 / Cr Loan Payable $500; entry 2: Dr Interest / Cr Checking
+    const mark = (label: string) =>
+      screen.getByLabelText(label).closest('td')!.querySelector('.jx-eff')!;
+    expect(mark('Entry 1 line 1 debit').className).toMatch(/is-up/);
+    expect(mark('Entry 1 line 1 debit').getAttribute('title')).toBe(
+      'Asset — this debit increases Checking Account',
     );
-    // Entry 2 pays interest out of checking: a credit to an asset decreases it.
-    expect(hint('Entry 2 line 2 account').getAttribute('title')).toBe(
-      'This credit decreases Checking Account',
+    expect(mark('Entry 1 line 2 credit').getAttribute('title')).toBe(
+      'Liability — this credit increases Loan Payable',
     );
+    // Paying interest out of checking: a credit to an asset decreases it.
+    expect(mark('Entry 2 line 2 credit').className).toMatch(/is-down/);
+    expect(mark('Entry 2 line 2 credit').textContent).toBe('▼ decreases the account');
+    // No mark in the empty column of a line.
+    expect(mark('Entry 1 line 1 credit').textContent).toBe('');
   });
 
   it('half-written lines stay on screen but are left out of the link', () => {

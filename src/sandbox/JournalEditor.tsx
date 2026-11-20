@@ -262,13 +262,7 @@ export function JournalEditor({
                   <tr key={li} className={`jx-line ${p.side === 'cr' ? 'is-cr' : 'is-dr'}`}>
                     <td />
                     <td className="jx-acct">
-                      <span className="jx-acct-row">
-                        {accountSelect(p, ri, li, line)}
-                        <AccountHint
-                          account={accounts.find((a) => a.id === p.accountId)}
-                          line={p}
-                        />
-                      </span>
+                      {accountSelect(p, ri, li, line)}
                       {creating === `${ri}:${li}` && (
                         <NewAccountForm
                           entity={e}
@@ -285,15 +279,24 @@ export function JournalEditor({
                         faint "$0.00" marks the side the line is on until an amount is typed. */}
                     {SIDES.map((s) => (
                       <td key={s} className="jx-amt">
-                        <AmountInput
-                          className="jx-amount jx-quiet"
-                          aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
-                          allowCents
-                          formatAtRest
-                          placeholder={p.side === s && p.amount === 0 ? '$0.00' : ''}
-                          cents={p.side === s ? p.amount : 0}
-                          onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c, s))}
-                        />
+                        <span className="jx-amt-row">
+                          <AmountInput
+                            className="jx-amount jx-quiet"
+                            aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
+                            allowCents
+                            formatAtRest
+                            placeholder={p.side === s && p.amount === 0 ? '$0.00' : ''}
+                            cents={p.side === s ? p.amount : 0}
+                            onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c, s))}
+                          />
+                          {/* Beside the amount: ▲ it increases the account, ▼ it decreases it. */}
+                          <EffectMark
+                            account={
+                              p.side === s ? accounts.find((a) => a.id === p.accountId) : undefined
+                            }
+                            line={p}
+                          />
+                        </span>
                       </td>
                     ))}
                     <td className="jx-tools-cell">
@@ -321,25 +324,20 @@ export function JournalEditor({
 }
 
 /**
- * A reminder next to a line's account: its type and the side that increases it — "Liability ▲Cr". The tooltip
- * says what this line does to it ("This debit decreases Wallet: Alice").
+ * Beside a line's amount, what it does to the account: a green ▲ when it increases it, a red ▼ when it decreases
+ * it (hidden while you edit the amount). The tooltip names the account's type: "Asset — this debit increases
+ * Cash: FBO Account".
  */
-function AccountHint({ account, line }: { account?: Account; line: Posting }) {
-  if (!account) return null;
-  const normal = engine.normalSide(account.type);
-  const word = (s: Side) => (s === 'dr' ? 'debit' : 'credit');
-  const effect =
-    line.amount > 0
-      ? `This ${word(line.side)} ${line.side === normal ? 'increases' : 'decreases'} ${account.name}`
-      : `${account.name} increases with a ${word(normal)}`;
+function EffectMark({ account, line }: { account?: Account; line: Posting }) {
+  if (!account || !(line.amount > 0)) return <span className="jx-eff" aria-hidden="true" />;
+  const up = line.side === engine.normalSide(account.type);
+  const what = `${typeLabel(account.type)} — this ${line.side === 'dr' ? 'debit' : 'credit'} ${
+    up ? 'increases' : 'decreases'
+  } ${account.name}`;
   return (
-    <span className="jx-acct-type" title={effect}>
-      <span className="jx-acct-type-name">{typeLabel(account.type)}</span>{' '}
-      <span className="jx-acct-inc">▲{normal === 'dr' ? 'Dr' : 'Cr'}</span>
-      <span className="sr-only">
-        {' '}
-        (increases with a {word(normal)}){line.amount > 0 ? `. ${effect}.` : ''}
-      </span>
+    <span className={`jx-eff ${up ? 'is-up' : 'is-down'}`} title={what}>
+      <span aria-hidden="true">{up ? '▲' : '▼'}</span>
+      <span className="sr-only"> {up ? 'increases' : 'decreases'} the account</span>
     </span>
   );
 }

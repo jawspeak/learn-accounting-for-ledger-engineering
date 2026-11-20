@@ -153,26 +153,31 @@
   cursor: default;
 }
 /* Lines: the account, then the amount in its column. Credits are indented under the debits. */
-/* The account, then a reminder of its type and increasing side: "Liability ▲Cr". */
-.jx-acct-row {
+/* An amount, then what it does to the account: ▲ increases (green), ▼ decreases (red). The mark keeps a fixed
+   slot so amounts stay aligned, and hides while the amount is being edited. */
+.jx-amt-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.2rem;
+}
+.jx-amt-row .jx-amount {
+  flex: 1;
   min-width: 0;
 }
-.jx-acct-row select {
-  min-width: 0;
-}
-.jx-acct-type {
+.jx-eff {
   flex: none;
-  margin-left: auto; /* one aligned column, at the right of the Account column */
-  color: var(--muted);
-  white-space: nowrap;
+  width: 0.9rem;
+  text-align: center;
   cursor: help;
 }
-.jx-acct-inc {
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
+.jx-eff.is-up {
+  color: var(--ok);
+}
+.jx-eff.is-down {
+  color: var(--err);
+}
+.jx-amount:focus + .jx-eff {
+  visibility: hidden;
 }
 .jx-acct select {
   max-width: 100%;
@@ -284,10 +289,6 @@ td.jx-add {
   }
   .jx-line.is-cr .jx-acct {
     padding-left: 0.9rem;
-  }
-  /* Phones: keep "▲Dr", drop the type name, so the account keeps its width. */
-  .jx-acct-type-name {
-    display: none;
   }
   /* The description takes the first line; the check, "+ Line" and the tools the second. */
   .jx-head-cell {
