@@ -251,15 +251,46 @@ describe('scenarios', () => {
 
   it('the chart of accounts: every entity’s accounts with their labels, and which scenarios use them', () => {
     mount('journal', bank());
-    const you = screen.getByRole('region', { name: 'You chart of accounts' });
-    const row = (name: string) =>
-      within(you).getByRole('rowheader', { name }).closest('tr')!.textContent;
-    expect(row('Checking Account')).toBe(
-      'Checking AccountAt the bankAssetDeposit cashBorrow, then pay interestRepay the loan',
-    );
-    expect(row('Cash')).toBe('CashIn your walletAssetDeposit cash');
-    expect(row('Interest Expense')).toMatch(/Borrow, then pay interest$/);
+    // One table: a column per scenario (lines posted there), then the total.
+    const table = screen.getByRole('table', { name: /^Chart of accounts/ });
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual([
+      'Account',
+      'Label',
+      'Deposit cash',
+      'Borrow, then pay interest',
+      'Repay the loan',
+      'Total',
+    ]);
+    const you = within(table).getByRole('rowgroup', { name: 'You chart of accounts' });
+    const cells = (name: string) =>
+      [...within(you).getByRole('rowheader', { name }).closest('tr')!.children].map(
+        (c) => c.textContent,
+      );
+    // Checking: 1 line in "Deposit cash", 2 in the loan, 2 when repaying (its opening balance counts too).
+    expect(cells('Checking Account')).toEqual([
+      'Checking Account',
+      'At the bank',
+      '1',
+      '2',
+      '2',
+      '5',
+    ]);
+    expect(cells('Cash')).toEqual(['Cash', 'In your wallet', '2', '', '', '2']);
     expect(within(you).getByText(/5 accounts/)).toBeTruthy();
+    // An account no scenario posts to is marked.
+    const s = bank();
+    s.entities[0]!.accounts.push({ id: 'savings', name: 'Savings', type: 'asset' });
+    cleanup();
+    mount('journal', s);
+    const you2 = screen.getByRole('rowgroup', { name: 'You chart of accounts' });
+    expect(
+      within(you2).getByRole('rowheader', { name: 'Savings' }).closest('tr')!.textContent,
+    ).toBe('Savingsunused');
+    expect(within(you2).getByText(/1 unused/)).toBeTruthy();
   });
 });
 

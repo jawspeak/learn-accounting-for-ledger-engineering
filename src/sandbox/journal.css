@@ -24,51 +24,91 @@
   margin: 0;
 }
 
-/* ---------- Journal ---------- */
+/* ---------- Journal: a general journal on ledger paper ---------- */
+/* One ruled sheet: # | Account | Dr | Cr. Each entry is a <tbody>: a heading row (number, description, check),
+   its lines (credits indented), and a slim row with "+ Dr" / "+ Cr" under their columns. Compact by spacing
+   and rules, not by smaller type. */
 .jx {
+  --jx-rule: color-mix(in srgb, var(--border) 70%, transparent);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin: var(--space-3) 0;
 }
-.jx-entries {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.jx-entry {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.jx-sheet {
+  width: 100%;
+  max-width: 52rem;
+  border-collapse: collapse;
+  table-layout: fixed;
   background: var(--surface);
-  padding: var(--space-2) var(--space-3);
-  max-width: 46rem;
+  border: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+.jx-c-num {
+  width: 2.5rem;
+}
+.jx-c-amt {
+  width: 8.5rem;
+}
+.jx-c-tools {
+  width: 2rem;
+}
+.jx-sheet thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.25rem 0.4rem;
+  border-bottom: 2px solid var(--fg);
+  background: color-mix(in srgb, var(--fg) 3%, var(--surface));
+}
+.jx-sheet td,
+.jx-sheet tbody th {
+  padding: 0 0.4rem;
+  vertical-align: middle;
+}
+/* A heavier rule between entries; light rules between lines; the Dr | Cr columns ruled like paper. */
+.jx-entry {
   scroll-margin-top: calc(var(--header-h) + var(--space-3));
 }
-.jx-entry.is-target {
-  box-shadow: 0 0 0 3px var(--accent);
+.jx-entry + .jx-entry .jx-head > * {
+  border-top: 1px solid var(--border);
 }
-.jx-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+.jx-line > td {
+  border-top: 1px solid var(--jx-rule);
+}
+.jx-sheet .jx-amt {
+  text-align: right;
+  border-left: 1px solid var(--jx-rule);
+}
+.jx-entry.is-target td,
+.jx-entry.is-target th {
+  background: var(--accent-soft);
 }
 .jx-num {
-  font-weight: 700;
+  text-align: right;
   color: var(--muted);
-  min-width: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.jx-head > * {
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.1rem !important;
+}
+.jx-head-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 .jx-desc {
-  flex: 1 1 14rem;
+  flex: 1 1 auto;
+  min-width: 0;
   font: inherit;
   font-weight: 600;
   border: 1px solid transparent;
   background: transparent;
-  border-radius: 4px;
-  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  margin-left: -0.3rem;
 }
 .jx-desc:hover,
 .jx-desc:focus {
@@ -76,7 +116,8 @@
   background: var(--bg);
 }
 .jx-status {
-  font-size: var(--text-sm);
+  flex: none;
+  white-space: nowrap;
 }
 .jx-status.is-ok {
   color: var(--ok);
@@ -85,80 +126,64 @@
   color: var(--err);
   font-weight: 600;
 }
+.jx-tools-cell {
+  text-align: right;
+  white-space: nowrap;
+}
 .jx-tools {
   display: inline-flex;
   gap: 0.15rem;
-  margin-left: auto;
 }
 .jx-tools[hidden] {
   display: none;
 }
 .jx-tools button,
 .jx-remove-line {
-  font-size: 0.7rem;
+  font: inherit;
   line-height: 1.2;
-  padding: 0.1rem 0.4rem;
+  padding: 0 0.35rem;
   background: var(--surface);
   color: var(--fg);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
 }
 .jx-tools button:disabled {
   opacity: 0.4;
   cursor: default;
 }
-.jx-lines {
-  width: 100%;
-  border-collapse: collapse;
-  margin: var(--space-2) 0 var(--space-1);
-  font-size: var(--text-sm);
+/* Lines: the account, then the amount in its column. Credits are indented under the debits. */
+.jx-acct select {
+  max-width: 100%;
+  font: inherit;
+  padding: 0.1rem 0.25rem;
+  margin: 0.1rem 0;
 }
-.jx-lines th {
-  text-align: left;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted);
-  padding: 0 0.25rem 0.2rem;
-}
-.jx-lines td {
-  padding: 0.15rem 0.25rem;
-  vertical-align: top;
-}
-.jx-amt {
-  text-align: right !important;
-  width: 8rem;
+.jx-line.is-cr .jx-acct {
+  padding-left: 2rem;
 }
 .jx-amount {
-  width: 7.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.25rem;
+  margin: 0.1rem 0;
 }
 /* Where the amount goes, before one is typed — a hint, never read as data. */
 .jx-amount::placeholder {
   color: var(--muted);
   opacity: 0.55;
 }
-.jx-acct select {
-  max-width: 100%;
-  min-width: 12rem;
-}
-/* Journal convention: credit lines are indented under the debits. */
-.jx-lines tr.is-cr .jx-acct {
-  padding-left: 1.75rem;
-}
-.jx-line-tools {
-  display: flex;
-  gap: var(--space-2);
-}
-.jx-line-tools button,
+/* "+ Dr" / "+ Cr" in the entry's heading row, each in its own column. */
+.jx-add button,
 .jx-add-entry {
   font: inherit;
-  font-size: var(--text-sm);
   color: var(--accent);
   background: none;
   border: none;
-  padding: 0.1rem 0;
+  padding: 0;
   cursor: pointer;
 }
 .jx-add-entry {
@@ -166,14 +191,8 @@
   font-weight: 600;
 }
 /* Read like a journal, edit like the Grid: with a mouse, a chosen account and an amount look like plain text
-   (no border, no dropdown arrow) until you hover the line or focus the field; the line / entry tools appear
-   on hover or focus too. Touch screens can't hover, so there everything stays visible. */
-.jx-lines tbody tr {
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-}
-.jx-lines tbody tr:last-child {
-  border-bottom: none;
-}
+   (no border, no dropdown arrow) until you hover the line or focus the field; the entry / line tools and the
+   "+ Dr / + Cr" row appear on hover or focus too. Touch screens can't hover, so there everything stays visible. */
 @media (hover: hover) and (pointer: fine) {
   .jx .jx-quiet:not(.is-empty) {
     border-color: transparent;
@@ -187,12 +206,12 @@
     -webkit-appearance: none;
     cursor: pointer;
   }
-  .jx-lines tr:hover .jx-quiet,
+  .jx-line:hover .jx-quiet,
   .jx .jx-quiet:focus {
     border-color: var(--border);
     background-color: var(--surface);
   }
-  .jx-lines tr:hover select.jx-quiet,
+  .jx-line:hover select.jx-quiet,
   .jx select.jx-quiet:focus {
     appearance: auto;
     -webkit-appearance: auto;
@@ -204,58 +223,70 @@
   .jx-remove-line {
     opacity: 0;
   }
-  .jx-lines tr:hover .jx-remove-line,
-  .jx-lines tr:focus-within .jx-remove-line {
+  .jx-line:hover .jx-remove-line,
+  .jx-line:focus-within .jx-remove-line {
     opacity: 1;
   }
   .jx-tools,
-  .jx-line-tools {
+  .jx-add button {
     opacity: 0;
     transition: opacity 0.12s;
   }
   .jx-entry:hover .jx-tools,
   .jx-entry:focus-within .jx-tools,
-  .jx-entry:hover .jx-line-tools,
-  .jx-entry:focus-within .jx-line-tools {
+  .jx-entry:hover .jx-add button,
+  .jx-entry:focus-within .jx-add button {
     opacity: 1;
   }
 }
 
-/* Phones: the account list shrinks and the amount columns narrow, so an entry fits without sideways scroll. */
+/* Phones: narrower number, amount and tool columns, so the sheet fits without sideways scroll. */
 @media (max-width: 560px) {
-  .jx-entry {
-    padding: var(--space-2);
+  .jx-c-num {
+    width: 1.75rem;
   }
-  .jx-lines {
-    table-layout: fixed;
+  .jx-c-amt {
+    width: 4.75rem;
   }
-  .jx-acct select {
-    min-width: 0;
-    width: 100%;
+  .jx-c-tools {
+    width: 1.75rem;
   }
-  .jx-amt {
-    width: 5.25rem;
+  .jx-sheet td,
+  .jx-sheet tbody th,
+  .jx-sheet thead th {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
   }
-  .jx-amount {
-    width: 100%;
-    min-width: 0;
-  }
-  .jx-lines th:last-child,
-  .jx-lines td:last-child {
-    width: 1.6rem;
-  }
-  .jx-lines tr.is-cr .jx-acct {
+  .jx-line.is-cr .jx-acct {
     padding-left: 0.9rem;
+  }
+  /* The description takes the first line; the check, "+ Dr / + Cr" and the tools the second. */
+  .jx-head-cell {
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+  }
+  .jx-desc {
+    flex-basis: 100%;
+  }
+  span.jx-add {
+    display: inline-flex;
+    gap: var(--space-3);
+  }
+  .jx-tools {
+    margin-left: auto;
+  }
+  .jx-status {
+    white-space: normal;
   }
 }
 .jx-new {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-top: 0.35rem;
+  margin: 0.2rem 0 0.35rem;
   padding: 0.35rem;
   border: 1px dashed var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 /* ---------- T-accounts (general ledger) ---------- */

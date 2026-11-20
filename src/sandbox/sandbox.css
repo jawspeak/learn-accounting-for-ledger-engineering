@@ -25,6 +25,12 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-sm);
+  max-width: 100%;
+}
+/* A long option (an example's name) mustn't widen the page on a phone. */
+.sbx-inline select {
+  min-width: 0;
+  max-width: 100%;
 }
 .sbx-confirm {
   display: inline-flex;
@@ -99,42 +105,86 @@
   border-radius: var(--radius);
   background: var(--warn-soft);
 }
-/* Chart of accounts (all entities, all scenarios). */
+/* Chart of accounts (all entities, all scenarios): one ruled table, like a ledger index. Columns line up across
+   entities; each scenario is a narrow column of line counts; the current scenario's column is shaded. */
 .coa {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
   padding-top: var(--space-2);
-}
-.coa-entity h3 {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-base);
+  overflow-x: auto;
 }
 .coa-table {
   width: 100%;
-}
-.coa-table tbody th[scope='row'] {
-  font-weight: 600;
-  text-align: left;
-}
-.coa-used {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-.coa-chip {
-  padding: 0 0.4rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--text-sm);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  white-space: nowrap;
 }
-.coa-chip.is-current {
-  border-color: var(--accent);
+.coa-c-name {
+  width: 16rem;
+}
+.coa-c-label {
+  width: 14rem;
+}
+.coa-c-sc {
+  width: 7.5rem;
+}
+.coa-c-total {
+  width: 4.5rem;
+}
+.coa-c-sc.is-current {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.coa-table th,
+.coa-table td {
+  padding: 0.15rem 0.4rem;
+  text-align: left;
+  vertical-align: top;
+}
+.coa-table thead th {
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: bottom;
+  border-bottom: 2px solid var(--fg);
+  background: color-mix(in srgb, var(--fg) 3%, var(--surface));
+}
+/* A scenario's title, in at most two lines (the full title is its tooltip). */
+.coa-sc-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.25;
+}
+.coa-table thead th.coa-sc.is-current {
   color: var(--accent);
 }
+.coa-entity th {
+  padding-top: 0.45rem;
+  font-weight: 700;
+  color: var(--fg);
+  border-top: 2px solid var(--border);
+}
+.coa-table tbody:first-of-type .coa-entity th {
+  border-top: 0;
+}
+.coa-section th {
+  padding-top: 0.3rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.coa-row > * {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.coa-row th {
+  font-weight: 500;
+}
+.coa-num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
 .coa-unused {
-  font-size: 0.8rem;
   color: var(--warn);
 }
 .sbx-scenario-text {
