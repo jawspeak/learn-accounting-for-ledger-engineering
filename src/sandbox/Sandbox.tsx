@@ -14,14 +14,14 @@ import {
   duplicateScenarioIn,
   emptyState,
   eventParts,
-  isManualOrder,
   moveScenario,
+  orderMode,
   persistable,
   removeEntityFrom,
   removeScenarioFrom,
   scenarioNumber,
   scenarioStatus,
-  setManualOrder,
+  setOrderMode,
   slugify,
   storyLine,
   summarize,
@@ -29,6 +29,7 @@ import {
   usageByScenario,
   withBooks,
 } from './model';
+import { entityLabel, ShowCodes } from './codes';
 import { Menu } from './Menu';
 import { SandboxLink, SandboxNavProvider, type SandboxNav, type SandboxView } from './nav';
 import { AccountsEditor, AccountUsage, EntitySummaryLine, OpeningEditor } from './EntityPanels';
@@ -205,407 +206,436 @@ export function Sandbox({
 
   const oneEntityView = view !== 'taccounts';
   const usage: AccountUsage = (accountId) => usageByScenario(state, current.id, accountId);
+  const showCodes = !!state.showCodes;
+  /** Each event's parts in scenario `i`, with the entities named as shown ("1000 Zap" when codes are on). */
+  const partsFor = (i: number) =>
+    eventParts(state, i).map((ps) =>
+      ps.map((p) => ({ ...p, entity: entityLabel(state.entities[p.index]!, showCodes) })),
+    );
 
   return (
     <SandboxNavProvider value={{ linkTo, onNavigate }}>
-      <article className="sbx sh">
-        <ViewSwitch current={view} entity={ei} />
-        {/* One line: the title, the host's tools (Copy link), and a menu for the occasional actions. */}
-        <div className="sbx-head">
-          <label htmlFor={`${uid}-title`} className="sr-only">
-            Sandbox title
-          </label>
-          <input
-            id={`${uid}-title`}
-            className="sbx-title"
-            value={state.title ?? ''}
-            placeholder="Untitled sandbox"
-            onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
-          />
-          {toolbar}
-          <Menu label="Sandbox menu" align="end">
-            {(close) => (
-              <>
-                {examples && examples.length > 0 && (
-                  <label className="sbx-menu-field">
-                    Example scenarios:
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const ex = examples.find((x) => x.id === e.target.value);
-                        if (!ex) return;
-                        close();
-                        setPending({
-                          question: `Replace everything in the Sandbox with the “${ex.label}” example? (Copy the link or export first to keep your work.)`,
-                          build: ex.build,
-                          done: `Loaded example: ${ex.label}.`,
-                        });
-                      }}
-                    >
-                      <option value="">Load an example…</option>
-                      {examples.map((x) => (
-                        <option key={x.id} value={x.id}>
-                          {x.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    setPending({
-                      question:
-                        'Start over with an empty Sandbox? (Copy the link or export first to keep your work.)',
-                      build: emptyState,
-                      done: 'Started a new, empty Sandbox.',
-                    });
-                  }}
-                >
-                  New
-                </button>
-                <button
-                  type="button"
-                  title="Download a .json file"
-                  onClick={() => {
-                    close();
-                    exportFile();
-                  }}
-                >
-                  Export
-                </button>
-                <button
-                  type="button"
-                  title="Open a .json file exported from the Sandbox"
-                  onClick={() => {
-                    close();
-                    fileRef.current?.click();
-                  }}
-                >
-                  Import
-                </button>
-              </>
-            )}
-          </Menu>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label="Import a Sandbox file"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void importFile(f);
-              e.target.value = '';
-            }}
-          />
-        </div>
-        <p className="note sbx-status" role="status" aria-live="polite">
-          {status}
-        </p>
-
-        {notice}
-        {pending && (
-          <p className="sbx-confirm sbx-pending" role="group" aria-label="Confirm replace">
-            {pending.question}
-            <button
-              type="button"
-              className="btn"
-              onClick={() => replaceAll(pending.build(), pending.done)}
+      <ShowCodes.Provider value={showCodes}>
+        <article className="sbx sh">
+          <div className="sbx-viewbar">
+            <ViewSwitch current={view} entity={ei} />
+            {/* One switch for every view: entity codes and GL account numbers (optional, for organising). */}
+            <label
+              className="sbx-check sbx-codes-toggle"
+              title="Show entity codes and GL account numbers in every view"
             >
-              Yes, replace
-            </button>
-            <button type="button" className="btn" onClick={() => setPending(null)}>
-              Cancel
-            </button>
-          </p>
-        )}
-
-        {/* ---- Scenarios ---- */}
-        <section className="sbx-scenarios" aria-label="Scenarios">
-          <Tabs
-            label="Scenarios"
-            heading="Scenarios"
-            // "S1 ✓ Alice tops up $50": a number to refer to, and the check, like a test run.
-            names={state.scenarios.map((x, i) => {
-              const st = scenarioStatus(state, i);
-              return (
-                <>
-                  <span className="sbx-sc-num">{scenarioNumber(i)}</span>
-                  {st !== 'empty' && (
-                    <span
-                      className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
-                      aria-hidden="true"
-                    >
-                      {st === 'ok' ? '✓' : '✗'}
-                    </span>
-                  )}
-                  {x.title || `Scenario ${i + 1}`}
-                  {st !== 'empty' && (
-                    <span className="sr-only">
-                      {st === 'ok' ? ' (balances)' : ' (doesn’t balance)'}
-                    </span>
-                  )}
-                </>
-              );
-            })}
-            sel={si}
-            onSelect={selectScenario}
-            idOf={(i) => `${uid}-sc-${i}`}
-            panelId={`${uid}-sc-panel`}
-            addLabel="+ Add scenario"
-            addTitle="A new scenario: the same entities and accounts, empty books"
-            onAdd={addScenario}
-          />
-          <div
-            id={`${uid}-sc-panel`}
-            role="tabpanel"
-            aria-labelledby={`${uid}-sc-${si}`}
-            className="sbx-scenario"
-          >
-            {/* One line: the story's first line (click to read or edit it all), and the scenario's menu. */}
-            <div className="sbx-scenario-bar">
-              <ScenarioText
-                key={`${epoch}:${sc.id}`}
-                uid={uid}
-                text={sc.text}
-                onText={(text) => onChange(updateScenario(state, si, { text }))}
+              <input
+                type="checkbox"
+                checked={showCodes}
+                onChange={(e) =>
+                  update((s) => {
+                    const next: SandboxState = { ...s, showCodes: e.target.checked };
+                    if (!e.target.checked) delete next.showCodes;
+                    return next;
+                  })
+                }
               />
-              <Menu label="Scenario menu" align="end">
-                {(close) => (
-                  <>
+              Codes &amp; GL numbers
+            </label>
+          </div>
+          {/* One line: the title, the host's tools (Copy link), and a menu for the occasional actions. */}
+          <div className="sbx-head">
+            <label htmlFor={`${uid}-title`} className="sr-only">
+              Sandbox title
+            </label>
+            <input
+              id={`${uid}-title`}
+              className="sbx-title"
+              value={state.title ?? ''}
+              placeholder="Untitled sandbox"
+              onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
+            />
+            {toolbar}
+            <Menu label="Sandbox menu" align="end">
+              {(close) => (
+                <>
+                  {examples && examples.length > 0 && (
                     <label className="sbx-menu-field">
-                      Title
-                      <input
-                        aria-label="Scenario title"
-                        value={sc.title}
-                        placeholder={`Scenario ${si + 1}`}
-                        onChange={(e) =>
-                          onChange(updateScenario(state, si, { title: e.target.value }))
-                        }
-                      />
+                      Example scenarios:
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const ex = examples.find((x) => x.id === e.target.value);
+                          if (!ex) return;
+                          close();
+                          setPending({
+                            question: `Replace everything in the Sandbox with the “${ex.label}” example? (Copy the link or export first to keep your work.)`,
+                            build: ex.build,
+                            done: `Loaded example: ${ex.label}.`,
+                          });
+                        }}
+                      >
+                        <option value="">Load an example…</option>
+                        {examples.map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {x.label}
+                          </option>
+                        ))}
+                      </select>
                     </label>
-                    <button
-                      type="button"
-                      aria-label="Move scenario left"
-                      disabled={si === 0}
-                      onClick={() => {
-                        onChange(moveScenario(state, si, -1));
-                        onScenarioSelect(si - 1);
-                      }}
-                    >
-                      <span aria-hidden="true">← </span>Move earlier
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Move scenario right"
-                      disabled={si === state.scenarios.length - 1}
-                      onClick={() => {
-                        onChange(moveScenario(state, si, 1));
-                        onScenarioSelect(si + 1);
-                      }}
-                    >
-                      <span aria-hidden="true">→ </span>Move later
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Duplicate scenario"
-                      onClick={() => {
-                        close();
-                        duplicateScenario();
-                      }}
-                    >
-                      Duplicate
-                    </button>
-                    {confirmRemoveScenario ? (
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      setPending({
+                        question:
+                          'Start over with an empty Sandbox? (Copy the link or export first to keep your work.)',
+                        build: emptyState,
+                        done: 'Started a new, empty Sandbox.',
+                      });
+                    }}
+                  >
+                    New
+                  </button>
+                  <button
+                    type="button"
+                    title="Download a .json file"
+                    onClick={() => {
+                      close();
+                      exportFile();
+                    }}
+                  >
+                    Export
+                  </button>
+                  <button
+                    type="button"
+                    title="Open a .json file exported from the Sandbox"
+                    onClick={() => {
+                      close();
+                      fileRef.current?.click();
+                    }}
+                  >
+                    Import
+                  </button>
+                </>
+              )}
+            </Menu>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              tabIndex={-1}
+              aria-label="Import a Sandbox file"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void importFile(f);
+                e.target.value = '';
+              }}
+            />
+          </div>
+          <p className="note sbx-status" role="status" aria-live="polite">
+            {status}
+          </p>
+
+          {notice}
+          {pending && (
+            <p className="sbx-confirm sbx-pending" role="group" aria-label="Confirm replace">
+              {pending.question}
+              <button
+                type="button"
+                className="btn"
+                onClick={() => replaceAll(pending.build(), pending.done)}
+              >
+                Yes, replace
+              </button>
+              <button type="button" className="btn" onClick={() => setPending(null)}>
+                Cancel
+              </button>
+            </p>
+          )}
+
+          {/* ---- Scenarios ---- */}
+          <section className="sbx-scenarios" aria-label="Scenarios">
+            <Tabs
+              label="Scenarios"
+              heading="Scenarios"
+              // "S1 ✓ Alice tops up $50": a number to refer to, and the check, like a test run.
+              names={state.scenarios.map((x, i) => {
+                const st = scenarioStatus(state, i);
+                return (
+                  <>
+                    <span className="sbx-sc-num">{scenarioNumber(i)}</span>
+                    {st !== 'empty' && (
                       <span
-                        className="sbx-confirm"
-                        role="group"
-                        aria-label="Confirm remove scenario"
+                        className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
+                        aria-hidden="true"
                       >
-                        Remove {sc.title || 'this scenario'} and its entries?
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => {
-                            close();
-                            removeScenario();
-                          }}
-                        >
-                          Yes, remove
-                        </button>
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => setConfirmRemoveScenario(false)}
-                        >
-                          Cancel
-                        </button>
+                        {st === 'ok' ? '✓' : '✗'}
                       </span>
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label="Remove scenario"
-                        onClick={() => setConfirmRemoveScenario(true)}
-                      >
-                        Remove
-                      </button>
+                    )}
+                    {x.title || `Scenario ${i + 1}`}
+                    {st !== 'empty' && (
+                      <span className="sr-only">
+                        {st === 'ok' ? ' (balances)' : ' (doesn’t balance)'}
+                      </span>
                     )}
                   </>
-                )}
-              </Menu>
-            </div>
-          </div>
-        </section>
-
-        <details className="sbx-panel sbx-coa">
-          <summary>
-            Chart of accounts ({state.entities.reduce((n, e) => n + e.accounts.length, 0)} accounts,{' '}
-            {state.entities.length} entit{state.entities.length > 1 ? 'ies' : 'y'})
-          </summary>
-          <ChartOfAccounts state={state} scenario={si} />
-        </details>
-
-        {/* ---- Entities and the views ---- */}
-        {oneEntityView && (
-          <EntityBar
-            uid={uid}
-            state={state}
-            sel={ei}
-            selectEntity={selectEntity}
-            addEntity={addEntity}
-            books={books}
-            setBooks={setBooks}
-            duplicateEntity={duplicateEntity}
-            confirmRemove={confirmRemoveEntity}
-            setConfirmRemove={setConfirmRemoveEntity}
-            removeEntity={removeEntity}
-            scenarioCount={state.scenarios.length}
-            scope={
-              view === 'journal' && state.scenarios.length > 1 ? (
-                <span className="vs-order" role="group" aria-label="Scenarios shown">
-                  <span className="vs-order-label">Show</span>
-                  <button
-                    type="button"
-                    aria-pressed={!allScenarios}
-                    onClick={() => setAllScenarios(false)}
-                  >
-                    This scenario
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={allScenarios}
-                    onClick={() => setAllScenarios(true)}
-                    title="Every scenario's journal for this entity, one after another"
-                  >
-                    All scenarios
-                  </button>
-                </span>
-              ) : null
-            }
-          />
-        )}
-
-        {view === 'grid' && (
-          <p className="sh-notice sh-narrow-note">
-            The Grid is built for a wide desktop screen. On a small screen, the{' '}
-            <SandboxLink to={{ view: 'journal', entity: ei }}>Journal</SandboxLink> is easier to
-            use.
-          </p>
-        )}
-
-        <AccountUsage.Provider value={usage}>
-          {oneEntityView ? (
+                );
+              })}
+              sel={si}
+              onSelect={selectScenario}
+              idOf={(i) => `${uid}-sc-${i}`}
+              panelId={`${uid}-sc-panel`}
+              addLabel="+ Add scenario"
+              addTitle="A new scenario: the same entities and accounts, empty books"
+              onAdd={addScenario}
+            />
             <div
-              id={`${uid}-panel`}
+              id={`${uid}-sc-panel`}
               role="tabpanel"
-              aria-labelledby={`${uid}-tab-${ei}`}
-              className="sh-panel"
+              aria-labelledby={`${uid}-sc-${si}`}
+              className="sbx-scenario"
             >
-              {view === 'journal' ? (
-                <>
-                  {allScenarios ? (
-                    /* Every scenario's journal for this entity, one after another, each under its own
-                       heading — still editable. Click a heading to make that scenario the current one. */
-                    state.scenarios.map((x, i) => {
-                      const st = scenarioStatus(state, i);
-                      return (
-                        <section
-                          key={`${epoch}:${x.id}:${current.id}`}
-                          className={`sbx-allsc${i === si ? ' is-current' : ''}`}
-                          aria-label={`${scenarioNumber(i)} ${x.title || `Scenario ${i + 1}`}`}
-                        >
-                          <h3 className="sbx-allsc-head">
-                            <button
-                              type="button"
-                              aria-current={i === si ? 'true' : undefined}
-                              title="Make this the current scenario"
-                              onClick={() => selectScenario(i)}
-                            >
-                              <span className="sbx-sc-num">{scenarioNumber(i)}</span>
-                              {st !== 'empty' && (
-                                <span
-                                  className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
-                                  aria-hidden="true"
-                                >
-                                  {st === 'ok' ? '✓' : '✗'}
-                                </span>
-                              )}
-                              {x.title || `Scenario ${i + 1}`}
-                            </button>
-                            {storyLine(x.text) && (
-                              <span className="sbx-allsc-story note">{storyLine(x.text)}</span>
-                            )}
-                          </h3>
-                          <JournalEditor
-                            entity={booksOf(state, i, ei)}
-                            onChange={(b) => onChange(withBooks(state, i, ei, b))}
-                            at={i === si ? at : undefined}
-                            idPrefix={i === si ? '' : `s${i + 1}-`}
-                            hint={false}
-                            parts={eventParts(state, i)}
-                            self={ei}
-                          />
-                        </section>
-                      );
-                    })
-                  ) : (
-                    <JournalEditor
-                      key={`${epoch}:${sc.id}:${current.id}`}
-                      entity={books}
-                      onChange={setBooks}
-                      at={at}
-                      parts={eventParts(state, si)}
-                      self={ei}
-                    />
-                  )}
-                  <details className="sbx-panel">
-                    <summary>Accounts ({current.accounts.length})</summary>
-                    <AccountsEditor entity={books} onChange={setBooks} />
-                  </details>
-                  <details className="sbx-panel">
-                    <summary>
-                      Opening balances in this scenario
-                      {books.opening ? ` (${books.opening.lines.length})` : ''}
-                    </summary>
-                    <OpeningEditor entity={books} onChange={setBooks} />
-                  </details>
-                </>
-              ) : (
-                <SheetGrid
-                  key={`${epoch}:${sc.id}:${current.id}`}
-                  entity={books}
-                  onChange={setBooks}
+              {/* One line: the story's first line (click to read or edit it all), and the scenario's menu. */}
+              <div className="sbx-scenario-bar">
+                <ScenarioText
+                  key={`${epoch}:${sc.id}`}
+                  uid={uid}
+                  text={sc.text}
+                  onText={(text) => onChange(updateScenario(state, si, { text }))}
                 />
-              )}
+                <Menu label="Scenario menu" align="end">
+                  {(close) => (
+                    <>
+                      <label className="sbx-menu-field">
+                        Title
+                        <input
+                          aria-label="Scenario title"
+                          value={sc.title}
+                          placeholder={`Scenario ${si + 1}`}
+                          onChange={(e) =>
+                            onChange(updateScenario(state, si, { title: e.target.value }))
+                          }
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        aria-label="Move scenario left"
+                        disabled={si === 0}
+                        onClick={() => {
+                          onChange(moveScenario(state, si, -1));
+                          onScenarioSelect(si - 1);
+                        }}
+                      >
+                        <span aria-hidden="true">← </span>Move earlier
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Move scenario right"
+                        disabled={si === state.scenarios.length - 1}
+                        onClick={() => {
+                          onChange(moveScenario(state, si, 1));
+                          onScenarioSelect(si + 1);
+                        }}
+                      >
+                        <span aria-hidden="true">→ </span>Move later
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Duplicate scenario"
+                        onClick={() => {
+                          close();
+                          duplicateScenario();
+                        }}
+                      >
+                        Duplicate
+                      </button>
+                      {confirmRemoveScenario ? (
+                        <span
+                          className="sbx-confirm"
+                          role="group"
+                          aria-label="Confirm remove scenario"
+                        >
+                          Remove {sc.title || 'this scenario'} and its entries?
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => {
+                              close();
+                              removeScenario();
+                            }}
+                          >
+                            Yes, remove
+                          </button>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => setConfirmRemoveScenario(false)}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label="Remove scenario"
+                          onClick={() => setConfirmRemoveScenario(true)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </>
+                  )}
+                </Menu>
+              </div>
             </div>
-          ) : (
-            <LedgerView books={allBooks(state, si)} onBooksChange={setBooksAt} at={at} />
+          </section>
+
+          <details className="sbx-panel sbx-coa">
+            <summary>
+              Chart of accounts ({state.entities.reduce((n, e) => n + e.accounts.length, 0)}{' '}
+              accounts, {state.entities.length} entit{state.entities.length > 1 ? 'ies' : 'y'})
+            </summary>
+            <ChartOfAccounts state={state} scenario={si} />
+          </details>
+
+          {/* ---- Entities and the views ---- */}
+          {oneEntityView && (
+            <EntityBar
+              uid={uid}
+              state={state}
+              sel={ei}
+              selectEntity={selectEntity}
+              addEntity={addEntity}
+              books={books}
+              setBooks={setBooks}
+              duplicateEntity={duplicateEntity}
+              confirmRemove={confirmRemoveEntity}
+              setConfirmRemove={setConfirmRemoveEntity}
+              removeEntity={removeEntity}
+              scenarioCount={state.scenarios.length}
+              showCodes={showCodes}
+              scope={
+                view === 'journal' && state.scenarios.length > 1 ? (
+                  <span className="vs-order" role="group" aria-label="Scenarios shown">
+                    <span className="vs-order-label">Show</span>
+                    <button
+                      type="button"
+                      aria-pressed={!allScenarios}
+                      onClick={() => setAllScenarios(false)}
+                    >
+                      This scenario
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={allScenarios}
+                      onClick={() => setAllScenarios(true)}
+                      title="Every scenario's journal for this entity, one after another"
+                    >
+                      All scenarios
+                    </button>
+                  </span>
+                ) : null
+              }
+            />
           )}
-        </AccountUsage.Provider>
-      </article>
+
+          {view === 'grid' && (
+            <p className="sh-notice sh-narrow-note">
+              The Grid is built for a wide desktop screen. On a small screen, the{' '}
+              <SandboxLink to={{ view: 'journal', entity: ei }}>Journal</SandboxLink> is easier to
+              use.
+            </p>
+          )}
+
+          <AccountUsage.Provider value={usage}>
+            {oneEntityView ? (
+              <div
+                id={`${uid}-panel`}
+                role="tabpanel"
+                aria-labelledby={`${uid}-tab-${ei}`}
+                className="sh-panel"
+              >
+                {view === 'journal' ? (
+                  <>
+                    {allScenarios ? (
+                      /* Every scenario's journal for this entity, one after another, each under its own
+                       heading — still editable. Click a heading to make that scenario the current one. */
+                      state.scenarios.map((x, i) => {
+                        const st = scenarioStatus(state, i);
+                        return (
+                          <section
+                            key={`${epoch}:${x.id}:${current.id}`}
+                            className={`sbx-allsc${i === si ? ' is-current' : ''}`}
+                            aria-label={`${scenarioNumber(i)} ${x.title || `Scenario ${i + 1}`}`}
+                          >
+                            <h3 className="sbx-allsc-head">
+                              <button
+                                type="button"
+                                aria-current={i === si ? 'true' : undefined}
+                                title="Make this the current scenario"
+                                onClick={() => selectScenario(i)}
+                              >
+                                <span className="sbx-sc-num">{scenarioNumber(i)}</span>
+                                {st !== 'empty' && (
+                                  <span
+                                    className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
+                                    aria-hidden="true"
+                                  >
+                                    {st === 'ok' ? '✓' : '✗'}
+                                  </span>
+                                )}
+                                {x.title || `Scenario ${i + 1}`}
+                              </button>
+                              {storyLine(x.text) && (
+                                <span className="sbx-allsc-story note">{storyLine(x.text)}</span>
+                              )}
+                            </h3>
+                            <JournalEditor
+                              entity={booksOf(state, i, ei)}
+                              onChange={(b) => onChange(withBooks(state, i, ei, b))}
+                              at={i === si ? at : undefined}
+                              idPrefix={i === si ? '' : `s${i + 1}-`}
+                              hint={false}
+                              parts={partsFor(i)}
+                              self={ei}
+                            />
+                          </section>
+                        );
+                      })
+                    ) : (
+                      <JournalEditor
+                        key={`${epoch}:${sc.id}:${current.id}`}
+                        entity={books}
+                        onChange={setBooks}
+                        at={at}
+                        parts={partsFor(si)}
+                        self={ei}
+                      />
+                    )}
+                    <details className="sbx-panel">
+                      <summary>Accounts ({current.accounts.length})</summary>
+                      <AccountsEditor entity={books} onChange={setBooks} />
+                    </details>
+                    <details className="sbx-panel">
+                      <summary>
+                        Opening balances in this scenario
+                        {books.opening ? ` (${books.opening.lines.length})` : ''}
+                      </summary>
+                      <OpeningEditor entity={books} onChange={setBooks} />
+                    </details>
+                  </>
+                ) : (
+                  <SheetGrid
+                    key={`${epoch}:${sc.id}:${current.id}`}
+                    entity={books}
+                    onChange={setBooks}
+                  />
+                )}
+              </div>
+            ) : (
+              <LedgerView books={allBooks(state, si)} onBooksChange={setBooksAt} at={at} />
+            )}
+          </AccountUsage.Provider>
+        </article>
+      </ShowCodes.Provider>
     </SandboxNavProvider>
   );
 }
@@ -804,6 +834,7 @@ function EntityBar({
   removeEntity,
   scenarioCount,
   scope,
+  showCodes,
 }: {
   uid: string;
   state: SandboxState;
@@ -819,6 +850,8 @@ function EntityBar({
   scenarioCount: number;
   /** The Journal's "This scenario | All scenarios" switch (none in the other views). */
   scope?: ReactNode;
+  /** Show the entity code field (codes and GL numbers are on). */
+  showCodes: boolean;
 }) {
   const summary = summarize(books);
   return (
@@ -826,7 +859,7 @@ function EntityBar({
       <Tabs
         label="Entities"
         heading="Entities"
-        names={state.entities.map((x, i) => x.name || `Entity ${i + 1}`)}
+        names={state.entities.map((x, i) => entityLabel(x, showCodes, `Entity ${i + 1}`))}
         sel={sel}
         onSelect={selectEntity}
         idOf={(i) => `${uid}-tab-${i}`}
@@ -845,11 +878,29 @@ function EntityBar({
             onChange={(e) => setBooks({ ...books, name: e.target.value })}
           />
         </label>
+        {showCodes && (
+          <label className="sh-rename">
+            <span>Code</span>
+            <input
+              className="sh-entity-code"
+              aria-label="Entity code"
+              placeholder="e.g. 1000"
+              size={6}
+              value={books.code ?? ''}
+              onChange={(e) => {
+                const next: EntityBooks = { ...books, code: e.target.value };
+                if (!e.target.value.trim()) delete next.code;
+                setBooks(next);
+              }}
+            />
+          </label>
+        )}
         {scope}
         <ColumnOrderToggle
-          manual={isManualOrder(books)}
+          mode={orderMode(books)}
+          byNumber={showCodes}
           disabled={books.accounts.length === 0}
-          onChange={(m) => setBooks(setManualOrder(books, m))}
+          onChange={(m) => setBooks(setOrderMode(books, m))}
         />
         <button
           type="button"

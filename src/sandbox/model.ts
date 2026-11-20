@@ -250,7 +250,7 @@ export const isManualOrder = (e: EntityBooks) => !!e.columnOrder?.length;
 /** Every account id in display order. In manual mode, accounts the order doesn't list yet go at the end. */
 export function orderedIds(e: EntityBooks): AccountId[] {
   const auto = canonicalOrder(e);
-  if (!isManualOrder(e)) return auto;
+  if (!isManualOrder(e)) return e.sortByNumber ? byNumber(e, auto) : auto;
   const have = new Set(auto);
   const manual = e.columnOrder!.filter((id) => have.has(id));
   return [...manual, ...auto.filter((id) => !manual.includes(id))];
@@ -262,6 +262,32 @@ export function orderedAccounts(e: EntityBooks): Account[] {
 }
 
 /** Switch auto ↔ manual. Manual starts from the order you're looking at, so nothing jumps. */
+/** Numbered accounts by GL number (numeric-aware: "2" before "10"), then unnumbered ones in `fallback` order. */
+function byNumber(e: EntityBooks, fallback: AccountId[]): AccountId[] {
+  const num = new Map(e.accounts.map((a) => [a.id, a.number?.trim() ?? '']));
+  const numbered = fallback
+    .filter((id) => num.get(id))
+    .sort((a, b) => num.get(a)!.localeCompare(num.get(b)!, undefined, { numeric: true }));
+  return [...numbered, ...fallback.filter((id) => !num.get(id))];
+}
+
+/** The account order: Auto (balance-sheet), By number (GL number), or Manual (your own). */
+export type OrderMode = 'auto' | 'number' | 'manual';
+export const orderMode = (e: EntityBooks): OrderMode =>
+  isManualOrder(e) ? 'manual' : e.sortByNumber ? 'number' : 'auto';
+
+/** Switch the account order. Manual starts from the order you're looking at, so nothing jumps. */
+export function setOrderMode(e: EntityBooks, mode: OrderMode): EntityBooks {
+  const current = orderedIds(e);
+  const next = withColumnOrder(
+    { ...e },
+    mode === 'manual' && e.accounts.length ? current : undefined,
+  );
+  if (mode === 'number') next.sortByNumber = true;
+  else delete next.sortByNumber;
+  return next;
+}
+
 export function setManualOrder(e: EntityBooks, manual: boolean): EntityBooks {
   return withColumnOrder(e, manual && e.accounts.length ? orderedIds(e) : undefined);
 }
@@ -308,12 +334,14 @@ export function addAccount(
   name: string,
   type: AccountType,
   contraOf?: AccountId,
+  number?: string,
 ): { entity: EntityBooks; id: AccountId } {
   const id = uniqueId(
     name,
     e.accounts.map((a) => a.id),
   );
   const account: Account = { id, name, type };
+  if (number?.trim()) account.number = number.trim();
   const candidates = contraCandidates(e.accounts, type);
   if (candidates.length)
     account.contraOf = candidates.some((c) => c.id === contraOf) ? contraOf! : candidates[0]!.id;
@@ -336,7 +364,8 @@ export function updateAccount(
   const accounts = e.accounts.map((a) => {
     if (a.id !== id) return a;
     const next: Account = { ...a, ...patch };
-    for (const k of ['subtitle', 'description'] as const) if (next[k] === '') delete next[k];
+    for (const k of ['subtitle', 'description', 'number'] as const)
+      if (next[k] !== undefined && !next[k]!.trim()) delete next[k];
     if (contraBase(next.type)) {
       const ok = contraCandidates(e.accounts, next.type, id).some((c) => c.id === next.contraOf);
       if (!ok) {
@@ -571,6 +600,8 @@ export function stateFromBooks(
         showBalanceSheets: b.showBalanceSheets,
       };
       if (b.columnOrder) def.columnOrder = b.columnOrder;
+      if (b.code) def.code = b.code;
+      if (b.sortByNumber) def.sortByNumber = true;
       const have = entities.find((e) => e.id === b.id);
       if (!have) entities.push(def);
       else

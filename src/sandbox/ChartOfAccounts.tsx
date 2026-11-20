@@ -2,6 +2,9 @@ import { Fragment } from 'react';
 import type { Account, SandboxState } from '@contracts';
 import { orderedAccounts, scenarioNumber, usageByScenario } from './model';
 import { SECTION_LABEL, sectionOf, typeLabel } from './EntityPanels';
+import { entityLabel, useShowCodes } from './codes';
+
+const SECTIONS = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'] as const;
 
 /** A type the section heading doesn't already say (Assets, Liabilities, Equity, Revenue, Expenses). */
 const plainType = (t: Account['type']) =>
@@ -14,7 +17,8 @@ const plainType = (t: Account['type']) =>
  */
 export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scenario: number }) {
   const names = state.scenarios.map((s, i) => s.title || `Scenario ${i + 1}`);
-  const cols = 3 + names.length;
+  const show = useShowCodes();
+  const cols = 3 + names.length + (show ? 1 : 0);
   return (
     <div className="coa">
       <p className="note coa-legend">
@@ -26,6 +30,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
           Chart of accounts: each entity’s accounts, and which scenarios use them
         </caption>
         <colgroup>
+          {show && <col className="coa-c-gl" />}
           <col className="coa-c-name" />
           <col className="coa-c-label" />
           {names.map((_, i) => (
@@ -35,6 +40,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
         </colgroup>
         <thead>
           <tr>
+            {show && <th scope="col">GL number</th>}
             <th scope="col">Account</th>
             <th scope="col">Label</th>
             {names.map((n, i) => (
@@ -54,7 +60,12 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
           </tr>
         </thead>
         {state.entities.map((e) => {
-          const accounts = orderedAccounts({ ...e, rows: [] });
+          // Grouped by section (Assets, Liabilities…), each in the entity's order (Auto, by GL number, or Manual).
+          const sectionRank = (t: Account['type']) => SECTIONS.indexOf(sectionOf(t));
+          const accounts = orderedAccounts({ ...e, rows: [] })
+            .map((a, i) => ({ a, i }))
+            .sort((x, y) => sectionRank(x.a.type) - sectionRank(y.a.type) || x.i - y.i)
+            .map((x) => x.a);
           const unused = accounts.filter((a) =>
             usageByScenario(state, e.id, a.id).every((x) => x === 0),
           ).length;
@@ -62,7 +73,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
             <tbody key={e.id} aria-label={`${e.name || 'Entity'} chart of accounts`}>
               <tr className="coa-entity">
                 <th scope="rowgroup" colSpan={cols}>
-                  {e.name || 'Unnamed entity'}{' '}
+                  {entityLabel(e, show, 'Unnamed entity')}{' '}
                   <span className="note">
                     {accounts.length} account{accounts.length === 1 ? '' : 's'}
                     {unused ? ` · ${unused} unused` : ''}
@@ -91,6 +102,7 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
                       </tr>
                     )}
                     <tr className="coa-row">
+                      {show && <td className="coa-gl">{a.number ?? ''}</td>}
                       <th scope="row" title={a.description}>
                         {a.name}
                         {!plainType(a.type) && (

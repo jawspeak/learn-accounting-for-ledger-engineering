@@ -39,6 +39,8 @@ export interface Account {
   description?: string;
   /** Sandbox: a short second line under the name, e.g. "Bank account" or "Employee payables". */
   subtitle?: string;
+  /** Sandbox: an optional GL account number (any format the user likes — no convention is imposed). */
+  number?: string;
 }
 
 export interface EntityCoA {

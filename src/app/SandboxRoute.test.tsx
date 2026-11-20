@@ -426,6 +426,53 @@ describe('scenarios', () => {
   });
 });
 
+describe('entity codes and GL numbers', () => {
+  const zapEx = () => EXAMPLES.find((x) => x.id === 'fbo')!.build();
+  const optionText = (label: string) =>
+    [...(screen.getByLabelText(label) as HTMLSelectElement).selectedOptions].map((o) => o.text);
+
+  it('hidden until the one Sandbox-wide switch is on; then shown in every view, and saved in the link', () => {
+    mount('journal', zapEx());
+    const toggle = screen.getByRole('checkbox', { name: 'Codes & GL numbers' }) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    expect(optionText('Entry 1 line 1 account')).toEqual(['Cash: FBO Account']);
+    expect(screen.queryByLabelText('Entity code')).toBeNull();
+
+    fireEvent.click(toggle);
+    // Journal: "1020 Cash: FBO Account"; the entity tabs carry their codes; the code is editable.
+    expect(optionText('Entry 1 line 1 account')).toEqual(['1020 Cash: FBO Account']);
+    expect(
+      within(screen.getByRole('tablist', { name: 'Entities' }))
+        .getAllByRole('tab')
+        .map((t) => t.textContent),
+    ).toEqual(['1000 Zap', '2000 First Example Bank', '3000 Bob’s Bank']);
+    expect((screen.getByLabelText('Entity code') as HTMLInputElement).value).toBe('1000');
+    // The Accounts panel has a GL number column; "By number" joins the account-order choices.
+    expect(
+      (screen.getByLabelText('GL number of Cash: FBO Account') as HTMLInputElement).value,
+    ).toBe('1020');
+    expect(screen.getByRole('button', { name: 'By number' })).toBeTruthy();
+    flush();
+    expect(urlState()!.showCodes).toBe(true);
+
+    // A number used twice in one entity is flagged, not blocked.
+    fireEvent.change(screen.getByLabelText('GL number of Wallet: Bob'), {
+      target: { value: '2010' },
+    });
+    expect(screen.getByLabelText('GL number of Wallet: Alice').className).toMatch(/is-dupe/);
+  });
+
+  it('the T-accounts and the chart of accounts show them too', () => {
+    const s = zapEx();
+    s.showCodes = true;
+    mount('taccounts', s);
+    expect(screen.getByRole('heading', { level: 2, name: '1000 Zap' })).toBeTruthy();
+    expect(screen.getAllByText('1020 Cash: FBO Account').length).toBeGreaterThan(0);
+    const chart = screen.getByRole('table', { name: /^Chart of accounts/ });
+    expect(within(chart).getAllByRole('columnheader')[0]!.textContent).toBe('GL number');
+  });
+});
+
 describe('opening balances', () => {
   it('read as a balance sheet: Assets, Liabilities, Equity with totals, and the A = L + E check', () => {
     mount('journal', bank()); // S1 "Deposit cash": You start with Cash $100 = Net Worth $100

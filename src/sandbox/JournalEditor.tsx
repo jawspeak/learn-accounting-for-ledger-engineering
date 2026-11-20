@@ -22,6 +22,7 @@ import {
   type EventPart,
 } from './model';
 import { SECTION_LABEL, sectionOf, TypeOptions, typeLabel, type BsSection } from './EntityPanels';
+import { accountLabel, useShowCodes } from './codes';
 import { Menu } from './Menu';
 import { SandboxLink } from './nav';
 import './journal.css';
@@ -150,6 +151,7 @@ export function JournalEditor({
   const [creating, setCreating] = useState<string | null>(null);
   const accounts = orderedAccounts(e);
   const narrow = useNarrow();
+  const show = useShowCodes();
 
   /** "+ Line": a new line, on the side that's short (type in the other column to switch it). */
   const addLineButton = (ri: number, n: number) => (
@@ -235,7 +237,7 @@ export function JournalEditor({
           <optgroup key={s} label={SECTION_LABEL[s]}>
             {inS.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name}
+                {accountLabel(a, show)}
               </option>
             ))}
           </optgroup>
@@ -522,18 +524,20 @@ function NewAccountForm({
   onCancel,
 }: {
   entity: EntityBooks;
-  onCreate(name: string, type: AccountType): void;
+  onCreate(name: string, type: AccountType, number?: string): void;
   onCancel(): void;
 }) {
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('asset');
+  const [number, setNumber] = useState('');
+  const show = useShowCodes();
   return (
     <form
       className="jx-new"
       aria-label="New account"
       onSubmit={(ev) => {
         ev.preventDefault();
-        if (name.trim()) onCreate(name.trim(), type);
+        if (name.trim()) onCreate(name.trim(), type, number);
       }}
     >
       {/* Focus moves here on purpose: the learner just chose "New account…" from the list. */}
@@ -553,6 +557,15 @@ function NewAccountForm({
         {/* Contra types only when there's something to reduce (the parent is picked; change it in Accounts). */}
         <TypeOptions accounts={entity.accounts} />
       </select>
+      {show && (
+        <input
+          aria-label="New account GL number"
+          placeholder="GL number"
+          size={8}
+          value={number}
+          onChange={(ev) => setNumber(ev.target.value)}
+        />
+      )}
       <button type="submit" className="btn" disabled={!name.trim()}>
         Add
       </button>

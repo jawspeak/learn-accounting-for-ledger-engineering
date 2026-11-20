@@ -3,6 +3,7 @@
 import { createContext, Fragment, useContext, useId, useState } from 'react';
 import type { Account, AccountId, AccountType, EntityBooks } from '@contracts';
 import { engine } from '@engine';
+import { accountLabel, useShowCodes } from './codes';
 import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
@@ -13,6 +14,7 @@ import {
   linesUsing,
   moveAccountInOrder,
   orderedAccounts,
+  orderMode,
   removeAccount,
   setOpening,
   summarize,
@@ -176,7 +178,18 @@ export function AccountsEditor({
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('asset');
   const [contraOf, setContraOf] = useState<AccountId>();
+  const [number, setNumber] = useState('');
+  const show = useShowCodes();
   const manual = isManualOrder(entity);
+  // Section headings only in the balance-sheet (Auto) order.
+  const sections = orderMode(entity) === 'auto';
+  /** GL numbers used more than once in this entity (flagged, not blocked). */
+  const dupes = new Set(
+    entity.accounts
+      .map((a) => a.number?.trim())
+      .filter((n, i, all): n is string => !!n && all.indexOf(n) !== i),
+  );
+  const isDupe = (a: Account) => !!a.number && dupes.has(a.number.trim());
   // The same order as the Grid's columns: balance-sheet order (auto) or the manual order.
   const listed = orderedAccounts(entity);
   const removeAsking = useRemoveAccount();
@@ -184,8 +197,9 @@ export function AccountsEditor({
   const add = () => {
     const n = name.trim();
     if (!n) return;
-    onChange(addAccount(entity, n, type, contraOf).entity);
+    onChange(addAccount(entity, n, type, contraOf, number).entity);
     setName('');
+    setNumber('');
     setContraOf(undefined);
   };
 
@@ -200,6 +214,7 @@ export function AccountsEditor({
         <table className="sbx-table">
           <thead>
             <tr>
+              {show && <th scope="col">GL number</th>}
               <th scope="col">Name</th>
               <th scope="col">Type</th>
               <th scope="col">
@@ -210,14 +225,30 @@ export function AccountsEditor({
           <tbody>
             {listed.map((a, i) => (
               <Fragment key={a.id}>
-                {!manual && (i === 0 || sectionOf(listed[i - 1]!.type) !== sectionOf(a.type)) && (
+                {sections && (i === 0 || sectionOf(listed[i - 1]!.type) !== sectionOf(a.type)) && (
                   <tr className="sbx-section-row">
-                    <th scope="rowgroup" colSpan={3}>
+                    <th scope="rowgroup" colSpan={show ? 4 : 3}>
                       {SECTION_LABEL[sectionOf(a.type)]}
                     </th>
                   </tr>
                 )}
                 <tr>
+                  {show && (
+                    <td>
+                      <input
+                        className={`sbx-gl${isDupe(a) ? ' is-dupe' : ''}`}
+                        aria-label={`GL number of ${a.name}`}
+                        size={8}
+                        value={a.number ?? ''}
+                        title={
+                          isDupe(a) ? 'Another account in this entity has this number' : undefined
+                        }
+                        onChange={(ev) =>
+                          onChange(updateAccount(entity, a.id, { number: ev.target.value }))
+                        }
+                      />
+                    </td>
+                  )}
                   <td>
                     <AccountNameInput
                       label={`Name of ${a.name}`}
@@ -304,6 +335,15 @@ export function AccountsEditor({
           add();
         }}
       >
+        {show && (
+          <input
+            aria-label="New account GL number"
+            placeholder="GL number"
+            size={8}
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+          />
+        )}
         <label htmlFor={`${uid}-n`} className="sr-only">
           New account name
         </label>
@@ -366,6 +406,7 @@ export function OpeningEditor({
   entity: EntityBooks;
   onChange(e: EntityBooks): void;
 }) {
+  const show = useShowCodes();
   if (entity.accounts.length === 0) return <p className="note">Add accounts first.</p>;
   const amountOf = (id: string) => entity.opening?.lines.find((l) => l.accountId === id)?.amount;
   const accounts = orderedAccounts(entity);
@@ -374,7 +415,7 @@ export function OpeningEditor({
   const row = (a: Account) => (
     <tr key={a.id} className="sbx-bs-acct">
       <th scope="row">
-        {a.name}
+        {accountLabel(a, show)}
         {(a.type.startsWith('contra-') || a.type === 'dividend' || a.type === 'expense') && (
           <span className="note"> ({typeLabel(a.type).toLowerCase()})</span>
         )}

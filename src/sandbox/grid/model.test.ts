@@ -7,6 +7,8 @@ import {
   addAccount,
   addEntry,
   isManualOrder,
+  orderMode,
+  setOrderMode,
   moveAccountInOrder,
   moveRow,
   orderedAccounts,
@@ -111,6 +113,23 @@ describe('accounts', () => {
 });
 
 describe('one account order (both views)', () => {
+  it('"By number" orders by GL number (numeric-aware), unnumbered accounts after in Auto order', () => {
+    let e = base();
+    e = updateAccount(e, 'revenue', { number: '10' });
+    e = updateAccount(e, 'payable', { number: '2' });
+    e = setOrderMode(e, 'number');
+    expect(orderMode(e)).toBe('number');
+    expect(orderedIds(e)).toEqual(['payable', 'revenue', 'cash']); // "2" before "10"; Cash has none
+    // Back to Auto: the balance-sheet order again; a blank number is cleared, not stored.
+    e = setOrderMode(e, 'auto');
+    expect(orderedIds(e)).toEqual(['cash', 'payable', 'revenue']);
+    expect('number' in updateAccount(e, 'revenue', { number: ' ' }).accounts[1]!).toBe(false);
+    // Manual starts from what you see.
+    e = setOrderMode(setOrderMode(e, 'number'), 'manual');
+    expect(e.columnOrder).toEqual(['payable', 'revenue', 'cash']);
+    expect(e.sortByNumber).toBeUndefined();
+  });
+
   it('auto is the balance-sheet order, whatever order accounts were added in', () => {
     expect(isManualOrder(base())).toBe(false);
     expect(orderedIds(base())).toEqual(['cash', 'payable', 'revenue']);

@@ -24,6 +24,7 @@ import {
   setOpening,
   updateAccount,
 } from '../model';
+import { useShowCodes } from '../codes';
 import { ContraParentSelect, TypeOptions, useRemoveAccount } from '../EntityPanels';
 import { equalsAt, setAmount, setLabel, sheetBalance, toneOf } from './model';
 
@@ -51,6 +52,8 @@ export function SheetGrid({
   const [showOpening, setShowOpening] = useState(() => !!e.opening);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('asset');
+  const [newNumber, setNewNumber] = useState('');
+  const show = useShowCodes();
 
   // One account order for every view: auto (A = L + E) or the manual order; ← → only in manual.
   const accounts = orderedAccounts(e);
@@ -98,9 +101,10 @@ export function SheetGrid({
   const add = () => {
     const name = newName.trim();
     if (!name) return;
-    const { entity, id } = addAccount(e, name, newType);
+    const { entity, id } = addAccount(e, name, newType, undefined, newNumber);
     onChange(entity);
     setNewName('');
+    setNewNumber('');
     // Jump to the new column's first debit cell (auto order may place it mid-grid), ready to type.
     const col = FIRST_AMOUNT_COL + orderedIds(entity).indexOf(id) * 2;
     setTimeout(() => focusCell(0, col));
@@ -222,7 +226,7 @@ export function SheetGrid({
               </th>
             ))}
             {/* spans the name, label, type and debit/credit header rows */}
-            <th rowSpan={4} className="sh-add-col sh-add">
+            <th rowSpan={show ? 5 : 4} className="sh-add-col sh-add">
               <form
                 onSubmit={(ev) => {
                   ev.preventDefault();
@@ -236,6 +240,14 @@ export function SheetGrid({
                   value={newName}
                   onChange={(ev) => setNewName(ev.target.value)}
                 />
+                {show && (
+                  <input
+                    aria-label="New account GL number"
+                    placeholder="GL number"
+                    value={newNumber}
+                    onChange={(ev) => setNewNumber(ev.target.value)}
+                  />
+                )}
                 <select
                   aria-label="New account type"
                   value={newType}
@@ -249,6 +261,16 @@ export function SheetGrid({
               </form>
             </th>
           </tr>
+          {show &&
+            headRow('GL number', (a) => (
+              <input
+                className="sh-subtitle"
+                aria-label={`${a.name} GL number`}
+                placeholder="GL number"
+                value={a.number ?? ''}
+                onChange={(ev) => onChange(updateAccount(e, a.id, { number: ev.target.value }))}
+              />
+            ))}
           {headRow('Label', (a) => (
             <input
               className="sh-subtitle"

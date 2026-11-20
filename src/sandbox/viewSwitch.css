@@ -71,6 +71,8 @@
 }
 .vs-order button:last-of-type {
   border-radius: 0 6px 6px 0;
+}
+.vs-order button + button {
   border-left: none;
 }
 .vs-order button[aria-pressed='true'] {
@@ -78,7 +80,7 @@
   border-color: var(--accent);
   font-weight: 600;
 }
-.vs-order button:last-of-type[aria-pressed='true'] {
+.vs-order button + button[aria-pressed='true'] {
   border-left: 1px solid var(--accent);
 }
 .vs-order button:disabled {

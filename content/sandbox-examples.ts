@@ -221,12 +221,41 @@ function zapWallet(): SandboxState {
     },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   ];
-  const Z = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
-    books('zap', 'Zap', zap, e, o);
-  const B = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
-    books('bank', bankName(), bank, e, o);
-  const BB = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
-    books('bobs-bank', 'Bob’s Bank', bobsBank, e, o);
+  // Example entity codes and GL numbers (turn on "Codes & GL numbers" to see them). Just example data — the
+  // Sandbox imposes no numbering convention.
+  const gl = (accounts: Account[], numbers: Record<string, string>) =>
+    accounts.map((a) => (numbers[a.id] ? { ...a, number: numbers[a.id] } : a));
+  const zapGl = gl(zap, {
+    'operating-cash': '1010',
+    'fbo-cash': '1020',
+    'wallet-alice': '2010',
+    'wallet-bob': '2020',
+    'paid-in-capital': '3010',
+    'fee-revenue': '4010',
+  });
+  const bankGl = gl(bank, {
+    'reserves-fed': '1100',
+    'deposits-checking': '2100',
+    'deposits-fbo': '2150',
+    'paid-in-capital': '3000',
+  });
+  const bobsGl = gl(bobsBank, {
+    'reserves-fed': '1100',
+    'deposits-checking': '2100',
+    'paid-in-capital': '3000',
+  });
+  const Z = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) => ({
+    ...books('zap', 'Zap', zapGl, e, o),
+    code: '1000',
+  });
+  const B = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) => ({
+    ...books('bank', bankName(), bankGl, e, o),
+    code: '2000',
+  });
+  const BB = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) => ({
+    ...books('bobs-bank', 'Bob’s Bank', bobsGl, e, o),
+    code: '3000',
+  });
   return stateFromBooks('Zap — a wallet on an FBO account', [
     {
       id: 'top-up',

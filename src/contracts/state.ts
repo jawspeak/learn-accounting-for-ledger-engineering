@@ -21,10 +21,14 @@ export const SANDBOX_VERSION = 3 as const;
 export interface SandboxEntity {
   id: EntityId;
   name: string;
+  /** An optional short code for the entity (e.g. "1000"), for organising — shown with the GL numbers. */
+  code?: string;
   accounts: Account[];
   showBalanceSheets: boolean;
   /** Manual column order (account ids); omit for canonical order. */
   columnOrder?: string[];
+  /** Order accounts by their GL number (when there's no manual order). */
+  sortByNumber?: boolean;
 }
 
 /**
@@ -55,6 +59,8 @@ export interface SandboxScenario {
 export interface SandboxState {
   v: typeof SANDBOX_VERSION;
   title?: string;
+  /** Show entity codes and GL account numbers in every view. */
+  showCodes?: boolean;
   entities: SandboxEntity[];
   scenarios: SandboxScenario[];
 }

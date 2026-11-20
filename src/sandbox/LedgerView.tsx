@@ -4,15 +4,16 @@ import { BalanceSheetPanel } from '../components/builder/BalanceSheetPanel';
 import { formatDollars } from '../components/builder/model';
 import '../components/animations/animations.css';
 import { useScrollToAt } from '../lib/useScrollToAt';
+import { accountLabel, entityLabel, useShowCodes } from './codes';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
 import { SandboxLink } from './nav';
 import { entryAnchor } from './JournalEditor';
 import {
-  isManualOrder,
+  orderMode,
   isPosted,
   orderedAccounts,
   postedRows,
-  setManualOrder,
+  setOrderMode,
   summarize,
   typeResolver,
 } from './model';
@@ -66,7 +67,11 @@ function EntityLedger({
   const left = shown.filter((a) => a.type === 'asset' || a.type === 'contra-asset');
   const liab = shown.filter((a) => a.type === 'liability' || a.type === 'contra-liability');
   const eq = shown.filter((a) => !left.includes(a) && !liab.includes(a));
-  const nameOf = (id: AccountId) => e.accounts.find((a) => a.id === id)?.name ?? id;
+  const show = useShowCodes();
+  const nameOf = (id: AccountId) => {
+    const a = e.accounts.find((x) => x.id === id);
+    return a ? accountLabel(a, show) : id;
+  };
   // The same rows in every T of this entity, so a row means the same thing everywhere: the opening balance
   // (if any T has one), then one row per entry, in order (blank where the entry doesn't touch the account),
   // then the ending balance.
@@ -103,11 +108,12 @@ function EntityLedger({
       aria-label={`${e.name || 'Unnamed entity'}’s ledger`}
     >
       <div className="lv-entity-head">
-        <h2>{e.name || `Entity ${index + 1}`}</h2>
+        <h2>{entityLabel(e, show, `Entity ${index + 1}`)}</h2>
         <ColumnOrderToggle
-          manual={isManualOrder(e)}
+          mode={orderMode(e)}
+          byNumber={show}
           disabled={e.accounts.length === 0}
-          onChange={(m) => onChange(setManualOrder(e, m))}
+          onChange={(m) => onChange(setOrderMode(e, m))}
         />
         <label className="sbx-check">
           <input
@@ -218,6 +224,7 @@ function TAccount({
   /** Which entity this T belongs to (its entry numbers link to that entity’s Journal). */
   owner: number;
 }) {
+  const show = useShowCodes();
   const normal = engine.normalSide(a.type);
   const bal = balance.lines.find((l) => l.accountId === a.id)?.amount ?? 0;
   const balSide = bal >= 0 ? normal : other(normal);
@@ -239,7 +246,7 @@ function TAccount({
     >
       <div className="tacct__head">
         <span className="tacct__name" title={a.name}>
-          {a.name}
+          {accountLabel(a, show)}
         </span>
         <span className="tacct__type">{typeLabel(a.type)}</span>
       </div>

@@ -30,6 +30,7 @@ export const accountSchema = z
     equityGroup: z.enum(['paid-in', 'retained']).optional(),
     description: z.string().optional(),
     subtitle: z.string().optional(),
+    number: z.string().optional(),
   })
   .refine((a) => !a.type.startsWith('contra-') || !!a.contraOf, 'contra accounts need contraOf');
 
@@ -227,13 +228,16 @@ export const sectionSchema = z.object({
 export const sandboxStateSchema = z.object({
   v: z.literal(3),
   title: z.string().optional(),
+  showCodes: z.boolean().optional(),
   entities: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
+      code: z.string().optional(),
       accounts: z.array(accountSchema),
       showBalanceSheets: z.boolean(),
       columnOrder: z.array(z.string()).optional(),
+      sortByNumber: z.boolean().optional(),
     }),
   ),
   scenarios: z
