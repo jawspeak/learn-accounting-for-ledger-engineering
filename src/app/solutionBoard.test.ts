@@ -41,6 +41,17 @@ describe('solution boards (Open solution in Sandbox / Spreadsheet)', () => {
     },
   );
 
+  it('the other side lines up with the event it books: the bank sees the cash-out only when it settles (E2)', () => {
+    const p = problems['11-ach-cashout'] as BookingProblem;
+    const board = boardFor(p, engine.pickerAccounts(p, entities.zap!), solvedRows(p), true);
+    const [e1, e2] = board.scenarios[0]!.events;
+    expect(e1!.none).toEqual(['bank']); // Monday's request: only in Zap's ledger
+    expect(e2!.lines.bank!.map((l) => [l.accountId, l.side])).toEqual([
+      ['deposits-fbo', 'dr'],
+      ['reserves-fed', 'cr'],
+    ]);
+  });
+
   it('without the pair, the board is just this problem’s books', () => {
     const p = problems['03-cash-to-checking'] as BookingProblem;
     const board = boardFor(p, engine.pickerAccounts(p, entities.you!), [], false);

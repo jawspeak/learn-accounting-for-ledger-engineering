@@ -368,7 +368,7 @@ describe('scenarios', () => {
     ).toHaveLength(3);
     expect(
       within(screen.getByRole('tablist', { name: 'Entities' })).getAllByRole('tab'),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it('the chart of accounts: every entity’s accounts with their labels, and which scenarios use them', () => {

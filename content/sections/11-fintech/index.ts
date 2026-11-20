@@ -115,6 +115,7 @@ const mod: SectionModule = {
       '11-fee-and-sweep',
       '11-sweep-bank',
       '11-ach-cashout',
+      '11-ach-cashout-bank',
       '11-ach-return',
       '11-wrong-customer',
       '11-suspense',
@@ -442,10 +443,63 @@ const mod: SectionModule = {
         MISSING_ACCOUNT: 'Monday needs the clearing account: Bob’s balance moves into **Clearing: Pending ACH Cash-outs** until settlement.',
         WRONG_ROW: 'Cash: FBO only changes on Wednesday, when the ACH settles.',
       },
+      perspectivePairId: '11-ach-cashout-bank',
       solution: [
         row('t1', 'Bob requests $50 cash-out', dr('cbp-bob', 50), cr('ach-cashout-clearing', 50)),
         row('t2', 'ACH settles', dr('ach-cashout-clearing', 50), cr('cash-fbo', 50)),
       ],
+    },
+    {
+      id: '11-ach-cashout-bank',
+      sectionId: '11-fintech',
+      kind: 'booking',
+      title: 'The cash-out settles, from the bank’s side',
+      role: 'practice',
+      difficulty: 2,
+      entityId: 'bank',
+      prompt:
+        'Same cash-out, other books. On **Wednesday** Bob’s **$50** ACH settles: it leaves **Zap’s FBO account** at First Example Bank for Bob’s checking account at **another bank**, settling between the two banks through the Federal Reserve. Book the settlement in **First Example Bank’s** books. (Monday’s request was only in Zap’s ledger — the bank saw nothing until the ACH settled.)',
+      hints: [
+        'The bank now owes $50 less on one deposit account. Which one — and does the bank know it’s Bob’s money?',
+        'The money goes to a *different* bank. How do banks pay each other — and which of First Example Bank’s assets goes down?',
+      ],
+      explanation:
+        '**Dr Deposits: FBO Accounts 50 / Cr Reserves at the Federal Reserve 50.** The bank owes $50 less on the FBO account, and pays it out to Bob’s bank through the Fed — so its reserves fall by $50. Both sides of its balance sheet shrink.\n\nCompare paying a customer at the **same** bank (the fee sweep): that was a liability-to-liability swap, and reserves didn’t move. Money leaving for another bank always moves reserves. In Bob’s bank’s books the mirror image happens: Dr Reserves at the Fed 50 / Cr Customer Deposits 50.',
+      perspectivePairId: '11-ach-cashout',
+      showBalanceSheets: true,
+      opening: bs({
+        'reserves-fed': 10000,
+        'deposits-business': 5851,
+        'deposits-fbo': 149,
+        'paid-in-capital': 3000,
+        'retained-earnings': 1000,
+      }),
+      trapAccounts: [
+        {
+          id: 'zap-clearing-trap',
+          name: 'Clearing: Pending ACH Cash-outs',
+          type: 'liability',
+          trap: {
+            kind: 'counterparty',
+            explanation: 'The pending cash-out is **Zap’s** clearing account. The bank only sees the FBO deposit go down when the ACH settles.',
+          },
+        },
+        {
+          id: 'bobs-bank-deposit-trap',
+          name: 'Bob’s Checking (at his bank)',
+          type: 'liability',
+          trap: {
+            kind: 'counterparty',
+            explanation: 'Bob’s checking account is a liability of **Bob’s bank**, not First Example Bank. Here the money leaves through the Fed: **Reserves at the Federal Reserve**.',
+          },
+        },
+      ],
+      diagnosticExplanations: {
+        EXTRA_ACCOUNT:
+          'The money leaves for another bank, so it goes through **Reserves at the Federal Reserve** — not vault cash, and not another deposit account at this bank.',
+        WRONG_SIDE: 'The FBO deposit (a liability) **decreases** → debit. Reserves (an asset) **decrease** → credit.',
+      },
+      solution: [row('t1', 'ACH out to Bob’s bank', dr('deposits-fbo', 50), cr('reserves-fed', 50))],
     },
     {
       id: '11-ach-return',

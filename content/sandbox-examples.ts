@@ -195,7 +195,7 @@ function zapWallet(): SandboxState {
       id: 'deposits-checking',
       name: 'Customer Deposits: Checking',
       type: 'liability',
-      subtitle: 'Alice, Bob, Zap’s operating account…',
+      subtitle: 'Alice, Zap’s operating account…',
     },
     {
       id: 'deposits-fbo',
@@ -205,10 +205,28 @@ function zapWallet(): SandboxState {
     },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
   ]);
+  // Bob banks somewhere else, so his cash-out leaves First Example Bank and settles through the Fed.
+  const bobsBank: Account[] = [
+    {
+      id: 'reserves-fed',
+      name: 'Reserves at the Federal Reserve',
+      type: 'asset',
+      subtitle: 'Payments between banks settle here',
+    },
+    {
+      id: 'deposits-checking',
+      name: 'Customer Deposits: Checking',
+      type: 'liability',
+      subtitle: 'Bob, …',
+    },
+    { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
+  ];
   const Z = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
     books('zap', 'Zap', zap, e, o);
   const B = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
     books('bank', bankName(), bank, e, o);
+  const BB = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('bobs-bank', 'Bob’s Bank', bobsBank, e, o);
   return stateFromBooks('Zap — a wallet on an FBO account', [
     {
       id: 'top-up',
@@ -274,13 +292,17 @@ function zapWallet(): SandboxState {
       id: 'cash-out',
       title: 'Bob cashes out, less a $1 fee',
       text:
-        'Bob withdraws his **$20** to his checking account. Zap keeps a **$1** fee, then sweeps the fee from the FBO ' +
-        'account into its own operating account. Two events:\n\n' +
-        '1. **E1 — the cash-out.** One entry in Zap’s books with three lines: Bob’s wallet goes down $20, $19 leaves ' +
-        'the FBO account, and $1 is Zap’s fee revenue. The bank moves $19 from the FBO deposit to Bob’s checking.\n' +
-        '2. **E2 — the fee sweep**, later: that $1 must leave the FBO account — it’s no longer users’ money.\n\n' +
-        'Check the reconciliation: the bank’s **Deposits: FBO Accounts** ends at $30, exactly Zap’s ' +
-        '**Cash: FBO Account** — and exactly what Zap owes its users (Alice’s $30).',
+        'Bob withdraws his **$20** to his checking account at **Bob’s Bank** — a different bank. Zap keeps a **$1** ' +
+        'fee, then sweeps the fee from the FBO account into its own operating account. Two events, three sets of books:\n\n' +
+        '1. **E1 — the cash-out.** Zap: one entry with three lines — Bob’s wallet goes down $20, $19 leaves the FBO ' +
+        'account, and $1 is Zap’s fee revenue. First Example Bank owes $19 less on the FBO deposit and pays it out ' +
+        'through the **Federal Reserve**, so its reserves fall $19. Bob’s Bank receives the $19 in its reserves and ' +
+        'now owes it to Bob.\n' +
+        '2. **E2 — the fee sweep**, later: that $1 must leave the FBO account — it’s no longer users’ money. Both ' +
+        'accounts are at First Example Bank, so no reserves move; Bob’s Bank has no entry.\n\n' +
+        'Check the reconciliation: First Example Bank’s **Deposits: FBO Accounts** ends at $30, exactly Zap’s ' +
+        '**Cash: FBO Account** — and exactly what Zap owes its users (Alice’s $30). The $19 that left its reserves ' +
+        'is the $19 that arrived in Bob’s Bank’s.',
       books: [
         Z(
           [
@@ -302,9 +324,15 @@ function zapWallet(): SandboxState {
         ),
         B(
           [
-            ['FBO → Bob’s checking', ['deposits-fbo', 'dr', 19], ['deposits-checking', 'cr', 19]],
+            // Bob banks elsewhere: the $19 leaves through the Fed, so First Example Bank's reserves fall.
             [
-              'FBO → Zap’s operating account',
+              'Bob cashes out $20, less a $1 fee',
+              ['deposits-fbo', 'dr', 19],
+              ['reserves-fed', 'cr', 19],
+            ],
+            // The sweep stays inside First Example Bank (Zap's operating account is here too): no reserves move.
+            [
+              'Sweep the fee to operating',
               ['deposits-fbo', 'dr', 1],
               ['deposits-checking', 'cr', 1],
             ],
@@ -313,6 +341,21 @@ function zapWallet(): SandboxState {
             ['reserves-fed', 1000],
             ['deposits-checking', 450],
             ['deposits-fbo', 50],
+            ['paid-in-capital', 500],
+          ],
+        ),
+        // Bob's bank receives the $19 through the Fed and owes it to Bob. The sweep (E2) isn't in its books.
+        BB(
+          [
+            [
+              'Bob cashes out $20, less a $1 fee',
+              ['reserves-fed', 'dr', 19],
+              ['deposits-checking', 'cr', 19],
+            ],
+          ],
+          [
+            ['reserves-fed', 2000],
+            ['deposits-checking', 1500],
             ['paid-in-capital', 500],
           ],
         ),
@@ -431,6 +474,10 @@ function payroll(): SandboxState {
 
 export const EXAMPLES: { id: string; label: string; build: () => SandboxState }[] = [
   { id: 'bank', label: 'You and your bank (3 scenarios)', build: youAndYourBank },
-  { id: 'fbo', label: 'Zap — a wallet on an FBO account (3 scenarios)', build: zapWallet },
+  {
+    id: 'fbo',
+    label: 'Zap — a wallet on an FBO account (3 scenarios, 3 entities)',
+    build: zapWallet,
+  },
   { id: 'payroll', label: 'A payroll provider (2 scenarios)', build: payroll },
 ];

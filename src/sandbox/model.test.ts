@@ -5,6 +5,7 @@ import { engine } from '@engine';
 import { EXAMPLES } from '../../content/sandbox-examples';
 import {
   addScenarioTo,
+  allBooks,
   applyAccounts,
   booksOf,
   duplicateEntity,
@@ -175,6 +176,21 @@ describe('entities × scenarios', () => {
     expect(s.scenarios.every((sc) => sc.events.every((ev) => !(copy.id in ev.lines)))).toBe(true);
   });
 
+  it('Bob’s cash-out settles through the Fed: what leaves one bank’s reserves arrives in the other’s', () => {
+    const s = ex();
+    const reserves = (entityId: string) =>
+      allBooks(s, 2)
+        .find((b) => b.id === entityId)!
+        .rows.flatMap((r) => r.postings)
+        .filter((p) => p.accountId === 'reserves-fed')
+        .map((p) => [p.side, p.amount]);
+    expect(reserves('bank')).toEqual([['cr', 1900]]); // First Example Bank pays out $19
+    expect(reserves('bobs-bank')).toEqual([['dr', 1900]]); // Bob's Bank receives it
+    // E2, the fee sweep, stays inside First Example Bank: Bob's Bank has no entry.
+    expect(eventParts(s, 2)[1]!.map((p) => p.part)).toEqual(['posted', 'posted', 'none']);
+    expect(scenarioStatus(s, 2)).toBe('ok');
+  });
+
   it('events are shared: one row per event in every entity, the same label and number (E1…)', () => {
     let s = ex();
     const zap = s.entities.findIndex((e) => e.id === 'zap');
@@ -199,6 +215,7 @@ describe('entities × scenarios', () => {
     expect(eventParts(s, 1)[0]!.map((p) => [p.entity, p.part])).toEqual([
       ['Zap', 'posted'],
       ['First Example Bank', 'none'],
+      ['Bob’s Bank', 'none'],
     ]);
     expect(scenarioStatus(s, 1)).toBe('ok');
     // Clear "no entry" for the bank without filling it in: its side is missing, so the scenario is ✗.

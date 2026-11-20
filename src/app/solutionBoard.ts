@@ -83,6 +83,20 @@ export function boardFor(
     books.push(
       sandboxEntity(pair, engine.pickerAccounts(pair, entities[pair.entityId]!), solvedRows(pair)),
     );
+  // Rows line up by position as shared events (E1, E2…). When one side books fewer events, its rows are the
+  // later ones — the bank only sees a cash-out when it settles, or a sweep after the fee — so pad its start
+  // with "no entry".
+  const n = Math.max(...books.map((b) => b.rows.length));
+  for (const b of books)
+    if (b.rows.length < n)
+      b.rows = [
+        ...Array.from({ length: n - b.rows.length }, (_, i) => ({
+          id: `pad${i + 1}`,
+          postings: [],
+          none: true,
+        })),
+        ...b.rows,
+      ];
   return stateFromBooks(withPair ? `${problem.title} — solution` : problem.title, [
     { id: problem.id, title: problem.title, text: problem.prompt, books },
   ]);
