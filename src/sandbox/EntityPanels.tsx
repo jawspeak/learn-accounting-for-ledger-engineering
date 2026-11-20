@@ -2,6 +2,7 @@
  *  and the small account controls every view uses (type options, "reduces…", remove-with-confirm). */
 import { createContext, Fragment, useContext, useId, useState } from 'react';
 import type { Account, AccountId, AccountType, EntityBooks } from '@contracts';
+import { engine } from '@engine';
 import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
@@ -15,6 +16,7 @@ import {
   removeAccount,
   setOpening,
   summarize,
+  typeResolver,
   updateAccount,
 } from './model';
 
@@ -353,6 +355,10 @@ export function sectionOf(t: AccountType): BsSection {
   return 'equity';
 }
 
+/** Balance-sheet groups for the opening balances: the three sections, and the income-statement accounts. */
+type BsGroup = 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+const groupOf = (t: AccountType): BsGroup => sectionOf(t);
+
 export function OpeningEditor({
   entity,
   onChange,
@@ -362,32 +368,91 @@ export function OpeningEditor({
 }) {
   if (entity.accounts.length === 0) return <p className="note">Add accounts first.</p>;
   const amountOf = (id: string) => entity.opening?.lines.find((l) => l.accountId === id)?.amount;
+  const accounts = orderedAccounts(entity);
+  const inGroup = (g: BsGroup) => accounts.filter((a) => groupOf(a.type) === g);
+  const eq = engine.checkEquation(entity.opening ?? { lines: [] }, typeResolver(entity));
+  const row = (a: Account) => (
+    <tr key={a.id} className="sbx-bs-acct">
+      <th scope="row">
+        {a.name}
+        {(a.type.startsWith('contra-') || a.type === 'dividend' || a.type === 'expense') && (
+          <span className="note"> ({typeLabel(a.type).toLowerCase()})</span>
+        )}
+      </th>
+      <td className="sbx-bs-amt">
+        <OpeningInput
+          label={`Opening balance for ${a.name}`}
+          cents={amountOf(a.id)}
+          onCents={(c) => onChange(setOpening(entity, a.id, c))}
+        />
+      </td>
+    </tr>
+  );
+  const total = (label: string, cents: number) => (
+    <tr className="sbx-bs-total">
+      <th scope="row">{label}</th>
+      <td className="sbx-bs-amt">{formatDollars(cents)}</td>
+    </tr>
+  );
+  const pnl = [...inGroup('revenue'), ...inGroup('expenses')];
   return (
     <div>
       <p className="note">
-        On each account’s normal side (cents allowed; negative = abnormal). Blank or 0 means no
-        opening balance.
+        The opening balance sheet: each account on its normal side (cents allowed; negative =
+        abnormal). Blank or 0 means no opening balance.
       </p>
-      <table className="sbx-table">
+      {/* A balance sheet in report form: Assets, then Liabilities and Equity, each with its total. */}
+      <table className="sbx-bs">
+        <caption className="sr-only">Opening balance sheet</caption>
         <tbody>
-          {orderedAccounts(entity).map((a) => {
-            const amt = amountOf(a.id);
-            return (
-              <tr key={a.id}>
-                <th scope="row">
-                  {a.name} <span className="note">({typeLabel(a.type)})</span>
-                </th>
-                <td>
-                  <OpeningInput
-                    label={`Opening balance for ${a.name}`}
-                    cents={amt}
-                    onCents={(c) => onChange(setOpening(entity, a.id, c))}
-                  />
-                </td>
-              </tr>
-            );
-          })}
+          <tr className="sbx-bs-section">
+            <th scope="rowgroup" colSpan={2}>
+              Assets
+            </th>
+          </tr>
+          {inGroup('assets').map(row)}
+          {total('Total assets', eq.assets)}
         </tbody>
+        <tbody>
+          <tr className="sbx-bs-section">
+            <th scope="rowgroup" colSpan={2}>
+              Liabilities
+            </th>
+          </tr>
+          {inGroup('liabilities').map(row)}
+          {total('Total liabilities', eq.liabilities)}
+        </tbody>
+        <tbody>
+          <tr className="sbx-bs-section">
+            <th scope="rowgroup" colSpan={2}>
+              Equity
+            </th>
+          </tr>
+          {inGroup('equity').map(row)}
+          {pnl.length > 0 && (
+            <>
+              {/* Income-statement accounts roll into equity; at the start of a period they're usually 0. */}
+              <tr className="sbx-bs-sub">
+                <th scope="rowgroup" colSpan={2}>
+                  Revenue &amp; expenses <span className="note">(usually 0 at the start)</span>
+                </th>
+              </tr>
+              {pnl.map(row)}
+            </>
+          )}
+          {total('Total equity', eq.equity)}
+        </tbody>
+        <tfoot>
+          {total('Total liabilities + equity', eq.liabilities + eq.equity)}
+          <tr className="sbx-bs-check">
+            <td colSpan={2}>
+              <Mark ok={eq.balanced} /> A = L + E
+              {eq.balanced
+                ? ''
+                : ` — off by ${formatDollars(Math.abs(eq.assets - eq.liabilities - eq.equity))}`}
+            </td>
+          </tr>
+        </tfoot>
       </table>
       {entity.opening && (
         <button

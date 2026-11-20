@@ -438,3 +438,102 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
+
+/* Opening balances as a balance sheet (report form): Assets, Liabilities, Equity — accounts indented under
+   their section, amounts in one right-aligned column, a total under each section, the check at the foot. */
+.sbx-bs {
+  width: 100%;
+  max-width: 34rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: var(--space-2);
+}
+.sbx-bs th,
+.sbx-bs td {
+  padding: 0.15rem 0.5rem;
+  text-align: left;
+  font-weight: 400;
+}
+.sbx-bs-section th {
+  padding-top: 0.45rem;
+  font-weight: 700;
+}
+.sbx-bs-sub th {
+  padding-top: 0.3rem;
+  padding-left: 1.25rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sbx-bs-acct > * {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.sbx-bs-acct th {
+  padding-left: 1.5rem;
+}
+.sbx-bs-amt {
+  width: 9rem;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+.sbx-bs-amt input {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: right;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.sbx-bs-total > * {
+  font-weight: 600 !important;
+  border-top: 1px solid var(--fg);
+}
+.sbx-bs tfoot .sbx-bs-total > * {
+  border-top: 2px solid var(--fg);
+}
+.sbx-bs-check td {
+  padding-top: 0.25rem;
+  padding-bottom: 0.35rem;
+}
+
+/* Journal, all scenarios: each scenario's journal under a ruled heading "S2 ✓ Title — first line of the story". */
+.sbx-allsc {
+  margin-top: var(--space-3);
+}
+.sbx-allsc-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid var(--fg);
+  font-size: var(--text-base);
+}
+.sbx-allsc-head button {
+  font: inherit;
+  font-weight: 700;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.sbx-allsc-head button:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sbx-allsc.is-current .sbx-allsc-head {
+  border-bottom-color: var(--accent);
+}
+.sbx-allsc-story {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+.sbx-allsc .jx {
+  margin-top: var(--space-1);
+}

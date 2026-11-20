@@ -352,6 +352,65 @@ describe('scenarios', () => {
   });
 });
 
+describe('opening balances', () => {
+  it('read as a balance sheet: Assets, Liabilities, Equity with totals, and the A = L + E check', () => {
+    mount('journal', bank()); // S1 "Deposit cash": You start with Cash $100 = Net Worth $100
+    const sheet = screen.getByRole('table', { name: 'Opening balance sheet' });
+    const rows = [...sheet.querySelectorAll('tr')].map((tr) =>
+      [...tr.children]
+        .map((c) => (c.querySelector('input') as HTMLInputElement | null)?.value ?? c.textContent)
+        .join(' | '),
+    );
+    expect(rows).toEqual([
+      'Assets',
+      'Cash | 100',
+      'Checking Account | ',
+      'Total assets | $100',
+      'Liabilities',
+      'Loan Payable | ',
+      'Total liabilities | $0',
+      'Equity',
+      'Net Worth | 100',
+      'Revenue & expenses (usually 0 at the start)',
+      'Interest Expense (expense) | ',
+      'Total equity | $100',
+      'Total liabilities + equity | $100',
+      '✓ A = L + E',
+    ]);
+    // Out of balance: the foot says by how much.
+    fireEvent.change(within(sheet).getByLabelText('Opening balance for Cash'), {
+      target: { value: '120' },
+    });
+    expect(sheet.querySelector('tfoot')!.textContent).toMatch(/✗ A = L \+ E — off by \$20/);
+  });
+});
+
+describe('Journal: all scenarios', () => {
+  it('one entity, every scenario one after another — still editable, each in its own scenario', () => {
+    mount('journal', bank());
+    fireEvent.click(screen.getByRole('button', { name: 'All scenarios' }));
+    const sections = screen.getAllByRole('region', { name: /^S\d / });
+    expect(sections.map((s) => s.getAttribute('aria-label'))).toEqual([
+      'S1 Deposit cash',
+      'S2 Borrow, then pay interest',
+      'S3 Repay the loan',
+    ]);
+    // Edit S2's first entry from here: it changes S2's books, not the current scenario's.
+    fireEvent.change(within(sections[1]!).getByLabelText('Entry 1 description'), {
+      target: { value: 'Borrow from the bank' },
+    });
+    flush();
+    expect(urlBooks(1, 'you').rows[0]!.label).toBe('Borrow from the bank');
+    expect(urlBooks(0, 'you').rows[0]!.label).toBe('Deposit cash');
+    // A heading makes its scenario the current one.
+    fireEvent.click(within(sections[2]!).getByRole('button', { name: /Repay the loan/ }));
+    expect(parseHash(window.location.hash)).toMatchObject({ scenario: 2 });
+    // Back to one scenario.
+    fireEvent.click(screen.getByRole('button', { name: 'This scenario' }));
+    expect(screen.queryAllByRole('region', { name: /^S\d / })).toHaveLength(0);
+  });
+});
+
 describe('T-accounts view (the ledger)', () => {
   it('lists the entries above the T’s, one per line, as the key to their (n)', () => {
     mountLoan('taccounts');

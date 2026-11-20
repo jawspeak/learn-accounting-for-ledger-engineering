@@ -104,6 +104,8 @@ export function Sandbox({
   const [pending, setPending] = useState<Pending | null>(null);
   const [confirmRemoveEntity, setConfirmRemoveEntity] = useState(false);
   const [confirmRemoveScenario, setConfirmRemoveScenario] = useState(false);
+  /** Journal: this scenario only, or every scenario one after another (for the selected entity). */
+  const [allScenarios, setAllScenarios] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const si = clamp(scenario, state.scenarios.length);
@@ -479,6 +481,28 @@ export function Sandbox({
             setConfirmRemove={setConfirmRemoveEntity}
             removeEntity={removeEntity}
             scenarioCount={state.scenarios.length}
+            scope={
+              view === 'journal' && state.scenarios.length > 1 ? (
+                <span className="vs-order" role="group" aria-label="Scenarios shown">
+                  <span className="vs-order-label">Show</span>
+                  <button
+                    type="button"
+                    aria-pressed={!allScenarios}
+                    onClick={() => setAllScenarios(false)}
+                  >
+                    This scenario
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={allScenarios}
+                    onClick={() => setAllScenarios(true)}
+                    title="Every scenario's journal for this entity, one after another"
+                  >
+                    All scenarios
+                  </button>
+                </span>
+              ) : null
+            }
           />
         )}
 
@@ -500,12 +524,57 @@ export function Sandbox({
             >
               {view === 'journal' ? (
                 <>
-                  <JournalEditor
-                    key={`${epoch}:${sc.id}:${current.id}`}
-                    entity={books}
-                    onChange={setBooks}
-                    at={at}
-                  />
+                  {allScenarios ? (
+                    /* Every scenario's journal for this entity, one after another, each under its own
+                       heading — still editable. Click a heading to make that scenario the current one. */
+                    state.scenarios.map((x, i) => {
+                      const st = scenarioStatus(state, i);
+                      return (
+                        <section
+                          key={`${epoch}:${x.id}:${current.id}`}
+                          className={`sbx-allsc${i === si ? ' is-current' : ''}`}
+                          aria-label={`${scenarioNumber(i)} ${x.title || `Scenario ${i + 1}`}`}
+                        >
+                          <h3 className="sbx-allsc-head">
+                            <button
+                              type="button"
+                              aria-current={i === si ? 'true' : undefined}
+                              title="Make this the current scenario"
+                              onClick={() => selectScenario(i)}
+                            >
+                              <span className="sbx-sc-num">{scenarioNumber(i)}</span>
+                              {st !== 'empty' && (
+                                <span
+                                  className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
+                                  aria-hidden="true"
+                                >
+                                  {st === 'ok' ? '✓' : '✗'}
+                                </span>
+                              )}
+                              {x.title || `Scenario ${i + 1}`}
+                            </button>
+                            {storyLine(x.text) && (
+                              <span className="sbx-allsc-story note">{storyLine(x.text)}</span>
+                            )}
+                          </h3>
+                          <JournalEditor
+                            entity={booksOf(state, i, ei)}
+                            onChange={(b) => onChange(withBooks(state, i, ei, b))}
+                            at={i === si ? at : undefined}
+                            idPrefix={i === si ? '' : `s${i + 1}-`}
+                            hint={false}
+                          />
+                        </section>
+                      );
+                    })
+                  ) : (
+                    <JournalEditor
+                      key={`${epoch}:${sc.id}:${current.id}`}
+                      entity={books}
+                      onChange={setBooks}
+                      at={at}
+                    />
+                  )}
                   <details className="sbx-panel">
                     <summary>Accounts ({current.accounts.length})</summary>
                     <AccountsEditor entity={books} onChange={setBooks} />
@@ -776,6 +845,7 @@ function EntityBar({
   setConfirmRemove,
   removeEntity,
   scenarioCount,
+  scope,
 }: {
   uid: string;
   state: SandboxState;
@@ -789,6 +859,8 @@ function EntityBar({
   setConfirmRemove(v: boolean): void;
   removeEntity(): void;
   scenarioCount: number;
+  /** The Journal's "This scenario | All scenarios" switch (none in the other views). */
+  scope?: ReactNode;
 }) {
   const summary = summarize(books);
   return (
@@ -815,6 +887,7 @@ function EntityBar({
             onChange={(e) => setBooks({ ...books, name: e.target.value })}
           />
         </label>
+        {scope}
         <ColumnOrderToggle
           manual={isManualOrder(books)}
           disabled={books.accounts.length === 0}

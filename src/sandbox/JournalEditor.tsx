@@ -49,10 +49,17 @@ export function JournalEditor({
   entity: stored,
   onChange,
   at,
+  idPrefix = '',
+  hint = true,
 }: {
   entity: EntityBooks;
   onChange(e: EntityBooks): void;
   at?: string;
+  /** Prefixes element ids when several journals share a page (all scenarios); "" for the current one, so
+   *  links to "entry-3" land there. */
+  idPrefix?: string;
+  /** The "Write your first entry" hint above a blank journal. */
+  hint?: boolean;
 }) {
   // With no entries yet, show one blank entry (a debit line and a credit line) so it's clear how to start. It
   // isn't in the state (or a link) until you type in it: every edit below starts from `e`, so the first one
@@ -80,7 +87,9 @@ export function JournalEditor({
   const add = () => {
     onChange(addEntry(e));
     // Put the cursor in the new entry's description.
-    setTimeout(() => document.getElementById(`${e.id}-entry-${e.rows.length + 1}-desc`)?.focus());
+    setTimeout(() =>
+      document.getElementById(`${idPrefix}${e.id}-entry-${e.rows.length + 1}-desc`)?.focus(),
+    );
   };
 
   const setDescription = (ri: number, label: string) =>
@@ -125,7 +134,7 @@ export function JournalEditor({
 
   return (
     <div className="jx">
-      {placeholder && (
+      {placeholder && hint && (
         <p className="note">
           Write your first entry: what happened, then the accounts it debits and credits. Each
           business event is one entry, and its debits must equal its credits.
@@ -165,7 +174,7 @@ export function JournalEditor({
           return (
             <tbody
               key={r.id}
-              id={entryAnchor(n)}
+              id={idPrefix + entryAnchor(n)}
               className="jx-entry"
               // Leaving the entry puts its debits first (the journal convention) — not while typing, so
               // the line you're in never jumps.
@@ -184,7 +193,7 @@ export function JournalEditor({
                 <td colSpan={narrow ? 3 : 1}>
                   <div className="jx-head-cell">
                     <input
-                      id={`${e.id}-entry-${n}-desc`}
+                      id={`${idPrefix}${e.id}-entry-${n}-desc`}
                       className="jx-desc"
                       aria-label={`Entry ${n} description`}
                       placeholder="What happened?"
