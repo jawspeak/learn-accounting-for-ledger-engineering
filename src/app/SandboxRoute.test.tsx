@@ -216,6 +216,26 @@ describe('Grid view', () => {
     expect(screen.getByRole('region', { name: /Spreadsheet/ })).toBeTruthy();
   });
 
+  it('starts with one blank entry that is saved only once you type in it', () => {
+    const s = emptyState();
+    s.entities[0]!.accounts = [{ id: 'cash', name: 'Cash', type: 'asset' }];
+    mount('grid', s);
+    expect(screen.getByLabelText('Entry 1 description')).toBeTruthy();
+    // Untouched, it isn't in the books (or the link).
+    fireEvent.change(screen.getByLabelText('Board title'), { target: { value: 'T' } });
+    flush();
+    expect(urlState()!.entities[0]!.rows).toEqual([]);
+    // Typing an amount creates it.
+    fireEvent.change(screen.getByLabelText('Entry 1 Cash debit'), { target: { value: '5' } });
+    flush();
+    expect(urlState()!.entities[0]!.rows).toEqual([
+      { id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 500, chosenType: 'asset' }] },
+    ]);
+    // "+ Add entry" adds entry 2 below it.
+    fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
+    expect(screen.getByLabelText('Entry 2 description')).toBeTruthy();
+  });
+
   it('a cell made of two journal lines shows their total read-only, so it can’t merge them', () => {
     const s = loan();
     // Entry 1 borrows $500 into Checking: split it into two $250 debit lines (as the Journal allows).

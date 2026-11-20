@@ -9,6 +9,7 @@ import {
   isManualOrder,
   moveAccountInOrder,
   moveRow,
+  nextRowId,
   orderedAccounts,
   orderedIds,
   removeRow,
@@ -44,8 +45,13 @@ export function SheetGrid({
   // One account order for every view: auto (A = L + E) or the manual order; ← → only in manual.
   const accounts = orderedAccounts(e);
   const manual = isManualOrder(e);
-  // The same entries as the Journal — no padding rows; "+ Add entry" adds one.
-  const n = e.rows.length;
+  // The same entries as the Journal — no padding rows; "+ Add entry" adds one. With no entries yet, one blank
+  // placeholder entry is shown so there's somewhere to type; it isn't in the state (or a link) until you do.
+  const placeholder = e.rows.length === 0;
+  const rows = placeholder ? [{ id: nextRowId([]), postings: [] }] : e.rows;
+  const n = rows.length;
+  /** The entity with entry `ri` stored (typing into the placeholder creates it). */
+  const stored = (ri: number) => (ri < e.rows.length ? e : addEntry(e, { blankLines: false }));
   const balance = sheetBalance(e);
   const eqAt = equalsAt(accounts);
   const lastCol = FIRST_AMOUNT_COL + accounts.length * 2 - 1;
@@ -322,7 +328,7 @@ export function SheetGrid({
           )}
         </thead>
         <tbody>
-          {e.rows.map((row, ri) => {
+          {rows.map((row, ri) => {
             const n1 = ri + 1;
             const check = entryCheck(row);
             return (
@@ -337,35 +343,37 @@ export function SheetGrid({
                     aria-label={`Entry ${n1} description`}
                     placeholder={row.label ? '' : 'What happened?'}
                     value={row.label ?? ''}
-                    onChange={(ev) => onChange(setLabel(e, ri, ev.target.value))}
+                    onChange={(ev) => onChange(setLabel(stored(ri), ri, ev.target.value))}
                   />
                   {/* Entry tools (the same entries as the Journal): move up / down, remove. */}
-                  <span className="sh-row-tools">
-                    <button
-                      type="button"
-                      aria-label={`Move entry ${n1} up`}
-                      disabled={ri === 0}
-                      onClick={() => onChange(moveRow(e, ri, -1))}
-                    >
-                      <span aria-hidden="true">↑</span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Move entry ${n1} down`}
-                      disabled={ri >= e.rows.length - 1}
-                      onClick={() => onChange(moveRow(e, ri, 1))}
-                    >
-                      <span aria-hidden="true">↓</span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Remove entry ${n1}`}
-                      title="Remove this entry"
-                      onClick={() => onChange(removeRow(e, ri))}
-                    >
-                      <span aria-hidden="true">×</span>
-                    </button>
-                  </span>
+                  {!placeholder && (
+                    <span className="sh-row-tools">
+                      <button
+                        type="button"
+                        aria-label={`Move entry ${n1} up`}
+                        disabled={ri === 0}
+                        onClick={() => onChange(moveRow(e, ri, -1))}
+                      >
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move entry ${n1} down`}
+                        disabled={ri >= e.rows.length - 1}
+                        onClick={() => onChange(moveRow(e, ri, 1))}
+                      >
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove entry ${n1}`}
+                        title="Remove this entry"
+                        onClick={() => onChange(removeRow(e, ri))}
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    </span>
+                  )}
                 </td>
                 <td className="sh-left sh-l4 sh-check">
                   {check.started &&
@@ -406,7 +414,7 @@ export function SheetGrid({
                             (p) => p.accountId === a.id && p.side === s && p.amount > 0,
                           ).length
                         }
-                        onChange={(c) => onChange(setAmount(e, ri, a.id, s, c))}
+                        onChange={(c) => onChange(setAmount(stored(ri), ri, a.id, s, c))}
                       />
                     </td>
                   )),
@@ -432,7 +440,8 @@ export function SheetGrid({
           type="button"
           className="sh-add-row"
           onClick={() => {
-            onChange(addEntry(e, { blankLines: false }));
+            // From the placeholder, keep it (now stored) and add the next one below it.
+            onChange(addEntry(stored(n - 1), { blankLines: false }));
             setTimeout(() => focusCell(n, 0));
           }}
         >
@@ -447,11 +456,6 @@ export function SheetGrid({
           {showOpening ? 'Hide opening balances' : '＋ Opening balances'}
         </button>
       </div>
-      {n === 0 && accounts.length > 0 && (
-        <p className="sh-empty">
-          No entries yet. Each business event is one entry: its debits and credits must be equal.
-        </p>
-      )}
       {accounts.length === 0 && (
         <p className="sh-empty">
           Add your first account on the right — start with the one you’re sure changes (often{' '}
