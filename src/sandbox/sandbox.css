@@ -69,36 +69,143 @@
   font-size: var(--text-base);
 }
 .sbx-scenario {
-  margin-bottom: var(--space-3);
-  padding-top: var(--space-2);
-}
-.sbx-scenario-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
   margin-bottom: var(--space-2);
 }
-.sbx-scenario-head .sh-rename {
-  margin-left: 0;
-  padding-bottom: 0;
-  flex: 1 1 20rem;
-  max-width: 36rem;
+/* Scenario tabs read like a test run: "S1 ✓ Alice tops up $50". */
+.sbx-sc-num {
+  margin-right: 0.4rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
-.sbx-scenario-head .sh-rename input {
+.sbx-sc-status {
+  margin-right: 0.35rem;
+}
+.sbx-sc-status.is-ok {
+  color: var(--ok);
+}
+.sbx-sc-status.is-bad {
+  color: var(--err);
+}
+/* Under the tabs, one line: the story's first line (expands to read / edit) and the scenario's "⋯" menu. */
+.sbx-scenario-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+.sbx-story {
   flex: 1;
   min-width: 0;
 }
-.sbx-tools {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
+.sbx-story-line {
+  display: flex;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+.sbx-story-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sbx-story.is-open .sbx-story-text {
+  white-space: normal;
+  color: var(--muted);
+}
+.sbx-story-line:hover .sbx-story-text {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .sbx-scenario-body {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+/* The title row: the title, Copy link, and the Sandbox "⋯" menu. */
+.sbx-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+.sbx-head .sbx-title {
+  flex: 1 1 18rem;
+  width: auto;
+  min-width: 0;
+}
+.sbx-status:empty {
+  display: none;
+}
+.sbx-status {
+  margin: 0;
+}
+/* "⋯" menus: occasional actions, out of the way until needed. */
+.sbx-menu {
+  position: relative;
+  flex: none;
+}
+.sbx-menu-button {
+  min-width: 2.5rem;
+}
+.sbx-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 15rem;
+  padding: var(--space-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.sbx-menu-panel.is-start {
+  left: 0;
+}
+.sbx-menu-panel.is-end {
+  right: 0;
+}
+.sbx-menu-panel > button {
+  font: inherit;
+  text-align: left;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+}
+.sbx-menu-panel > button:hover:not(:disabled),
+.sbx-menu-panel > button:focus-visible {
+  background: var(--surface-2);
+}
+.sbx-menu-panel > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sbx-menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.35rem 0.5rem 0.5rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-1);
+}
+.sbx-menu-field input,
+.sbx-menu-field select {
+  color: var(--fg);
+}
+.sbx-menu-panel .sbx-confirm {
+  flex-wrap: wrap;
+  padding: 0.35rem 0.5rem;
 }
 .sbx-scenario-modes {
   display: inline-flex;
@@ -135,7 +242,7 @@
   width: 14rem;
 }
 .coa-c-sc {
-  width: 7.5rem;
+  width: 3.5rem;
 }
 .coa-c-total {
   width: 6rem;
@@ -164,6 +271,9 @@
   line-clamp: 2;
   overflow: hidden;
   line-height: 1.25;
+}
+.coa-table thead th.coa-sc {
+  text-align: center;
 }
 .coa-table thead th.coa-sc.is-current {
   color: var(--accent);

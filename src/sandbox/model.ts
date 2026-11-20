@@ -736,3 +736,33 @@ export const updateScenario = (
   ...s,
   scenarios: s.scenarios.map((sc, j) => (j === si ? { ...sc, ...patch } : sc)),
 });
+
+/** A scenario's check, like a test result: "ok" when every entity's entries balance and A = L + E holds
+ *  (opening balances too), "bad" when any doesn't, "empty" before anything is posted. */
+export type ScenarioStatus = 'empty' | 'ok' | 'bad';
+export function scenarioStatus(s: SandboxState, si: number): ScenarioStatus {
+  let posted = false;
+  for (let ei = 0; ei < s.entities.length; ei++) {
+    const b = booksOf(s, si, ei);
+    const hasOpening = !!b.opening?.lines.some((l) => l.amount !== 0);
+    if (!hasOpening && !b.rows.some((r) => entryCheck(r).started)) continue;
+    posted = true;
+    const sum = summarize(b);
+    if (!sum.rowsBalanced || !sum.equation.balanced || (sum.opening && !sum.opening.balanced))
+      return 'bad';
+  }
+  return posted ? 'ok' : 'empty';
+}
+
+/** "S1", "S2", … — a scenario's short name in tabs and the chart of accounts. */
+export const scenarioNumber = (si: number) => `S${si + 1}`;
+
+/** The first line of a scenario's story as plain text (markdown marks stripped), for its one-line summary. */
+export function storyLine(text: string): string {
+  const first = text.split('\n').find((l) => l.trim()) ?? '';
+  return first
+    .replace(/^\s*(#+|[-*]|\d+\.)\s+/, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .trim();
+}

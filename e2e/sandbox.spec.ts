@@ -4,6 +4,7 @@ import { watchErrors } from './helpers';
 test('example scenario loads, edit updates ?d=, reload restores', async ({ page }) => {
   const w = watchErrors(page);
   await page.goto('/#/sandbox');
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByLabel('Example scenarios:').selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Yes, replace' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Loaded example' })).toBeVisible();
@@ -20,13 +21,16 @@ test('example scenario loads, edit updates ?d=, reload restores', async ({ page 
 test('Export a .json file, then Import it into an empty Sandbox', async ({ page }, info) => {
   const w = watchErrors(page);
   await page.goto('/#/sandbox');
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByLabel('Example scenarios:').selectOption('fbo');
   await page.getByRole('button', { name: 'Yes, replace' }).click();
   const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByRole('button', { name: 'Export' }).click();
   const file = info.outputPath('zap.json');
   await (await download).saveAs(file);
 
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByRole('button', { name: 'New' }).click();
   await page.getByRole('button', { name: 'Yes, replace' }).click();
   await expect(page.getByRole('tablist', { name: 'Scenarios' }).getByRole('tab')).toHaveCount(1);
@@ -35,7 +39,8 @@ test('Export a .json file, then Import it into an empty Sandbox', async ({ page 
   await expect(page.getByRole('group', { name: 'Confirm replace' })).toContainText('3 scenarios');
   await page.getByRole('button', { name: 'Yes, replace' }).click();
   const tabs = page.getByRole('tablist', { name: 'Scenarios' }).getByRole('tab');
-  await expect(tabs).toHaveText([
+  // "S1 ✓ Alice tops up $50 (balances)"…: the title is in each tab.
+  await expect(tabs).toContainText([
     'Alice tops up $50',
     'Alice pays Bob $20 in Zap',
     'Bob cashes out, less a $1 fee',
@@ -53,6 +58,7 @@ test('malicious scenario is inert', async ({ page }) => {
     await d.dismiss();
   });
   await page.goto('/#/sandbox');
+  await page.getByRole('button', { name: /Describe what happens/ }).click();
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   const payload = '<img src=x onerror=alert(1)> <script>alert(2)</script> [x](javascript:alert(3))';
   await page.getByRole('textbox', { name: 'Scenario text (markdown)' }).fill(payload);

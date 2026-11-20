@@ -5,6 +5,7 @@ test.use({ viewport: { width: 1600, height: 950 } });
 
 const views = (page: Page) => page.getByRole('navigation', { name: 'Sandbox view' });
 const loadExample = async (page: Page, id: string) => {
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
   await page.getByLabel('Example scenarios:').selectOption(id);
   await page.getByRole('button', { name: 'Yes, replace' }).click();
 };

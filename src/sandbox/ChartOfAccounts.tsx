@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import type { Account, SandboxState } from '@contracts';
-import { orderedAccounts, usageByScenario } from './model';
+import { orderedAccounts, scenarioNumber, usageByScenario } from './model';
 import { SECTION_LABEL, sectionOf, typeLabel } from './EntityPanels';
 
 /** A type the section heading doesn't already say (Assets, Liabilities, Equity, Revenue, Expenses). */
@@ -18,8 +18,8 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
   return (
     <div className="coa">
       <p className="note coa-legend">
-        <span aria-hidden="true">✓</span> = the scenario uses the account, in an entry or as an
-        opening balance. “Used in” counts the scenarios.
+        S1, S2… are the scenario tabs. <span aria-hidden="true">✓</span> = the scenario uses the
+        account, in an entry or as an opening balance. “Used in” counts the scenarios.
       </p>
       <table className="coa-table">
         <caption className="sr-only">
@@ -44,7 +44,8 @@ export function ChartOfAccounts({ state, scenario }: { state: SandboxState; scen
                 className={`coa-sc${i === scenario ? ' is-current' : ''}`}
                 title={n}
               >
-                <span className="coa-sc-name">{n}</span>
+                <span aria-hidden="true">{scenarioNumber(i)}</span>
+                <span className="sr-only">{n}</span>
               </th>
             ))}
             <th scope="col" className="coa-num">

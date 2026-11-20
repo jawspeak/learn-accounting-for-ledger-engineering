@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { schemas, type EntityBooks, type SandboxState } from '@contracts';
 import { ChartOfAccounts } from './ChartOfAccounts';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
@@ -18,8 +18,11 @@ import {
   persistable,
   removeEntityFrom,
   removeScenarioFrom,
+  scenarioNumber,
+  scenarioStatus,
   setManualOrder,
   slugify,
+  storyLine,
   summarize,
   updateScenario,
   usageByScenario,
@@ -203,70 +206,84 @@ export function Sandbox({
     <SandboxNavProvider value={{ linkTo, onNavigate }}>
       <article className="sbx sh">
         <ViewSwitch current={view} entity={ei} />
-        <label htmlFor={`${uid}-title`} className="sr-only">
-          Sandbox title
-        </label>
-        <input
-          id={`${uid}-title`}
-          className="sbx-title"
-          value={state.title ?? ''}
-          placeholder="Untitled sandbox"
-          onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
-        />
-
-        {notice}
-
-        <div className="toolbar sbx-toolbar">
+        {/* One line: the title, the host's tools (Copy link), and a menu for the occasional actions. */}
+        <div className="sbx-head">
+          <label htmlFor={`${uid}-title`} className="sr-only">
+            Sandbox title
+          </label>
+          <input
+            id={`${uid}-title`}
+            className="sbx-title"
+            value={state.title ?? ''}
+            placeholder="Untitled sandbox"
+            onChange={(e) => update((s) => ({ ...s, title: e.target.value }))}
+          />
           {toolbar}
-          {examples && examples.length > 0 && (
-            <label className="sbx-inline">
-              Example scenarios:
-              <select
-                value=""
-                onChange={(e) => {
-                  const ex = examples.find((x) => x.id === e.target.value);
-                  if (ex)
+          <Menu label="Sandbox menu" align="end">
+            {(close) => (
+              <>
+                {examples && examples.length > 0 && (
+                  <label className="sbx-menu-field">
+                    Example scenarios:
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const ex = examples.find((x) => x.id === e.target.value);
+                        if (!ex) return;
+                        close();
+                        setPending({
+                          question: `Replace everything in the Sandbox with the “${ex.label}” example? (Copy the link or export first to keep your work.)`,
+                          build: ex.build,
+                          done: `Loaded example: ${ex.label}.`,
+                        });
+                      }}
+                    >
+                      <option value="">Load an example…</option>
+                      {examples.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
                     setPending({
-                      question: `Replace everything in the Sandbox with the “${ex.label}” example? (Copy the link or export first to keep your work.)`,
-                      build: ex.build,
-                      done: `Loaded example: ${ex.label}.`,
+                      question:
+                        'Start over with an empty Sandbox? (Copy the link or export first to keep your work.)',
+                      build: emptyState,
+                      done: 'Started a new, empty Sandbox.',
                     });
-                }}
-              >
-                <option value="">Load an example…</option>
-                {examples.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button
-            type="button"
-            className="btn"
-            onClick={() =>
-              setPending({
-                question:
-                  'Start over with an empty Sandbox? (Copy the link or export first to keep your work.)',
-                build: emptyState,
-                done: 'Started a new, empty Sandbox.',
-              })
-            }
-          >
-            New
-          </button>
-          <button type="button" className="btn" onClick={exportFile} title="Download a .json file">
-            Export
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => fileRef.current?.click()}
-            title="Open a .json file exported from the Sandbox"
-          >
-            Import
-          </button>
+                  }}
+                >
+                  New
+                </button>
+                <button
+                  type="button"
+                  title="Download a .json file"
+                  onClick={() => {
+                    close();
+                    exportFile();
+                  }}
+                >
+                  Export
+                </button>
+                <button
+                  type="button"
+                  title="Open a .json file exported from the Sandbox"
+                  onClick={() => {
+                    close();
+                    fileRef.current?.click();
+                  }}
+                >
+                  Import
+                </button>
+              </>
+            )}
+          </Menu>
           <input
             ref={fileRef}
             type="file"
@@ -280,10 +297,12 @@ export function Sandbox({
               e.target.value = '';
             }}
           />
-          <span className="note" role="status" aria-live="polite">
-            {status}
-          </span>
         </div>
+        <p className="note sbx-status" role="status" aria-live="polite">
+          {status}
+        </p>
+
+        {notice}
         {pending && (
           <p className="sbx-confirm sbx-pending" role="group" aria-label="Confirm replace">
             {pending.question}
@@ -305,7 +324,29 @@ export function Sandbox({
           <Tabs
             label="Scenarios"
             heading="Scenarios"
-            names={state.scenarios.map((x, i) => x.title || `Scenario ${i + 1}`)}
+            // "S1 ✓ Alice tops up $50": a number to refer to, and the check, like a test run.
+            names={state.scenarios.map((x, i) => {
+              const st = scenarioStatus(state, i);
+              return (
+                <>
+                  <span className="sbx-sc-num">{scenarioNumber(i)}</span>
+                  {st !== 'empty' && (
+                    <span
+                      className={`sbx-sc-status ${st === 'ok' ? 'is-ok' : 'is-bad'}`}
+                      aria-hidden="true"
+                    >
+                      {st === 'ok' ? '✓' : '✗'}
+                    </span>
+                  )}
+                  {x.title || `Scenario ${i + 1}`}
+                  {st !== 'empty' && (
+                    <span className="sr-only">
+                      {st === 'ok' ? ' (balances)' : ' (doesn’t balance)'}
+                    </span>
+                  )}
+                </>
+              );
+            })}
             sel={si}
             onSelect={selectScenario}
             idOf={(i) => `${uid}-sc-${i}`}
@@ -320,83 +361,98 @@ export function Sandbox({
             aria-labelledby={`${uid}-sc-${si}`}
             className="sbx-scenario"
           >
-            <div className="sbx-scenario-head">
-              <label className="sh-rename">
-                <span>Scenario</span>
-                <input
-                  aria-label="Scenario title"
-                  value={sc.title}
-                  placeholder={`Scenario ${si + 1}`}
-                  onChange={(e) => onChange(updateScenario(state, si, { title: e.target.value }))}
-                />
-              </label>
-              <span className="sbx-tools">
-                <button
-                  type="button"
-                  className="btn"
-                  aria-label="Move scenario left"
-                  title="Earlier"
-                  disabled={si === 0}
-                  onClick={() => {
-                    onChange(moveScenario(state, si, -1));
-                    onScenarioSelect(si - 1);
-                  }}
-                >
-                  <span aria-hidden="true">←</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  aria-label="Move scenario right"
-                  title="Later"
-                  disabled={si === state.scenarios.length - 1}
-                  onClick={() => {
-                    onChange(moveScenario(state, si, 1));
-                    onScenarioSelect(si + 1);
-                  }}
-                >
-                  <span aria-hidden="true">→</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  aria-label="Duplicate scenario"
-                  onClick={duplicateScenario}
-                >
-                  Duplicate
-                </button>
-                {confirmRemoveScenario ? (
-                  <span className="sbx-confirm" role="group" aria-label="Confirm remove scenario">
-                    Remove {sc.title || 'this scenario'} and its entries?
-                    <button type="button" className="btn" onClick={removeScenario}>
-                      Yes, remove
+            {/* One line: the story's first line (click to read or edit it all), and the scenario's menu. */}
+            <div className="sbx-scenario-bar">
+              <ScenarioText
+                key={`${epoch}:${sc.id}`}
+                uid={uid}
+                text={sc.text}
+                onText={(text) => onChange(updateScenario(state, si, { text }))}
+              />
+              <Menu label="Scenario menu" align="end">
+                {(close) => (
+                  <>
+                    <label className="sbx-menu-field">
+                      Title
+                      <input
+                        aria-label="Scenario title"
+                        value={sc.title}
+                        placeholder={`Scenario ${si + 1}`}
+                        onChange={(e) =>
+                          onChange(updateScenario(state, si, { title: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      aria-label="Move scenario left"
+                      disabled={si === 0}
+                      onClick={() => {
+                        onChange(moveScenario(state, si, -1));
+                        onScenarioSelect(si - 1);
+                      }}
+                    >
+                      <span aria-hidden="true">← </span>Move earlier
                     </button>
                     <button
                       type="button"
-                      className="btn"
-                      onClick={() => setConfirmRemoveScenario(false)}
+                      aria-label="Move scenario right"
+                      disabled={si === state.scenarios.length - 1}
+                      onClick={() => {
+                        onChange(moveScenario(state, si, 1));
+                        onScenarioSelect(si + 1);
+                      }}
                     >
-                      Cancel
+                      <span aria-hidden="true">→ </span>Move later
                     </button>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn"
-                    aria-label="Remove scenario"
-                    onClick={() => setConfirmRemoveScenario(true)}
-                  >
-                    Remove
-                  </button>
+                    <button
+                      type="button"
+                      aria-label="Duplicate scenario"
+                      onClick={() => {
+                        close();
+                        duplicateScenario();
+                      }}
+                    >
+                      Duplicate
+                    </button>
+                    {confirmRemoveScenario ? (
+                      <span
+                        className="sbx-confirm"
+                        role="group"
+                        aria-label="Confirm remove scenario"
+                      >
+                        Remove {sc.title || 'this scenario'} and its entries?
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            close();
+                            removeScenario();
+                          }}
+                        >
+                          Yes, remove
+                        </button>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => setConfirmRemoveScenario(false)}
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Remove scenario"
+                        onClick={() => setConfirmRemoveScenario(true)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </>
                 )}
-              </span>
+              </Menu>
             </div>
-            <ScenarioText
-              key={`${epoch}:${sc.id}`}
-              uid={uid}
-              text={sc.text}
-              onText={(text) => onChange(updateScenario(state, si, { text }))}
-            />
           </div>
         </section>
 
@@ -479,7 +535,8 @@ export function Sandbox({
   );
 }
 
-/** The scenario's story, in markdown: edit, or read it rendered. */
+/** The scenario's story, in markdown. Collapsed to its first line (the books matter more); click to read it
+ *  all or edit it. */
 function ScenarioText({
   uid,
   text,
@@ -489,9 +546,56 @@ function ScenarioText({
   text: string;
   onText(t: string): void;
 }) {
+  const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState(() => !!text.trim());
+  const line = storyLine(text);
   return (
-    <div className="sbx-scenario-body">
+    <div className={`sbx-story${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="sbx-story-line"
+        aria-expanded={open}
+        aria-controls={`${uid}-story`}
+        title={open ? 'Hide the story' : 'Show the whole story'}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span aria-hidden="true">{open ? '▾' : '▸'} </span>
+        {line ? (
+          <span className="sbx-story-text">{line}</span>
+        ) : (
+          <span className="sbx-story-text note">Describe what happens in this scenario…</span>
+        )}
+      </button>
+      {open && (
+        <div id={`${uid}-story`} className="sbx-scenario-body">
+          <ScenarioBody
+            uid={uid}
+            text={text}
+            onText={onText}
+            preview={preview}
+            setPreview={setPreview}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScenarioBody({
+  uid,
+  text,
+  onText,
+  preview,
+  setPreview,
+}: {
+  uid: string;
+  text: string;
+  onText(t: string): void;
+  preview: boolean;
+  setPreview(p: boolean): void;
+}) {
+  return (
+    <>
       <div role="group" aria-label="Scenario text view" className="sbx-scenario-modes">
         <button
           type="button"
@@ -533,6 +637,54 @@ function ScenarioText({
           />
         </>
       )}
+    </>
+  );
+}
+
+/** A "⋯" menu for occasional actions: opens below its button; Escape or a click outside closes it. */
+function Menu({
+  label,
+  align = 'start',
+  children,
+}: {
+  label: string;
+  align?: 'start' | 'end';
+  children(close: () => void): ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <div className="sbx-menu" ref={ref}>
+      <button
+        type="button"
+        className="btn sbx-menu-button"
+        aria-label={label}
+        aria-expanded={open}
+        title={label}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span aria-hidden="true">⋯</span>
+      </button>
+      {open && (
+        <div className={`sbx-menu-panel is-${align}`} role="group" aria-label={label}>
+          {children(() => setOpen(false))}
+        </div>
+      )}
     </div>
   );
 }
@@ -552,7 +704,7 @@ function Tabs({
 }: {
   label: string;
   heading?: string;
-  names: string[];
+  names: ReactNode[];
   sel: number;
   onSelect(i: number): void;
   idOf(i: number): string;

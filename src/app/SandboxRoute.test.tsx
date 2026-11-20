@@ -202,32 +202,41 @@ describe('entities (Journal and Grid)', () => {
   });
 });
 
+/** Open one of the "⋯" menus (Sandbox menu, Scenario menu). */
+const openMenu = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
+
 describe('scenarios', () => {
-  it('tabs pick the scenario; the URL remembers it; accounts carry over, entries don’t', () => {
+  it('tabs pick the scenario — "S1 ✓ title", like a test run; the URL remembers it; accounts carry over', () => {
     mount('journal', bank());
     const tabs = screen.getByRole('tablist', { name: 'Scenarios' });
     expect(
       within(tabs)
         .getAllByRole('tab')
         .map((t) => t.textContent),
-    ).toEqual(['Deposit cash', 'Borrow, then pay interest', 'Repay the loan']);
+    ).toEqual([
+      'S1✓Deposit cash (balances)',
+      'S2✓Borrow, then pay interest (balances)',
+      'S3✓Repay the loan (balances)',
+    ]);
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
       'Deposit cash',
     );
-    fireEvent.click(within(tabs).getByRole('tab', { name: 'Borrow, then pay interest' }));
+    fireEvent.click(within(tabs).getByRole('tab', { name: /Borrow, then pay interest/ }));
     expect(parseHash(window.location.hash)).toMatchObject({ scenario: 1 });
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
       'Borrow $500',
     );
-    // A new scenario: the same entities and accounts, empty books.
+    // A new scenario: the same entities and accounts, empty books (no ✓ or ✗ yet).
     fireEvent.click(screen.getByRole('button', { name: '+ Add scenario' }));
-    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Scenario 4');
+    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('S4Scenario 4');
     // Its Journal shows only the blank first entry.
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe('');
     expect(screen.queryByLabelText('Entry 2 description')).toBeNull();
     expect(screen.getByText(/^Accounts \(5\)/)).toBeTruthy();
+    // Rename it from the scenario's "⋯" menu.
+    openMenu('Scenario menu');
     fireEvent.change(screen.getByLabelText('Scenario title'), { target: { value: 'Overdraft' } });
-    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Overdraft');
+    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('S4Overdraft');
     flush();
     expect(urlState()!.scenarios.map((s) => s.title)).toEqual([
       'Deposit cash',
@@ -240,12 +249,15 @@ describe('scenarios', () => {
   it('duplicate, move and remove a scenario (remove asks first)', () => {
     mount('journal', bank());
     const tabs = screen.getByRole('tablist', { name: 'Scenarios' });
+    // The title, without the S-number and the check.
     const titles = () =>
       within(tabs)
         .getAllByRole('tab')
-        .map((t) => t.textContent);
+        .map((t) => t.textContent!.replace(/^S\d+✓|\s\(balances\)$/g, ''));
+    openMenu('Scenario menu');
     fireEvent.click(screen.getByRole('button', { name: 'Duplicate scenario' }));
     expect(titles()[1]).toBe('Deposit cash (copy)');
+    openMenu('Scenario menu');
     fireEvent.click(screen.getByRole('button', { name: 'Move scenario right' }));
     expect(titles()[2]).toBe('Deposit cash (copy)');
     fireEvent.click(screen.getByRole('button', { name: 'Remove scenario' }));
@@ -253,14 +265,37 @@ describe('scenarios', () => {
     expect(titles()).toEqual(['Deposit cash', 'Borrow, then pay interest', 'Repay the loan']);
   });
 
+  it('a scenario whose books don’t balance shows ✗ on its tab', () => {
+    const s = bank();
+    s.scenarios[0]!.books.you!.rows[0]!.postings[0]!.amount = 9900; // Dr $99 ≠ Cr $100
+    mount('journal', s);
+    const tab = within(screen.getByRole('tablist', { name: 'Scenarios' })).getAllByRole('tab')[0]!;
+    expect(tab.textContent).toBe('S1✗Deposit cash (doesn’t balance)');
+  });
+
+  it('the story shows its first line; click it to read or edit it all', () => {
+    mount('journal', bank());
+    const line = screen.getByRole('button', { name: /You walk into First Example Bank/ });
+    expect(line.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText(/it now owes you \$100/)).toBeNull();
+    fireEvent.click(line);
+    expect(screen.getByText(/it now owes you \$100/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(
+      (screen.getByLabelText('Scenario text (markdown)') as HTMLTextAreaElement).value,
+    ).toMatch(/^You walk into/);
+  });
+
   it('an example replaces everything — only after you say yes', () => {
     mount('journal', emptyState());
+    openMenu('Sandbox menu');
     fireEvent.change(screen.getByLabelText('Example scenarios:'), { target: { value: 'fbo' } });
     expect(screen.getByRole('group', { name: 'Confirm replace' }).textContent).toMatch(
       /Replace everything/,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('tablist', { name: 'Scenarios' }).textContent).toBe('Scenario 1');
+    expect(screen.getByRole('tablist', { name: 'Scenarios' }).textContent).toBe('S1Scenario 1');
+    openMenu('Sandbox menu');
     fireEvent.change(screen.getByLabelText('Example scenarios:'), { target: { value: 'fbo' } });
     fireEvent.click(screen.getByRole('button', { name: 'Yes, replace' }));
     expect(
@@ -282,9 +317,10 @@ describe('scenarios', () => {
     ).toEqual([
       'Account',
       'Label',
-      'Deposit cash',
-      'Borrow, then pay interest',
-      'Repay the loan',
+      // "S1" on screen (as on the tabs); the full title for screen readers and as a tooltip.
+      'S1Deposit cash',
+      'S2Borrow, then pay interest',
+      'S3Repay the loan',
       'Used in',
     ]);
     const you = within(table).getByRole('rowgroup', { name: 'You chart of accounts' });
