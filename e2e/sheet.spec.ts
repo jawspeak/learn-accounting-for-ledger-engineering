@@ -83,7 +83,7 @@ test('Journal → T-accounts → Grid: the same books, three ways', async ({ pag
   await page.getByLabel('Entry 3 line 2 account').selectOption({ label: 'Checking Account' });
   await expect(page.locator('#entry-3 .jx-status')).toContainText('≠');
   await page.getByLabel('Entry 3 line 2 credit').fill('2.50');
-  await expect(page.locator('#entry-3 .jx-status')).toContainText('Debits = credits');
+  await expect(page.locator('#entry-3 .jx-status')).toHaveCount(0); // balanced: no status
 
   // T-accounts: real T's for the accounts in use, numbered by entry; Checking ends at $492.50.
   await page.waitForTimeout(400);

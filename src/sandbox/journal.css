@@ -153,6 +153,22 @@
   cursor: default;
 }
 /* Lines: the account, then the amount in its column. Credits are indented under the debits. */
+/* The account, then its type (Asset, Liability…) as one aligned column at the right of the Account column. */
+.jx-acct-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.jx-acct-row select {
+  min-width: 0;
+}
+.jx-acct-type {
+  flex: none;
+  margin-left: auto;
+  color: var(--muted);
+  white-space: nowrap;
+}
 /* An amount, then what it does to the account: ▲ increases (green), ▼ decreases (red). The mark keeps a fixed
    slot so amounts stay aligned, and hides while the amount is being edited. */
 .jx-amt-row {

@@ -144,7 +144,7 @@ test('Open in Sandbox carries the problem accounts', async ({ page }) => {
   await page.getByLabel('Entry 1 line 1 debit').focus();
   await expect(page.getByLabel('Entry 1 line 1 debit')).toHaveValue('100');
   await expect(page.getByLabel('Entry 1 line 2 account')).toHaveValue('cash');
-  await expect(page.locator('#entry-1 .jx-status')).toContainText('Debits = credits');
+  await expect(page.locator('#entry-1 .jx-status')).toHaveCount(0); // balanced: no status
 });
 
 test('prev/next navigation resets the answer', async ({ page }) => {

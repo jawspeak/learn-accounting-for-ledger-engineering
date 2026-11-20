@@ -76,7 +76,8 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
       target: { value: 'sales' },
     });
     fireEvent.change(screen.getByLabelText('Entry 1 line 2 credit'), { target: { value: '3' } });
-    expect(screen.getByText('Debits = credits')).toBeTruthy();
+    // A balanced entry shows no status (only a problem is worth the space).
+    expect(document.querySelector('.jx-status')).toBeNull();
 
     // The view switch calls onNavigate (no URL): the T-accounts view shows the same books.
     const nav = screen.getByRole('navigation', { name: 'Sandbox view' });

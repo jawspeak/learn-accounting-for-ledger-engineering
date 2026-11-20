@@ -201,13 +201,10 @@ export function JournalEditor({
                       value={r.label ?? ''}
                       onChange={(ev) => setDescription(ri, ev.target.value)}
                     />
-                    {t.started && (
-                      <span className={`jx-status ${t.balanced ? 'is-ok' : 'is-bad'}`}>
-                        {t.balanced ? (
-                          <>
-                            <span aria-hidden="true">✓</span> Debits = credits
-                          </>
-                        ) : t.missingAccount ? (
+                    {/* Only a problem is worth the space: a balanced entry says nothing. */}
+                    {t.started && !t.balanced && (
+                      <span className="jx-status is-bad">
+                        {t.missingAccount ? (
                           <>
                             <span aria-hidden="true">✗</span> Choose an account for every line
                           </>
@@ -262,7 +259,16 @@ export function JournalEditor({
                   <tr key={li} className={`jx-line ${p.side === 'cr' ? 'is-cr' : 'is-dr'}`}>
                     <td />
                     <td className="jx-acct">
-                      {accountSelect(p, ri, li, line)}
+                      <span className="jx-acct-row">
+                        {accountSelect(p, ri, li, line)}
+                        {/* The account's type, in the room at the right of the Account column. */}
+                        {(() => {
+                          const a = accounts.find((x) => x.id === p.accountId);
+                          return a ? (
+                            <span className="jx-acct-type">{typeLabel(a.type)}</span>
+                          ) : null;
+                        })()}
+                      </span>
                       {creating === `${ri}:${li}` && (
                         <NewAccountForm
                           entity={e}

@@ -77,7 +77,8 @@ describe('Journal view (the editor)', () => {
     fireEvent.change(screen.getByLabelText('Entry 1 line 2 credit'), {
       target: { value: '44.24' },
     });
-    expect(screen.getByText('Debits = credits')).toBeTruthy();
+    // A balanced entry shows no status (only a problem is worth the space).
+    expect(document.querySelector('.jx-status')).toBeNull();
     flush();
     const row = urlBooks(0, 'you').rows[0]!;
     expect(row.label).toBe('Deposit cash');
@@ -126,6 +127,11 @@ describe('Journal view (the editor)', () => {
     expect(mark('Entry 2 line 2 credit').textContent).toBe('▼ decreases the account');
     // No mark in the empty column of a line.
     expect(mark('Entry 1 line 1 credit').textContent).toBe('');
+    // The account's type sits in the Account column, to the right of the account.
+    const type = (label: string) =>
+      screen.getByLabelText(label).closest('td')!.querySelector('.jx-acct-type')?.textContent;
+    expect(type('Entry 1 line 1 account')).toBe('Asset');
+    expect(type('Entry 1 line 2 account')).toBe('Liability');
   });
 
   it('half-written lines stay on screen but are left out of the link', () => {
