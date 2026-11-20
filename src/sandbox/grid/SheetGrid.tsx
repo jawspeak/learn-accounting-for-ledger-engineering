@@ -221,7 +221,7 @@ export function SheetGrid({
                   add();
                 }}
               >
-                <strong>Add account</strong>
+                <span className="sh-add-title">Add account</span>
                 <input
                   aria-label="New account name"
                   placeholder="Name"

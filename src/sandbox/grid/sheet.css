@@ -531,6 +531,13 @@ th.sh-left[colspan='3'] {
   vertical-align: top !important;
   padding: 0.5rem !important;
   background: var(--sh-head-bg) !important;
+  /* The same weights and sizes as the account columns' headers (it's a header cell, so not bold). */
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+.sh-add-title {
+  font-weight: 500;
+  color: var(--fg);
 }
 .sh-add form {
   display: flex;
@@ -542,6 +549,8 @@ th.sh-left[colspan='3'] {
 .sh-add select {
   width: 100%;
   box-sizing: border-box;
+  font: inherit;
+  font-weight: 400;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
