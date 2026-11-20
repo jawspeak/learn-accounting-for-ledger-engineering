@@ -834,7 +834,7 @@ textarea {
   stroke-width: 1.5;
 }
 .cheat-svg .t-inc {
-  fill: var(--accent-soft);
+  fill: var(--inc-soft);
 }
 .cheat-svg .t-line {
   stroke: var(--fg);

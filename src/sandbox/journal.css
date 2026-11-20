@@ -299,7 +299,7 @@ td.jx-add {
   --sa-muted: var(--muted);
   --sa-border: var(--border);
   --sa-accent: var(--accent);
-  --sa-hl: var(--accent-soft);
+  --sa-hl: var(--inc-soft);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);

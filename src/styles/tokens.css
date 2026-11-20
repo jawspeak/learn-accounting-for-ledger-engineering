@@ -6,6 +6,8 @@
   --accent: #2a52c4;
   --accent-fg: #ffffff;
   --accent-soft: #e3eaff;
+  /* The side of a T-account that increases it (shaded), with body text on it. */
+  --inc-soft: #e3eaff;
   --border: #d6d2c8;
   --surface: #ffffff;
   --surface-2: #f3f1ea;
@@ -31,6 +33,7 @@
     --accent: #8fabff;
     --accent-fg: #0d1430;
     --accent-soft: #1f2a4d;
+    --inc-soft: #34406a;
     --border: #36363d;
     --surface: #1b1b1f;
     --surface-2: #232328;
@@ -55,6 +58,7 @@
   --accent: #8fabff;
   --accent-fg: #0d1430;
   --accent-soft: #1f2a4d;
+  --inc-soft: #34406a;
   --border: #36363d;
   --surface: #1b1b1f;
   --surface-2: #232328;

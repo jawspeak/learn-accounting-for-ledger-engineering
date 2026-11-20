@@ -8,7 +8,7 @@
   --sa-muted: var(--muted, #6b6b70);
   --sa-ok: var(--ok, #2e7d32);
   --sa-err: var(--err, #c62828);
-  --sa-hl: var(--accent-soft, color-mix(in srgb, var(--sa-accent) 14%, transparent));
+  --sa-hl: var(--inc-soft, color-mix(in srgb, var(--sa-accent) 14%, transparent));
   /* What changed in this step: amber, never blue (blue = the increasing side of a T). */
   --sa-chg: var(--change, #b06a00);
   --sa-chg-soft: var(--change-soft, #ffe39a);
