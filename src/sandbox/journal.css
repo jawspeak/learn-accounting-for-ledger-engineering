@@ -153,6 +153,27 @@
   cursor: default;
 }
 /* Lines: the account, then the amount in its column. Credits are indented under the debits. */
+/* The account, then a reminder of its type and increasing side: "Liability ▲Cr". */
+.jx-acct-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.jx-acct-row select {
+  min-width: 0;
+}
+.jx-acct-type {
+  flex: none;
+  margin-left: auto; /* one aligned column, at the right of the Account column */
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: help;
+}
+.jx-acct-inc {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
 .jx-acct select {
   max-width: 100%;
   font: inherit;
@@ -263,6 +284,10 @@ td.jx-add {
   }
   .jx-line.is-cr .jx-acct {
     padding-left: 0.9rem;
+  }
+  /* Phones: keep "▲Dr", drop the type name, so the account keeps its width. */
+  .jx-acct-type-name {
+    display: none;
   }
   /* The description takes the first line; the check, "+ Line" and the tools the second. */
   .jx-head-cell {

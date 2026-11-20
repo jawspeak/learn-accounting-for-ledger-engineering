@@ -110,6 +110,21 @@ describe('Journal view (the editor)', () => {
     expect(sides()).toEqual(['dr', 'cr', 'cr']);
   });
 
+  it('each line reminds you of its account’s type and increasing side, and what the line does to it', () => {
+    mountLoan('journal'); // Entry 1: Dr Checking $500 / Cr Loan Payable $500
+    const hint = (label: string) =>
+      screen.getByLabelText(label).closest('td')!.querySelector('.jx-acct-type')!;
+    expect(hint('Entry 1 line 1 account').textContent).toMatch(/^Asset ▲Dr/);
+    expect(hint('Entry 1 line 2 account').textContent).toMatch(/^Liability ▲Cr/);
+    expect(hint('Entry 1 line 1 account').getAttribute('title')).toBe(
+      'This debit increases Checking Account',
+    );
+    // Entry 2 pays interest out of checking: a credit to an asset decreases it.
+    expect(hint('Entry 2 line 2 account').getAttribute('title')).toBe(
+      'This credit decreases Checking Account',
+    );
+  });
+
   it('half-written lines stay on screen but are left out of the link', () => {
     mountLoan('journal');
     fireEvent.click(screen.getByRole('button', { name: 'Add a line to entry 1' }));

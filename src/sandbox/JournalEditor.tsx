@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
-import type { AccountType, EntityBooks, Posting, Side } from '@contracts';
+import type { Account, AccountType, EntityBooks, Posting, Side } from '@contracts';
+import { engine } from '@engine';
 import { AmountInput } from '../components/builder/AmountInput';
 import { formatDollars } from '../components/builder/model';
 import { useScrollToAt } from '../lib/useScrollToAt';
@@ -17,7 +18,7 @@ import {
   setLineAccount,
   setLineAmount,
 } from './model';
-import { SECTION_LABEL, sectionOf, TypeOptions, type BsSection } from './EntityPanels';
+import { SECTION_LABEL, sectionOf, TypeOptions, typeLabel, type BsSection } from './EntityPanels';
 import './journal.css';
 
 const NEW = '__new';
@@ -261,7 +262,13 @@ export function JournalEditor({
                   <tr key={li} className={`jx-line ${p.side === 'cr' ? 'is-cr' : 'is-dr'}`}>
                     <td />
                     <td className="jx-acct">
-                      {accountSelect(p, ri, li, line)}
+                      <span className="jx-acct-row">
+                        {accountSelect(p, ri, li, line)}
+                        <AccountHint
+                          account={accounts.find((a) => a.id === p.accountId)}
+                          line={p}
+                        />
+                      </span>
                       {creating === `${ri}:${li}` && (
                         <NewAccountForm
                           entity={e}
@@ -310,6 +317,30 @@ export function JournalEditor({
         <span aria-hidden="true">＋ </span>Add entry
       </button>
     </div>
+  );
+}
+
+/**
+ * A reminder next to a line's account: its type and the side that increases it — "Liability ▲Cr". The tooltip
+ * says what this line does to it ("This debit decreases Wallet: Alice").
+ */
+function AccountHint({ account, line }: { account?: Account; line: Posting }) {
+  if (!account) return null;
+  const normal = engine.normalSide(account.type);
+  const word = (s: Side) => (s === 'dr' ? 'debit' : 'credit');
+  const effect =
+    line.amount > 0
+      ? `This ${word(line.side)} ${line.side === normal ? 'increases' : 'decreases'} ${account.name}`
+      : `${account.name} increases with a ${word(normal)}`;
+  return (
+    <span className="jx-acct-type" title={effect}>
+      <span className="jx-acct-type-name">{typeLabel(account.type)}</span>{' '}
+      <span className="jx-acct-inc">▲{normal === 'dr' ? 'Dr' : 'Cr'}</span>
+      <span className="sr-only">
+        {' '}
+        (increases with a {word(normal)}){line.amount > 0 ? `. ${effect}.` : ''}
+      </span>
+    </span>
   );
 }
 
