@@ -596,3 +596,29 @@
   margin: 0.1rem 0 0;
   justify-content: center;
 }
+
+/* The Sandbox menu: "Build a file with an agent" — the docs, and a prompt to copy. */
+.sbx-menu-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 0;
+  min-width: 100%;
+  margin-top: var(--space-1);
+  padding: 0.5rem 0.5rem 0.35rem;
+  border-top: 1px solid var(--border);
+}
+.sbx-menu-agents p {
+  margin: 0;
+}
+.sbx-menu-heading {
+  font-weight: 600;
+}
+.sbx-menu-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+}
+.sbx-menu-agents .btn {
+  align-self: flex-start;
+}

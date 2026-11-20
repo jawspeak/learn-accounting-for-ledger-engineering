@@ -30,6 +30,7 @@ import {
 } from './model';
 import { entityLabel, ShowCodes } from './codes';
 import { checkSandbox, exportFileName, parseSandboxFile } from './fileFormat';
+import { AgentHelp } from './AgentHelp';
 import { Menu } from './Menu';
 import { SandboxLink, SandboxNavProvider, type SandboxNav, type SandboxView } from './nav';
 import { AccountsEditor, AccountUsage, EntitySummaryLine, OpeningEditor } from './EntityPanels';
@@ -318,7 +319,7 @@ export function Sandbox({
                   </button>
                   <button
                     type="button"
-                    title="Open a .json file exported from the Sandbox"
+                    title="Open a .json Sandbox file — exported here, or written by you or an agent"
                     onClick={() => {
                       close();
                       fileRef.current?.click();
@@ -326,6 +327,16 @@ export function Sandbox({
                   >
                     Import
                   </button>
+                  <AgentHelp
+                    onCopied={(ok) => {
+                      close();
+                      setStatus(
+                        ok
+                          ? 'Copied a prompt for your agent — paste it, describe what to model, then Import the file it writes.'
+                          : 'Couldn’t copy — the format guide is at sandbox-format.md.',
+                      );
+                    }}
+                  />
                 </>
               )}
             </Menu>

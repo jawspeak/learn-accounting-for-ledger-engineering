@@ -102,3 +102,24 @@ test('a file that isn’t valid says where; the format docs are published for ag
   }
   w.assertClean();
 });
+
+test('the Sandbox menu points agents to the format, and copies a prompt for them', async ({
+  page,
+  context,
+}) => {
+  const w = watchErrors(page);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/#/sandbox');
+  await page.getByRole('button', { name: 'Sandbox menu' }).click();
+  const agents = page.getByRole('group', { name: 'Build a file with an agent' });
+  for (const name of ['Format guide', 'JSON Schema', 'Example file', 'llms.txt']) {
+    const href = await agents.getByRole('link', { name }).getAttribute('href');
+    expect((await page.request.get(`/${href}`)).ok(), name).toBe(true);
+  }
+  await agents.getByRole('button', { name: 'Copy agent prompt' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Copied a prompt' })).toBeVisible();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('/sandbox-format.md');
+  expect(copied).toContain('Import');
+  w.assertClean();
+});
