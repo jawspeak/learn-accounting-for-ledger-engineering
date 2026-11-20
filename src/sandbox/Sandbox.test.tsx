@@ -63,7 +63,7 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
     // until you type in it, and an untouched entry isn't flagged as unbalanced anywhere.
     expect(screen.getByLabelText('Entry 1 line 1 account')).toBeTruthy();
     expect(screen.getByText(/Entries balanced \(0\)/)).toBeTruthy();
-    expect(onState.mock.calls.at(-1)![0].scenarios[0].books.you.rows).toEqual([]);
+    expect(onState.mock.calls.at(-1)![0].scenarios[0].events).toEqual([]);
     // Write it: sell lemonade for $3.
     // Every line takes an amount under Dr or Cr; the column you type in decides which it is.
     expect(screen.getByLabelText('Entry 1 line 1 credit')).toBeTruthy();
@@ -89,7 +89,7 @@ describe('Sandbox as a standalone module (no router, no course content)', () => 
         .getAttribute('aria-label'),
     ).toMatch(/balance \$3 debit/);
     // An entry number goes back to the Journal through the host, too.
-    fireEvent.click(within(ledger).getAllByRole('link', { name: '(1)' })[0]!);
+    fireEvent.click(within(ledger).getAllByRole('link', { name: 'E1' })[0]!);
     expect(screen.getByLabelText('Entry 1 description')).toBeTruthy();
   });
 });

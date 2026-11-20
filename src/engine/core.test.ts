@@ -149,7 +149,7 @@ describe('pickerAccounts', () => {
 
 describe('URL codec', () => {
   const sandbox: SandboxState = {
-    v: 2,
+    v: 3,
     title: 'Deposit',
     entities: [
       {
@@ -165,12 +165,8 @@ describe('URL codec', () => {
         id: 'deposit',
         title: 'Deposit',
         text: '# Hi\nYou deposit **$100**.',
-        books: {
-          you: {
-            rows: [row('r1', p('cash', 'dr', 100))],
-            opening: { lines: [{ accountId: 'cash', amount: 100 }] },
-          },
-        },
+        events: [{ id: 'e1', label: 'Deposit', lines: { you: row('r1', p('cash', 'dr', 100)).postings } }],
+        opening: { you: { lines: [{ accountId: 'cash', amount: 100 }] } },
       },
     ],
   };
@@ -200,8 +196,8 @@ describe('URL codec', () => {
     expect(decodeSandbox('%%%')).toBeNull();
     expect(decodeAttempt(encodeState(sandbox))).toBeNull();
     expect(decodeSandbox(encodeState({ v: 1, problemId: 'x' }))).toBeNull();
-    expect(decodeSandbox(encodeState({ ...sandbox, v: 3 } as unknown as SandboxState))).toBeNull();
-    // Sandbox v1 links (one scenario, entries inside each entity) were dropped with v2.
+    expect(decodeSandbox(encodeState({ ...sandbox, v: 4 } as unknown as SandboxState))).toBeNull();
+    // Older Sandbox links (v1: one scenario; v2: entries per entity) were dropped.
     expect(decodeSandbox(encodeState({ v: 1, scenario: '', entities: [] } as unknown as SandboxState))).toBeNull();
     const fractional = { v: 1 as const, problemId: 'x', rows: [{ id: 'r', postings: [{ accountId: 'cash', side: 'dr' as const, amount: 1.5 }] }] };
     expect(decodeAttempt(encodeState(fractional))).toBeNull();

@@ -8,10 +8,11 @@ import type {
   Money,
   Posting,
   EntityBooks,
+  EventRow,
   SandboxEntity,
+  SandboxEvent,
   SandboxScenario,
   SandboxState,
-  ScenarioBooks,
   Side,
   TransactionRow,
 } from '@contracts';
@@ -32,7 +33,7 @@ export const ACCOUNT_TYPES: { type: AccountType; label: string }[] = [
 
 export function emptyState(): SandboxState {
   return {
-    v: 2,
+    v: 3,
     title: '',
     entities: [newEntity([], 'You')],
     scenarios: [newScenario([], 'Scenario 1')],
@@ -48,7 +49,8 @@ export function newScenario(existing: SandboxScenario[], title: string): Sandbox
     ),
     title,
     text: '',
-    books: {},
+    events: [],
+    opening: {},
   };
 }
 
@@ -523,37 +525,38 @@ export function entryCheck(r: TransactionRow): EntryCheck {
 
 /**
  * The state as it can be saved in a link or a file: half-written lines (no account, or no amount) are left out,
- * and a line's `chosenType` is dropped when its account exists (the account says the type) — shorter links.
+ * a line's `chosenType` is dropped when its account exists (the account says the type), and an entity's empty
+ * entry is left out (empty and missing both mean "not filled in yet") — shorter links.
  */
 export function persistable(s: SandboxState): SandboxState {
+  const known = new Map(s.entities.map((e) => [e.id, new Set(e.accounts.map((a) => a.id))]));
   return {
     ...s,
     scenarios: s.scenarios.map((sc) => ({
       ...sc,
-      books: Object.fromEntries(
-        Object.entries(sc.books).map(([id, b]) => {
-          const known = new Set(s.entities.find((e) => e.id === id)?.accounts.map((a) => a.id));
-          const out: ScenarioBooks = {
-            ...b,
-            rows: b.rows.map((r) => ({
-              ...r,
-              postings: r.postings.filter(isPosted).map((p) => {
-                if (!known.has(p.accountId)) return p;
-                const out: Posting = { ...p };
-                delete out.chosenType;
-                return out;
-              }),
-            })),
-          };
-          return [id, out];
-        }),
-      ),
+      events: sc.events.map((ev) => {
+        const lines: Record<string, Posting[]> = {};
+        for (const [id, ps] of Object.entries(ev.lines)) {
+          const kept = ps.filter(isPosted).map((p) => {
+            if (!known.get(id)?.has(p.accountId)) return p;
+            const out: Posting = { ...p };
+            delete out.chosenType;
+            return out;
+          });
+          if (kept.length) lines[id] = kept;
+        }
+        return { ...ev, lines };
+      }),
     })),
   };
 }
 
-/** Scenarios written as each entity's books (accounts + rows) → a state. An entity's accounts are the union, by
- *  id, of its accounts in every scenario (first definition wins), in first-seen order. */
+/**
+ * Scenarios written as each entity's books (accounts + rows) → a state. Rows line up by position: row i of every
+ * entity is event Ei (its label from the first entity that names it); a row marked `none`, or a missing one, means
+ * that entity has no entry for the event. An entity's accounts are the union, by id, of its accounts in every
+ * scenario (first definition wins), in first-seen order.
+ */
 export function stateFromBooks(
   title: string,
   scenarios: { id: string; title: string; text: string; books: EntityBooks[] }[],
@@ -561,46 +564,66 @@ export function stateFromBooks(
   const entities: SandboxEntity[] = [];
   for (const sc of scenarios)
     for (const b of sc.books) {
-      const { rows: _r, opening: _o, ...def } = b;
-      void _r;
-      void _o;
+      const def: SandboxEntity = {
+        id: b.id,
+        name: b.name,
+        accounts: [...b.accounts],
+        showBalanceSheets: b.showBalanceSheets,
+      };
+      if (b.columnOrder) def.columnOrder = b.columnOrder;
       const have = entities.find((e) => e.id === b.id);
-      if (!have) entities.push({ ...def, accounts: [...def.accounts] });
+      if (!have) entities.push(def);
       else
         for (const a of def.accounts)
           if (!have.accounts.some((x) => x.id === a.id)) have.accounts.push(a);
     }
   return {
-    v: 2,
+    v: 3,
     title,
     entities,
-    scenarios: scenarios.map((sc) => ({
-      id: sc.id,
-      title: sc.title,
-      text: sc.text,
-      books: Object.fromEntries(
-        sc.books.map((b) => {
-          const books: ScenarioBooks = { rows: b.rows };
-          if (b.opening) books.opening = b.opening;
-          return [b.id, books];
-        }),
-      ),
-    })),
+    scenarios: scenarios.map((sc) => {
+      const n = Math.max(0, ...sc.books.map((b) => b.rows.length));
+      const events: SandboxEvent[] = Array.from({ length: n }, (_, i) => {
+        const ev: SandboxEvent = { id: `e${i + 1}`, lines: {} };
+        const none: string[] = [];
+        // Every entity: one with no books in this scenario (or no row i) has no entry for the event.
+        for (const entity of entities) {
+          const r = sc.books.find((b) => b.id === entity.id)?.rows[i];
+          if (!r || r.none) none.push(entity.id);
+          else ev.lines[entity.id] = r.postings;
+          if (r?.label && !ev.label) ev.label = r.label;
+        }
+        if (none.length) ev.none = none;
+        return ev;
+      });
+      const opening: Record<string, BalanceSheet> = {};
+      for (const b of sc.books) if (b.opening) opening[b.id] = b.opening;
+      return { id: sc.id, title: sc.title, text: sc.text, events, opening };
+    }),
   };
 }
 
-// ---- Entities × scenarios: the views edit one entity's books in one scenario (`EntityBooks`) ----
-// Accounts, account order and the balance-sheet toggle belong to the entity (shared by every scenario); entries
-// and opening balances belong to the scenario.
+// ---- Entities × scenarios × events: the views edit one entity's books in one scenario (`EntityBooks`) ----
+// Accounts, account order and the balance-sheet toggle belong to the entity (shared by every scenario). A scenario
+// has its events (E1, E2…, shared by every entity) and each entity's opening balances. An entity's journal in a
+// scenario is one row per event: its entry for that event, or `none` when the event doesn't touch its books.
+// Adding, removing, moving or naming a row does it to the event — for every entity.
 
-const NO_BOOKS: ScenarioBooks = { rows: [] };
+/** One event, as one entity's journal row. */
+function rowOf(ev: SandboxEvent, entityId: string): EventRow {
+  const r: EventRow = { id: ev.id, postings: ev.lines[entityId] ?? [] };
+  if (ev.label) r.label = ev.label;
+  if (ev.none?.includes(entityId)) r.none = true;
+  return r;
+}
 
 /** Entity `ei`'s chart of accounts with its books in scenario `si`. */
 export function booksOf(s: SandboxState, si: number, ei: number): EntityBooks {
   const e = s.entities[ei]!;
-  const b = s.scenarios[si]?.books[e.id] ?? NO_BOOKS;
-  const out: EntityBooks = { ...e, rows: b.rows };
-  if (b.opening) out.opening = b.opening;
+  const sc = s.scenarios[si];
+  const out: EntityBooks = { ...e, rows: (sc?.events ?? []).map((ev) => rowOf(ev, e.id)) };
+  const opening = sc?.opening[e.id];
+  if (opening) out.opening = opening;
   return out;
 }
 
@@ -609,8 +632,9 @@ export const allBooks = (s: SandboxState, si: number) =>
   s.entities.map((_, ei) => booksOf(s, si, ei));
 
 /**
- * Write back an edit of entity `ei` in scenario `si`. The entity part is shared, so when an account was removed
- * its lines and opening balance go from every other scenario too (an id that no longer exists can't be posted to).
+ * Write back an edit of entity `ei` in scenario `si`. Its rows are the scenario's events, in order: their order,
+ * labels and existence apply to every entity; their lines and `none` to this one. The entity part is shared, so
+ * when an account was removed its lines and opening balance go from every other scenario too.
  */
 export function withBooks(s: SandboxState, si: number, ei: number, b: EntityBooks): SandboxState {
   const { rows, opening, ...entity } = b;
@@ -623,21 +647,42 @@ export function withBooks(s: SandboxState, si: number, ei: number, b: EntityBook
     entities: s.entities.map((x, j) => (j === ei ? entity : x)),
     scenarios: s.scenarios.map((sc, j) => {
       if (j === si) {
-        const books: ScenarioBooks = { rows };
-        if (opening) books.opening = opening;
-        return { ...sc, books: { ...sc.books, [id]: books } };
+        const byId = new Map(sc.events.map((ev) => [ev.id, ev]));
+        const events = rows.map((r) => {
+          const old = byId.get(r.id);
+          const lines = { ...(old?.lines ?? {}) };
+          if (r.none || !r.postings.length) delete lines[id];
+          else lines[id] = r.postings;
+          const none = new Set(old?.none ?? []);
+          if (r.none) none.add(id);
+          else none.delete(id);
+          const ev: SandboxEvent = { id: r.id, lines };
+          if (r.label) ev.label = r.label;
+          if (none.size) ev.none = [...none];
+          return ev;
+        });
+        const nextOpening = { ...sc.opening };
+        if (opening) nextOpening[id] = opening;
+        else delete nextOpening[id];
+        return { ...sc, events, opening: nextOpening };
       }
-      const other = sc.books[id];
-      if (!removed || !other) return sc;
-      const pruned: ScenarioBooks = {
-        rows: other.rows.map((r) => ({
-          ...r,
-          postings: r.postings.filter((p) => keep(p.accountId)),
-        })),
+      if (!removed) return sc;
+      const nextOpening = { ...sc.opening };
+      const lines = sc.opening[id]?.lines.filter((l) => keep(l.accountId)) ?? [];
+      if (lines.length) nextOpening[id] = { lines };
+      else delete nextOpening[id];
+      return {
+        ...sc,
+        opening: nextOpening,
+        events: sc.events.map((ev) =>
+          ev.lines[id]
+            ? {
+                ...ev,
+                lines: { ...ev.lines, [id]: ev.lines[id]!.filter((p) => keep(p.accountId)) },
+              }
+            : ev,
+        ),
       };
-      const lines = other.opening?.lines.filter((l) => keep(l.accountId)) ?? [];
-      if (lines.length) pruned.opening = { lines };
-      return { ...sc, books: { ...sc.books, [id]: pruned } };
     }),
   };
 }
@@ -645,17 +690,36 @@ export function withBooks(s: SandboxState, si: number, ei: number, b: EntityBook
 /** How many lines post to an account in each scenario (for "remove" confirmations and the chart of accounts). */
 export function usageByScenario(s: SandboxState, entityId: string, accountId: AccountId): number[] {
   return s.scenarios.map((sc) => {
-    const b = sc.books[entityId];
-    if (!b) return 0;
-    const lines = b.rows.reduce(
-      (n, r) => n + r.postings.filter((p) => p.accountId === accountId && isPosted(p)).length,
+    const lines = sc.events.reduce(
+      (n, ev) =>
+        n +
+        (ev.lines[entityId] ?? []).filter((p) => p.accountId === accountId && isPosted(p)).length,
       0,
     );
-    const opening = b.opening?.lines.some((l) => l.accountId === accountId && l.amount !== 0)
+    const opening = sc.opening[entityId]?.lines.some(
+      (l) => l.accountId === accountId && l.amount !== 0,
+    )
       ? 1
       : 0;
     return lines + opening;
   });
+}
+
+/** One entity's part in one event: its lines are posted, it has explicitly no entry, or it's still to do. */
+export type EventPart = 'posted' | 'none' | 'todo';
+export function eventPart(ev: SandboxEvent, entityId: string): EventPart {
+  if (ev.none?.includes(entityId)) return 'none';
+  return (ev.lines[entityId] ?? []).some(isPosted) ? 'posted' : 'todo';
+}
+
+/** For each event of a scenario: every entity's part in it (name, index, part) — "Zap ✓ · Bank: no entry". */
+export function eventParts(
+  s: SandboxState,
+  si: number,
+): { entity: string; index: number; part: EventPart }[][] {
+  return (s.scenarios[si]?.events ?? []).map((ev) =>
+    s.entities.map((e, index) => ({ entity: e.name, index, part: eventPart(ev, e.id) })),
+  );
 }
 
 export function addEntityTo(s: SandboxState, name: string): { state: SandboxState; index: number } {
@@ -663,18 +727,27 @@ export function addEntityTo(s: SandboxState, name: string): { state: SandboxStat
   return { state: { ...s, entities: [...s.entities, e] }, index: s.entities.length };
 }
 
-/** Duplicate an entity right after it: its accounts, and its books in every scenario. */
+/** Duplicate an entity right after it: its accounts, and its entries and opening balances in every scenario. */
 export function duplicateEntityIn(s: SandboxState, ei: number): SandboxState {
   const src = s.entities[ei]!;
   const copy = duplicateEntity(s.entities, src);
   return {
     ...s,
     entities: [...s.entities.slice(0, ei + 1), copy, ...s.entities.slice(ei + 1)],
-    scenarios: s.scenarios.map((sc) =>
-      sc.books[src.id]
-        ? { ...sc, books: { ...sc.books, [copy.id]: structuredClone(sc.books[src.id]!) } }
-        : sc,
-    ),
+    scenarios: s.scenarios.map((sc) => {
+      const opening = { ...sc.opening };
+      if (sc.opening[src.id]) opening[copy.id] = structuredClone(sc.opening[src.id]!);
+      return {
+        ...sc,
+        opening,
+        events: sc.events.map((ev) => {
+          const out: SandboxEvent = { ...ev, lines: { ...ev.lines } };
+          if (ev.lines[src.id]) out.lines[copy.id] = structuredClone(ev.lines[src.id]!);
+          if (ev.none?.includes(src.id)) out.none = [...ev.none, copy.id];
+          return out;
+        }),
+      };
+    }),
   };
 }
 
@@ -686,9 +759,21 @@ export function removeEntityFrom(s: SandboxState, ei: number): SandboxState {
     ...s,
     entities: rest.length ? rest : [newEntity([], 'You')],
     scenarios: s.scenarios.map((sc) => {
-      const books = { ...sc.books };
-      delete books[id];
-      return { ...sc, books };
+      const opening = { ...sc.opening };
+      delete opening[id];
+      return {
+        ...sc,
+        opening,
+        events: sc.events.map((ev) => {
+          const lines = { ...ev.lines };
+          delete lines[id];
+          const out: SandboxEvent = { ...ev, lines };
+          const none = ev.none?.filter((x) => x !== id);
+          if (none?.length) out.none = none;
+          else delete out.none;
+          return out;
+        }),
+      };
     }),
   };
 }
@@ -698,7 +783,7 @@ export function addScenarioTo(s: SandboxState): { state: SandboxState; index: nu
   return { state: { ...s, scenarios: [...s.scenarios, sc] }, index: s.scenarios.length };
 }
 
-/** Duplicate a scenario right after it (its text, entries and opening balances). */
+/** Duplicate a scenario right after it (its text, events and opening balances). */
 export function duplicateScenarioIn(s: SandboxState, si: number): SandboxState {
   const src = s.scenarios[si]!;
   const title = `${src.title} (copy)`;
@@ -737,8 +822,11 @@ export const updateScenario = (
   scenarios: s.scenarios.map((sc, j) => (j === si ? { ...sc, ...patch } : sc)),
 });
 
-/** A scenario's check, like a test result: "ok" when every entity's entries balance and A = L + E holds
- *  (opening balances too), "bad" when any doesn't, "empty" before anything is posted. */
+/**
+ * A scenario's check, like a test result: "ok" when every entity's entries balance, A = L + E holds (opening
+ * balances too), and every event that's been started has every entity's part filled in — an entry, or "no entry";
+ * "bad" when any of that fails; "empty" before anything is posted.
+ */
 export type ScenarioStatus = 'empty' | 'ok' | 'bad';
 export function scenarioStatus(s: SandboxState, si: number): ScenarioStatus {
   let posted = false;
@@ -751,8 +839,15 @@ export function scenarioStatus(s: SandboxState, si: number): ScenarioStatus {
     if (!sum.rowsBalanced || !sum.equation.balanced || (sum.opening && !sum.opening.balanced))
       return 'bad';
   }
+  // An event someone has posted to, with another entity's part still blank: the other side is missing.
+  for (const parts of eventParts(s, si))
+    if (parts.some((p) => p.part === 'posted') && parts.some((p) => p.part === 'todo'))
+      return 'bad';
   return posted ? 'ok' : 'empty';
 }
+
+/** "E1", "E2", … — an event's number, the same in every entity's books. */
+export const eventNumber = (i: number) => `E${i + 1}`;
 
 /** "S1", "S2", … — a scenario's short name in tabs and the chart of accounts. */
 export const scenarioNumber = (si: number) => `S${si + 1}`;

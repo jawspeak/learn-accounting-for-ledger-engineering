@@ -7,6 +7,7 @@ import type {
   BalanceSheet,
   Money,
   EntityBooks,
+  EventRow,
   Side,
   TransactionRow,
 } from '@contracts';
@@ -54,7 +55,12 @@ export function setAmount(
   cents: Money,
 ): EntityBooks {
   const type = e.accounts.find((a) => a.id === accountId)?.type ?? 'asset';
-  return updateRow(e, i, (r) => setCell(r, accountId, side, cents, type));
+  // Typing an amount means this event does touch these books after all.
+  return updateRow(e, i, (r) => {
+    const next: EventRow = setCell(r, accountId, side, cents, type);
+    delete next.none;
+    return next;
+  });
 }
 
 export function setLabel(e: EntityBooks, i: number, label: string): EntityBooks {

@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import type { Account, AccountType, EntityBooks, Posting, Side } from '@contracts';
+import type { Account, AccountType, EntityBooks, EventRow, Posting, Side } from '@contracts';
 import { engine } from '@engine';
 import { AmountInput } from '../components/builder/AmountInput';
 import { formatDollars } from '../components/builder/model';
@@ -17,14 +17,25 @@ import {
   removeRow,
   setLineAccount,
   setLineAmount,
+  blankLine,
+  eventNumber,
+  type EventPart,
 } from './model';
 import { SECTION_LABEL, sectionOf, TypeOptions, typeLabel, type BsSection } from './EntityPanels';
+import { SandboxLink } from './nav';
 import './journal.css';
 
 const NEW = '__new';
 const SECTIONS: BsSection[] = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'];
 const SIDES: Side[] = ['dr', 'cr'];
 export const entryAnchor = (n: number) => `entry-${n}`;
+
+const PART_MARK: Record<EventPart, string> = { posted: '✓', none: '—', todo: '✗' };
+const PART_WORD: Record<EventPart, string> = {
+  posted: 'has its entry',
+  none: 'no entry',
+  todo: 'entry still to do',
+};
 
 /** Phone width (matches journal.css): the entry's heading row then spans the Dr and Cr columns too. */
 const NARROW = '(max-width: 560px)';
@@ -52,6 +63,8 @@ export function JournalEditor({
   at,
   idPrefix = '',
   hint = true,
+  parts = [],
+  self = 0,
 }: {
   entity: EntityBooks;
   onChange(e: EntityBooks): void;
@@ -61,6 +74,10 @@ export function JournalEditor({
   idPrefix?: string;
   /** The "Write your first entry" hint above a blank journal. */
   hint?: boolean;
+  /** For each event (row): every entity's part in it, so each event shows the other side ("Bank ✓"). */
+  parts?: { entity: string; index: number; part: EventPart }[][];
+  /** This entity's index (in `parts`). */
+  self?: number;
 }) {
   // With no entries yet, show one blank entry (a debit line and a credit line) so it's clear how to start. It
   // isn't in the state (or a link) until you type in it: every edit below starts from `e`, so the first one
@@ -91,6 +108,40 @@ export function JournalEditor({
     setTimeout(() =>
       document.getElementById(`${idPrefix}${e.id}-entry-${e.rows.length + 1}-desc`)?.focus(),
     );
+  };
+
+  /** This event doesn't touch these books ("No entry"), or does after all (a blank Dr and Cr line to fill). */
+  const setNone = (ri: number, none: boolean) => {
+    const r = e.rows[ri]!;
+    if (none && r.postings.some((p) => p.amount > 0)) {
+      if (
+        !window.confirm(`Mark ${eventNumber(ri)} as no entry in ${e.name}’s books? Its lines go.`)
+      )
+        return;
+    }
+    onChange({
+      ...e,
+      rows: e.rows.map((x, i) => {
+        if (i !== ri) return x;
+        if (none) return { ...x, none: true, postings: [] };
+        const next: EventRow = { ...x, postings: [blankLine('dr'), blankLine('cr')] };
+        delete next.none;
+        return next;
+      }),
+    });
+  };
+
+  /** Removing an event removes it from every entity — ask first when another entity has lines in it. */
+  const removeEvent = (ri: number) => {
+    const others = (parts[ri] ?? []).filter((p) => p.index !== self && p.part === 'posted');
+    if (
+      others.length &&
+      !window.confirm(
+        `Remove ${eventNumber(ri)} from every entity? ${others.map((o) => o.entity).join(', ')}’s entry goes too.`,
+      )
+    )
+      return;
+    onChange(removeRow(e, ri));
   };
 
   const setDescription = (ri: number, label: string) =>
@@ -172,6 +223,49 @@ export function JournalEditor({
         {e.rows.map((r, ri) => {
           const n = ri + 1;
           const t = entryCheck(r);
+          // The other entities' parts in this event, and whether this entity's side is the one missing.
+          const others = (parts[ri] ?? []).filter((p) => p.index !== self);
+          const missing =
+            !r.none && !t.started && others.some((p) => p.part === 'posted') && !placeholder;
+          // "No entry", ↑ ↓ ×. Nothing to move or remove until the blank first entry is written.
+          const tools = (
+            <span className="jx-tools" hidden={placeholder}>
+              {!r.none && (
+                <button
+                  type="button"
+                  aria-label={`No entry for entry ${n}`}
+                  title={`${eventNumber(ri)} doesn’t touch ${e.name || 'these'}’s books`}
+                  onClick={() => setNone(ri, true)}
+                >
+                  No entry
+                </button>
+              )}
+              <button
+                type="button"
+                aria-label={`Move entry ${n} up`}
+                disabled={ri === 0}
+                onClick={() => onChange(moveRow(e, ri, -1))}
+              >
+                <span aria-hidden="true">↑</span>
+              </button>
+              <button
+                type="button"
+                aria-label={`Move entry ${n} down`}
+                disabled={ri === e.rows.length - 1}
+                onClick={() => onChange(moveRow(e, ri, 1))}
+              >
+                <span aria-hidden="true">↓</span>
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove entry ${n}`}
+                title={`Remove ${eventNumber(ri)} (from every entity)`}
+                onClick={() => removeEvent(ri)}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </span>
+          );
           return (
             <tbody
               key={r.id}
@@ -187,8 +281,12 @@ export function JournalEditor({
             >
               {/* The entry's first row: its number, what happened, and whether it balances. */}
               <tr className="jx-head">
-                <th scope="row" className="jx-num">
-                  {n}
+                <th
+                  scope="row"
+                  className="jx-num"
+                  title={`Event ${n} — the same E${n} in every entity`}
+                >
+                  {eventNumber(ri)}
                 </th>
                 {/* On a phone the description gets the whole row, with "+ Line" in it. */}
                 <td colSpan={narrow ? 3 : 1}>
@@ -201,6 +299,23 @@ export function JournalEditor({
                       value={r.label ?? ''}
                       onChange={(ev) => setDescription(ri, ev.target.value)}
                     />
+                    {r.none && (
+                      <span
+                        className="jx-none"
+                        title={`${eventNumber(ri)} has no entry in ${e.name || 'these'}’s books`}
+                      >
+                        No entry here{' '}
+                        <button type="button" onClick={() => setNone(ri, false)}>
+                          ＋ Add one
+                        </button>
+                      </span>
+                    )}
+                    {missing && (
+                      <span className="jx-status is-bad">
+                        <span aria-hidden="true">✗</span> {e.name || 'This entity'}’s side is
+                        missing — fill it in, or mark “No entry”
+                      </span>
+                    )}
                     {/* Only a problem is worth the space: a balanced entry says nothing. */}
                     {t.started && !t.balanced && (
                       <span className="jx-status is-bad">
@@ -216,108 +331,109 @@ export function JournalEditor({
                         )}
                       </span>
                     )}
-                    {narrow && <span className="jx-add">{addLineButton(ri, n)}</span>}
-                    {/* Nothing to move or remove until the blank first entry is written. */}
-                    <span className="jx-tools" hidden={placeholder}>
-                      <button
-                        type="button"
-                        aria-label={`Move entry ${n} up`}
-                        disabled={ri === 0}
-                        onClick={() => onChange(moveRow(e, ri, -1))}
+                    {/* The same event in the other entities' books: ✓ posted, — no entry, ✗ still to do. */}
+                    {others.length > 0 && (
+                      <span
+                        className="jx-parts"
+                        aria-label={`${eventNumber(ri)} in other entities`}
                       >
-                        <span aria-hidden="true">↑</span>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Move entry ${n} down`}
-                        disabled={ri === e.rows.length - 1}
-                        onClick={() => onChange(moveRow(e, ri, 1))}
-                      >
-                        <span aria-hidden="true">↓</span>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Remove entry ${n}`}
-                        title="Remove this entry"
-                        onClick={() => onChange(removeRow(e, ri))}
-                      >
-                        <span aria-hidden="true">×</span>
-                      </button>
-                    </span>
+                        {others.map((o) => (
+                          <SandboxLink
+                            key={o.index}
+                            className={`jx-part is-${o.part}`}
+                            to={{ view: 'journal', entity: o.index, at: entryAnchor(n) }}
+                            title={`${eventNumber(ri)} in ${o.entity}’s books: ${PART_WORD[o.part]}`}
+                          >
+                            {o.entity} <span aria-hidden="true">{PART_MARK[o.part]}</span>
+                            <span className="sr-only">({PART_WORD[o.part]})</span>
+                          </SandboxLink>
+                        ))}
+                      </span>
+                    )}
+                    {narrow && !r.none && <span className="jx-add">{addLineButton(ri, n)}</span>}
+                    {narrow && tools}
                   </div>
                 </td>
+                {/* Desktop: "+ Line" and the event's tools in the heading row's Dr | Cr cells. */}
                 {!narrow && (
                   <td colSpan={2} className="jx-add">
-                    {addLineButton(ri, n)}
+                    <div className="jx-add-cell">
+                      {!r.none && addLineButton(ri, n)}
+                      {tools}
+                    </div>
                   </td>
                 )}
                 <td />
               </tr>
-              {r.postings.map((p, li) => {
-                const line = `Entry ${n} line ${li + 1}`;
-                return (
-                  <tr key={li} className={`jx-line ${p.side === 'cr' ? 'is-cr' : 'is-dr'}`}>
-                    <td />
-                    <td className="jx-acct">
-                      <span className="jx-acct-row">
-                        {accountSelect(p, ri, li, line)}
-                        {/* The account's type, in the room at the right of the Account column. */}
-                        {(() => {
-                          const a = accounts.find((x) => x.id === p.accountId);
-                          return a ? (
-                            <span className="jx-acct-type">{typeLabel(a.type)}</span>
-                          ) : null;
-                        })()}
-                      </span>
-                      {creating === `${ri}:${li}` && (
-                        <NewAccountForm
-                          entity={e}
-                          onCancel={() => setCreating(null)}
-                          onCreate={(name, type) => {
-                            const { entity, id } = addAccount(e, name, type);
-                            onChange(setLineAccount(entity, ri, li, id));
-                            setCreating(null);
-                          }}
-                        />
-                      )}
-                    </td>
-                    {/* Type in Dr or Cr: that makes it a debit (flush left) or a credit (indented). The
-                        faint "$0.00" marks the side the line is on until an amount is typed. */}
-                    {SIDES.map((s) => (
-                      <td key={s} className="jx-amt">
-                        <span className="jx-amt-row">
-                          <AmountInput
-                            className="jx-amount jx-quiet"
-                            aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
-                            allowCents
-                            formatAtRest
-                            placeholder={p.side === s && p.amount === 0 ? '$0.00' : ''}
-                            cents={p.side === s ? p.amount : 0}
-                            onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c, s))}
-                          />
-                          {/* Beside the amount: ▲ it increases the account, ▼ it decreases it. */}
-                          <EffectMark
-                            account={
-                              p.side === s ? accounts.find((a) => a.id === p.accountId) : undefined
-                            }
-                            line={p}
-                          />
+              {/* No entry here: just the heading row. */}
+              {!r.none &&
+                r.postings.map((p, li) => {
+                  const line = `Entry ${n} line ${li + 1}`;
+                  return (
+                    <tr key={li} className={`jx-line ${p.side === 'cr' ? 'is-cr' : 'is-dr'}`}>
+                      <td />
+                      <td className="jx-acct">
+                        <span className="jx-acct-row">
+                          {accountSelect(p, ri, li, line)}
+                          {/* The account's type, in the room at the right of the Account column. */}
+                          {(() => {
+                            const a = accounts.find((x) => x.id === p.accountId);
+                            return a ? (
+                              <span className="jx-acct-type">{typeLabel(a.type)}</span>
+                            ) : null;
+                          })()}
                         </span>
+                        {creating === `${ri}:${li}` && (
+                          <NewAccountForm
+                            entity={e}
+                            onCancel={() => setCreating(null)}
+                            onCreate={(name, type) => {
+                              const { entity, id } = addAccount(e, name, type);
+                              onChange(setLineAccount(entity, ri, li, id));
+                              setCreating(null);
+                            }}
+                          />
+                        )}
                       </td>
-                    ))}
-                    <td className="jx-tools-cell">
-                      <button
-                        type="button"
-                        className="jx-remove-line"
-                        aria-label={`Remove ${line.toLowerCase()}`}
-                        onClick={() => onChange(removeLine(e, ri, li))}
-                      >
-                        <span aria-hidden="true">×</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      {/* Type in Dr or Cr: that makes it a debit (flush left) or a credit (indented). The
+                        faint "$0.00" marks the side the line is on until an amount is typed. */}
+                      {SIDES.map((s) => (
+                        <td key={s} className="jx-amt">
+                          <span className="jx-amt-row">
+                            <AmountInput
+                              className="jx-amount jx-quiet"
+                              aria-label={`${line} ${s === 'dr' ? 'debit' : 'credit'}`}
+                              allowCents
+                              formatAtRest
+                              placeholder={p.side === s && p.amount === 0 ? '$0.00' : ''}
+                              cents={p.side === s ? p.amount : 0}
+                              onCentsChange={(c) => onChange(setLineAmount(e, ri, li, c, s))}
+                            />
+                            {/* Beside the amount: ▲ it increases the account, ▼ it decreases it. */}
+                            <EffectMark
+                              account={
+                                p.side === s
+                                  ? accounts.find((a) => a.id === p.accountId)
+                                  : undefined
+                              }
+                              line={p}
+                            />
+                          </span>
+                        </td>
+                      ))}
+                      <td className="jx-tools-cell">
+                        <button
+                          type="button"
+                          className="jx-remove-line"
+                          aria-label={`Remove ${line.toLowerCase()}`}
+                          onClick={() => onChange(removeLine(e, ri, li))}
+                        >
+                          <span aria-hidden="true">×</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           );
         })}

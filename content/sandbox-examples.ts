@@ -275,15 +275,21 @@ function zapWallet(): SandboxState {
       title: 'Bob cashes out, less a $1 fee',
       text:
         'Bob withdraws his **$20** to his checking account. Zap keeps a **$1** fee, then sweeps the fee from the FBO ' +
-        'account into its own operating account.\n\n' +
-        '- The fee is Zap’s revenue — and that $1 must leave the FBO account: it’s no longer users’ money.\n' +
-        '- Check the reconciliation: the bank’s **Deposits: FBO Accounts** ends at $30, exactly Zap’s ' +
+        'account into its own operating account. Two events:\n\n' +
+        '1. **E1 — the cash-out.** One entry in Zap’s books with three lines: Bob’s wallet goes down $20, $19 leaves ' +
+        'the FBO account, and $1 is Zap’s fee revenue. The bank moves $19 from the FBO deposit to Bob’s checking.\n' +
+        '2. **E2 — the fee sweep**, later: that $1 must leave the FBO account — it’s no longer users’ money.\n\n' +
+        'Check the reconciliation: the bank’s **Deposits: FBO Accounts** ends at $30, exactly Zap’s ' +
         '**Cash: FBO Account** — and exactly what Zap owes its users (Alice’s $30).',
       books: [
         Z(
           [
-            ['Charge Bob the $1 cash-out fee', ['wallet-bob', 'dr', 1], ['fee-revenue', 'cr', 1]],
-            ['Pay Bob $19 to his checking', ['wallet-bob', 'dr', 19], ['fbo-cash', 'cr', 19]],
+            [
+              'Bob cashes out $20, less a $1 fee',
+              ['wallet-bob', 'dr', 20],
+              ['fbo-cash', 'cr', 19],
+              ['fee-revenue', 'cr', 1],
+            ],
             ['Sweep the fee to operating', ['operating-cash', 'dr', 1], ['fbo-cash', 'cr', 1]],
           ],
           [

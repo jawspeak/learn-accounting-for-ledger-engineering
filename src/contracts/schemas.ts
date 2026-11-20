@@ -225,7 +225,7 @@ export const sectionSchema = z.object({
 });
 
 export const sandboxStateSchema = z.object({
-  v: z.literal(2),
+  v: z.literal(3),
   title: z.string().optional(),
   entities: z.array(
     z.object({
@@ -242,10 +242,15 @@ export const sandboxStateSchema = z.object({
         id: z.string(),
         title: z.string(),
         text: z.string(),
-        books: z.record(
-          z.string(),
-          z.object({ rows: z.array(rowSchema), opening: balanceSheetSchema.optional() }),
+        events: z.array(
+          z.object({
+            id: z.string().min(1),
+            label: z.string().optional(),
+            lines: z.record(z.string(), z.array(postingSchema)),
+            none: z.array(z.string()).optional(),
+          }),
         ),
+        opening: z.record(z.string(), balanceSheetSchema),
       }),
     )
     .min(1),

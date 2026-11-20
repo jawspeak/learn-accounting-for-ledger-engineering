@@ -35,8 +35,14 @@ function urlState(): SandboxState | null {
   return r.name === 'sandbox' && r.data ? engine.decodeSandbox(r.data) : null;
 }
 /** One entity's books in one scenario, from the URL. */
-const urlBooks = (scenario: number, entityId: string): ScenarioBooks =>
-  urlState()!.scenarios[scenario]!.books[entityId] ?? { rows: [] };
+const urlBooks = (scenario: number, entityId: string): ScenarioBooks => {
+  const s = urlState()!;
+  return booksOf(
+    s,
+    scenario,
+    s.entities.findIndex((e) => e.id === entityId),
+  );
+};
 const flush = () => act(() => vi.advanceTimersByTime(URL_DEBOUNCE_MS + 10));
 const mount = (view: SandboxView, s?: SandboxState, entity = 0, scenario = 0) =>
   render(
@@ -159,17 +165,52 @@ describe('Journal view (the editor)', () => {
     expect(screen.getByText(/^Accounts \(6\)/)).toBeTruthy();
   });
 
-  it('entries move up / down and can be removed', () => {
+  it('events move up / down and can be removed — for every entity, asking first if another has lines', () => {
     mountLoan('journal');
     fireEvent.click(screen.getByRole('button', { name: 'Move entry 2 up' }));
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
       'Pay $5 interest',
     );
+    // The bank has its entry for this event too, so removing it asks first.
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove entry 1' }));
+    expect(confirm.mock.calls[0]![0]).toMatch(
+      /Remove E1 from every entity\? First Example Bank’s entry goes too/,
+    );
+    expect(screen.getByLabelText('Entry 2 description')).toBeTruthy(); // kept
+    confirm.mockReturnValueOnce(true);
     fireEvent.click(screen.getByRole('button', { name: 'Remove entry 1' }));
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
       'Borrow $500',
     );
     expect(screen.queryByLabelText('Entry 2 description')).toBeNull();
+    // …and it's gone from the bank's books too (the same event).
+    flush();
+    expect(urlBooks(LOAN, 'bank').rows.map((r) => r.label)).toEqual(['Borrow $500']); // one name per event
+    confirm.mockRestore();
+  });
+
+  it('every event shows the other side, can be marked "No entry", and flags a missing side', () => {
+    mount('journal', EXAMPLES.find((x) => x.id === 'fbo')!.build(), 0, 1); // S2 "Alice pays Bob"
+    // Zap's E1: the bank has no entry (the money never leaves the FBO account).
+    expect(screen.getByRole('link', { name: /First Example Bank\s*\(no entry\)/ })).toBeTruthy();
+    // In the bank's journal, E1 is "No entry"; add one, and the scenario flags the missing side until filled.
+    fireEvent.click(
+      within(screen.getByRole('tablist', { name: 'Entities' })).getByRole('tab', {
+        name: 'First Example Bank',
+      }),
+    );
+    expect(screen.getByTitle(/has no entry in First Example Bank’s books/).textContent).toMatch(
+      /^No entry here/,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '＋ Add one' }));
+    expect(screen.getByLabelText('Entry 1 line 1 account')).toBeTruthy();
+    expect(screen.getByText(/First Example Bank’s side is missing/)).toBeTruthy();
+    const tab = within(screen.getByRole('tablist', { name: 'Scenarios' })).getAllByRole('tab')[1]!;
+    expect(tab.textContent).toMatch(/^S2✗/);
+    // Mark it "No entry" again: the scenario is fine.
+    fireEvent.click(screen.getByRole('button', { name: 'No entry for entry 1' }));
+    expect(tab.textContent).toMatch(/^S2✓/);
   });
 });
 
@@ -291,7 +332,7 @@ describe('scenarios', () => {
 
   it('a scenario whose books don’t balance shows ✗ on its tab', () => {
     const s = bank();
-    s.scenarios[0]!.books.you!.rows[0]!.postings[0]!.amount = 9900; // Dr $99 ≠ Cr $100
+    s.scenarios[0]!.events[0]!.lines.you![0]!.amount = 9900; // Dr $99 ≠ Cr $100
     mount('journal', s);
     const tab = within(screen.getByRole('tablist', { name: 'Scenarios' })).getAllByRole('tab')[0]!;
     expect(tab.textContent).toBe('S1✗Deposit cash (doesn’t balance)');
@@ -443,8 +484,8 @@ describe('T-accounts view (the ledger)', () => {
       'listitem',
     );
     expect(items.map((li) => li.textContent)).toEqual([
-      '(1) Borrow $500Dr Checking Account $500 · Cr Loan Payable $500',
-      '(2) Pay $5 interestDr Interest Expense $5 · Cr Checking Account $5',
+      'E1 Borrow $500Dr Checking Account $500 · Cr Loan Payable $500',
+      'E2 Pay $5 interestDr Interest Expense $5 · Cr Checking Account $5',
     ]);
     // Liabilities and equity share one flow, each labelled above its first T.
     expect(
@@ -467,7 +508,7 @@ describe('T-accounts view (the ledger)', () => {
     ]);
     const checking = ts[0]!;
     expect(checking.getAttribute('aria-label')).toMatch(/balance \$495 debit/);
-    const ref = within(checking).getByRole('link', { name: '(2)' });
+    const ref = within(checking).getByRole('link', { name: 'E2' });
     expect(parseHash(ref.getAttribute('href')!)).toMatchObject({
       view: 'journal',
       scenario: LOAN,
@@ -555,12 +596,13 @@ describe('Grid view', () => {
   it('a cell made of two journal lines shows their total read-only, so it can’t merge them', () => {
     const s = bank();
     // Entry 1 borrows $500 into Checking: split it into two $250 debit lines (as the Journal allows).
-    const row = s.scenarios[LOAN]!.books.you!.rows[0]!;
-    const dr = row.postings.find((p) => p.side === 'dr')!;
-    row.postings = [
+    const ev = s.scenarios[LOAN]!.events[0]!;
+    const lines = ev.lines.you!;
+    const dr = lines.find((p) => p.side === 'dr')!;
+    ev.lines.you = [
       { ...dr, amount: 25000 },
       { ...dr, amount: 25000 },
-      ...row.postings.filter((p) => p !== dr),
+      ...lines.filter((p) => p !== dr),
     ];
     mount('grid', s, 0, LOAN);
     const cell = screen.getByLabelText(
@@ -611,7 +653,7 @@ describe('journal model', () => {
     e = setLineAmount(e, 0, 1, 500, 'cr');
     e = setLineAmount(e, 0, 0, 700); // an amount on a line with no account yet
     const s = persistable(withBooks(bank(), LOAN, 0, e));
-    expect(s.scenarios[LOAN]!.books.you!.rows[0]!.postings).toEqual([
+    expect(s.scenarios[LOAN]!.events[0]!.lines.you).toEqual([
       { accountId: 'cash', side: 'cr', amount: 500 },
     ]);
   });

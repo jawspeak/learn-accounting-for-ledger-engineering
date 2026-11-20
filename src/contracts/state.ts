@@ -1,19 +1,21 @@
 /**
  * URL-encoded state. FROZEN CONTRACT — only the manager changes this file.
- * Bump the version on any breaking change. (Sandbox v1 links were dropped on purpose with v2: no one used them.)
+ * Bump the version on any breaking change. (Old Sandbox links are dropped on purpose: no one relies on them.)
  */
 import type {
   Account,
   BalanceSheet,
   EntityId,
+  Posting,
   TransactionRow,
   TrialBalanceLine,
 } from './accounting';
 
 /** Attempt links (problem answers). */
 export const STATE_VERSION = 1 as const;
-/** Sandbox links: v2 = entities with shared charts of accounts, and many scenarios. */
-export const SANDBOX_VERSION = 2 as const;
+/** Sandbox links: v3 = entities, scenarios, and events shared across entities (E1, E2… mean the same thing in
+ *  every entity's books). */
+export const SANDBOX_VERSION = 3 as const;
 
 /** An entity being modelled (a bank, a payments company, you): its chart of accounts, shared by every scenario. */
 export interface SandboxEntity {
@@ -25,20 +27,29 @@ export interface SandboxEntity {
   columnOrder?: string[];
 }
 
-/** One entity's books in one scenario. */
-export interface ScenarioBooks {
-  rows: TransactionRow[];
-  opening?: BalanceSheet;
+/**
+ * An event: something that happens (E1, E2… in its scenario). Each entity either books an entry for it (its lines
+ * here), has explicitly no entry (`none`), or hasn't been filled in yet — which the scenario's check flags, so
+ * the other side of an event isn't forgotten.
+ */
+export interface SandboxEvent {
+  id: string;
+  label?: string;
+  /** Each entity's entry for this event: its lines (debits and credits), by entity id. */
+  lines: Record<EntityId, Posting[]>;
+  /** Entities this event doesn't touch (no entry in their books). */
+  none?: EntityId[];
 }
 
-/** A scenario: a story, and what it posts in each entity's books (each with its own opening balances). */
+/** A scenario: a story, its events in order, and each entity's opening balances. */
 export interface SandboxScenario {
   id: string;
   title: string;
   /** Markdown. */
   text: string;
-  /** By entity id; an entity with no books here has no entries in this scenario. */
-  books: Record<EntityId, ScenarioBooks>;
+  events: SandboxEvent[];
+  /** By entity id. */
+  opening: Record<EntityId, BalanceSheet>;
 }
 
 export interface SandboxState {
@@ -46,6 +57,15 @@ export interface SandboxState {
   title?: string;
   entities: SandboxEntity[];
   scenarios: SandboxScenario[];
+}
+
+/** A row of one entity's journal: one event's entry (`none` when the event has no entry in these books). */
+export type EventRow = TransactionRow & { none?: boolean };
+
+/** One entity's books in one scenario, as the views edit them: one row per event, in order, and its opening. */
+export interface ScenarioBooks {
+  rows: EventRow[];
+  opening?: BalanceSheet;
 }
 
 /** One entity's chart of accounts plus its books in one scenario — what the Journal, T-accounts and Grid edit. */

@@ -13,6 +13,7 @@ import {
   duplicateEntityIn,
   duplicateScenarioIn,
   emptyState,
+  eventParts,
   isManualOrder,
   moveScenario,
   persistable,
@@ -563,6 +564,8 @@ export function Sandbox({
                             at={i === si ? at : undefined}
                             idPrefix={i === si ? '' : `s${i + 1}-`}
                             hint={false}
+                            parts={eventParts(state, i)}
+                            self={ei}
                           />
                         </section>
                       );
@@ -573,6 +576,8 @@ export function Sandbox({
                       entity={books}
                       onChange={setBooks}
                       at={at}
+                      parts={eventParts(state, si)}
+                      self={ei}
                     />
                   )}
                   <details className="sbx-panel">

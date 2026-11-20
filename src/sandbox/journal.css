@@ -100,8 +100,10 @@
   gap: var(--space-3);
 }
 .jx-desc {
-  flex: 1 1 auto;
-  min-width: 0;
+  /* Takes the room the row has (the parts and tools stay their own size, at the right). */
+  flex: 1 1 10rem;
+  width: 0;
+  min-width: 6rem;
   font: inherit;
   font-weight: 600;
   border: 1px solid transparent;
@@ -118,6 +120,45 @@
 .jx-status {
   flex: none;
   white-space: nowrap;
+}
+/* The same event in the other entities' books: "Bank ✓", "Bank —" (no entry), "Bank ✗" (to do). */
+.jx-parts {
+  flex: none;
+  display: inline-flex;
+  gap: 0 var(--space-2);
+  white-space: nowrap;
+}
+.jx-part {
+  color: var(--muted);
+  font-weight: 400;
+  text-decoration: none;
+}
+.jx-part:hover {
+  text-decoration: underline;
+}
+.jx-part.is-posted {
+  color: var(--muted);
+}
+.jx-part.is-todo {
+  color: var(--err);
+  font-weight: 600;
+}
+/* An event that doesn't touch these books: its heading row only. */
+.jx-none {
+  flex: none;
+  color: var(--muted);
+  font-style: italic;
+  white-space: nowrap;
+}
+.jx-none button {
+  font: inherit;
+  font-style: normal;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: var(--space-2);
+  cursor: pointer;
 }
 .jx-status.is-ok {
   color: var(--ok);
@@ -222,7 +263,15 @@
 td.jx-add {
   text-align: center;
 }
-.jx-add button,
+/* "+ Line" on the left, the event's tools on the right, across Dr | Cr. */
+.jx-add-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.jx-add > button,
+.jx-add-cell > button,
 .jx-add-entry {
   font: inherit;
   color: var(--accent);

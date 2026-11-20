@@ -60,9 +60,9 @@ describe('engine (phase-0 baseline)', () => {
 
   it('URL state round-trips', () => {
     const s: SandboxState = {
-      v: 2,
+      v: 3,
       entities: [{ id: 'e', name: 'E', accounts: [], showBalanceSheets: false }],
-      scenarios: [{ id: 's', title: 'S', text: 'hi', books: { e: { rows: [] } } }],
+      scenarios: [{ id: 's', title: 'S', text: 'hi', events: [], opening: {} }],
     };
     expect(engine.decodeSandbox(engine.encodeState(s))).toEqual(s);
     expect(engine.decodeSandbox('garbage')).toBeNull();

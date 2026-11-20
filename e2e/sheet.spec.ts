@@ -95,7 +95,7 @@ test('Journal → T-accounts → Grid: the same books, three ways', async ({ pag
   await expect(checking.locator('.tacct__sides')).toContainText('Dr ▲');
   await expect(you.getByRole('group', { name: /^Cash,/ })).toHaveCount(0); // unused: no empty T's
   // An entry number goes back to that entry in the Journal.
-  await checking.getByRole('link', { name: '(3)' }).click();
+  await checking.getByRole('link', { name: 'E3' }).click();
   await expect(page).toHaveURL(/#\/sandbox\?.*at=entry-3/);
   await expect(page.locator('#entry-3')).toBeInViewport();
 

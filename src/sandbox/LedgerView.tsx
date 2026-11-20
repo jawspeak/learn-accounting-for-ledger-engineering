@@ -141,9 +141,9 @@ function EntityLedger({
                   <SandboxLink
                     className="lv-ref"
                     to={{ view: 'journal', entity: index, at: entryAnchor(n) }}
-                    title={`Entry ${n} — open in the Journal`}
+                    title={`E${n} — open in the Journal`}
                   >
-                    ({n})
+                    E{n}
                   </SandboxLink>{' '}
                   {r.label || <span className="note">No description</span>}
                   <span className="lv-entry-lines">
@@ -279,9 +279,9 @@ function TAccount({
                     <SandboxLink
                       className="tacct__ref lv-ref"
                       to={{ view: 'journal', entity: owner, at: entryAnchor(l.n) }}
-                      title={`Entry ${l.n}${l.label ? `: ${l.label}` : ''} — open in the Journal`}
+                      title={`E${l.n}${l.label ? `: ${l.label}` : ''} — open in the Journal`}
                     >
-                      ({l.n})
+                      E{l.n}
                     </SandboxLink>
                     <span className="tacct__amt">{formatDollars(l[s])}</span>
                     <span className="visually-hidden"> {s === 'dr' ? 'debit' : 'credit'}</span>

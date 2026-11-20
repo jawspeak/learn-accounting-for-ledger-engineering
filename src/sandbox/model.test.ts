@@ -11,9 +11,11 @@ import {
   duplicateEntityIn,
   duplicateScenarioIn,
   emptyState,
+  eventParts,
   persistable,
   removeEntityFrom,
   removeScenarioFrom,
+  scenarioStatus,
   setOpening,
   slugify,
   summarize,
@@ -109,11 +111,11 @@ describe('examples', () => {
       expect(s.scenarios.length).toBeGreaterThanOrEqual(2);
       for (const [si, sc] of s.scenarios.entries()) {
         expect(sc.text.length).toBeGreaterThan(0);
-        for (const [ei, entity] of s.entities.entries()) {
-          if (!sc.books[entity.id]) continue;
+        for (const ei of s.entities.keys()) {
           const e = booksOf(s, si, ei);
           const ids = new Set(e.accounts.map((a) => a.id));
           for (const r of e.rows) {
+            if (r.none) continue; // this event has no entry in these books
             expect(engine.rowTotals(r).balanced).toBe(true);
             for (const p of r.postings) expect(ids.has(p.accountId)).toBe(true);
           }
@@ -149,7 +151,7 @@ describe('entities × scenarios', () => {
   it('removing an account removes its lines in every scenario', () => {
     let s = ex();
     const zap = s.entities.findIndex((e) => e.id === 'zap');
-    expect(usageByScenario(s, 'zap', 'wallet-bob')).toEqual([0, 1, 3]);
+    expect(usageByScenario(s, 'zap', 'wallet-bob')).toEqual([0, 1, 2]);
     const b = booksOf(s, 0, zap);
     s = withBooks(s, 0, zap, { ...b, accounts: b.accounts.filter((a) => a.id !== 'wallet-bob') });
     expect(usageByScenario(s, 'zap', 'wallet-bob')).toEqual([0, 0, 0]);
@@ -159,23 +161,61 @@ describe('entities × scenarios', () => {
   it('add / duplicate / remove scenarios and entities', () => {
     let s = ex();
     s = addScenarioTo(s).state;
-    expect(s.scenarios.at(-1)).toMatchObject({ title: 'Scenario 4', books: {} });
+    expect(s.scenarios.at(-1)).toMatchObject({ title: 'Scenario 4', events: [], opening: {} });
     s = duplicateScenarioIn(s, 0);
     expect(s.scenarios[1]!.title).toBe('Alice tops up $50 (copy)');
-    expect(s.scenarios[1]!.books).toEqual(s.scenarios[0]!.books);
+    expect(s.scenarios[1]!.events).toEqual(s.scenarios[0]!.events);
     s = removeScenarioFrom(s, 1);
     expect(s.scenarios).toHaveLength(4);
     s = duplicateEntityIn(s, 0);
     const copy = s.entities[1]!;
-    expect(s.scenarios[0]!.books[copy.id]).toEqual(s.scenarios[0]!.books[s.entities[0]!.id]);
+    const ev0 = s.scenarios[0]!.events[0]!;
+    expect(ev0.lines[copy.id]).toEqual(ev0.lines[s.entities[0]!.id]);
     s = removeEntityFrom(s, 1);
-    expect(s.scenarios.every((sc) => !(copy.id in sc.books))).toBe(true);
+    expect(s.scenarios.every((sc) => sc.events.every((ev) => !(copy.id in ev.lines)))).toBe(true);
+  });
+
+  it('events are shared: one row per event in every entity, the same label and number (E1…)', () => {
+    let s = ex();
+    const zap = s.entities.findIndex((e) => e.id === 'zap');
+    const bank = s.entities.findIndex((e) => e.id === 'bank');
+    // S3: E1 the cash-out (Zap: one entry, three lines; the bank: FBO → checking), E2 the fee sweep.
+    expect(booksOf(s, 2, zap).rows.map((r) => r.postings.length)).toEqual([3, 2]);
+    expect(booksOf(s, 2, bank).rows.map((r) => r.label)).toEqual(
+      booksOf(s, 2, zap).rows.map((r) => r.label),
+    );
+    // Renaming an event in one entity's journal renames it for every entity.
+    const b = booksOf(s, 2, zap);
+    s = withBooks(s, 2, zap, {
+      ...b,
+      rows: b.rows.map((r, i) => (i === 0 ? { ...r, label: 'Cash-out' } : r)),
+    });
+    expect(booksOf(s, 2, bank).rows[0]!.label).toBe('Cash-out');
+  });
+
+  it('each entity has its entry for an event, "no entry", or one still to do — and a missing side is ✗', () => {
+    let s = ex();
+    // S2 "Alice pays Bob": Zap posts it; the bank has no entry (the money never leaves the FBO account).
+    expect(eventParts(s, 1)[0]!.map((p) => [p.entity, p.part])).toEqual([
+      ['Zap', 'posted'],
+      ['First Example Bank', 'none'],
+    ]);
+    expect(scenarioStatus(s, 1)).toBe('ok');
+    // Clear "no entry" for the bank without filling it in: its side is missing, so the scenario is ✗.
+    const bank = s.entities.findIndex((e) => e.id === 'bank');
+    const b = booksOf(s, 1, bank);
+    s = withBooks(s, 1, bank, {
+      ...b,
+      rows: b.rows.map((r) => ({ id: r.id, label: r.label, postings: [] })),
+    });
+    expect(eventParts(s, 1)[0]![1]!.part).toBe('todo');
+    expect(scenarioStatus(s, 1)).toBe('bad');
   });
 
   it('persistable drops half-written lines and the type an account already says', () => {
     const s = ex();
     const out = persistable(s);
-    const p = out.scenarios[0]!.books.zap!.rows[0]!.postings[0]!;
+    const p = out.scenarios[0]!.events[0]!.lines.zap![0]!;
     expect(p).toEqual({ accountId: 'fbo-cash', side: 'dr', amount: 5000 });
     expect(engine.decodeSandbox(engine.encodeState(out))).toEqual(out);
   });

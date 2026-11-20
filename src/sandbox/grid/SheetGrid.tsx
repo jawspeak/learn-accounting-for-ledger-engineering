@@ -1,5 +1,13 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import type { Account, AccountType, BalanceSheet, Money, EntityBooks, Side } from '@contracts';
+import type {
+  Account,
+  AccountType,
+  BalanceSheet,
+  Money,
+  EntityBooks,
+  EventRow,
+  Side,
+} from '@contracts';
 import { engine } from '@engine';
 import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
 import {
@@ -339,7 +347,7 @@ export function SheetGrid({
             return (
               <tr key={row.id} data-row={ri}>
                 <th scope="row" className="sh-left sh-l1 sh-rownum">
-                  {n1}
+                  E{n1}
                 </th>
                 <td className="sh-left sh-l2">
                   <input
@@ -381,6 +389,11 @@ export function SheetGrid({
                   )}
                 </td>
                 <td className="sh-left sh-l4 sh-check">
+                  {(row as EventRow).none && (
+                    <span className="note" title="This event has no entry in these books">
+                      no entry
+                    </span>
+                  )}
                   {check.started &&
                     (check.balanced ? (
                       <span className="is-ok">
