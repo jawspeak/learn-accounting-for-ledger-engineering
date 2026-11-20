@@ -498,7 +498,12 @@
 
 /* Journal, all scenarios: each scenario's journal under a ruled heading "S2 ✓ Title — first line of the story". */
 .sbx-allsc {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: 0.35rem;
+  border-top: 2px solid var(--fg); /* one strong rule above each scenario */
+}
+.sbx-allsc:first-of-type {
+  margin-top: var(--space-2);
 }
 .sbx-allsc-head {
   display: flex;
@@ -507,7 +512,6 @@
   gap: 0 var(--space-3);
   margin: 0;
   padding-bottom: 0.2rem;
-  border-bottom: 2px solid var(--fg);
   font-size: var(--text-base);
 }
 .sbx-allsc-head button {
@@ -523,8 +527,8 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.sbx-allsc.is-current .sbx-allsc-head {
-  border-bottom-color: var(--accent);
+.sbx-allsc.is-current {
+  border-top-color: var(--accent);
 }
 .sbx-allsc-story {
   flex: 1;

@@ -58,7 +58,7 @@
   font-weight: 600;
   color: var(--muted);
   padding: 0.25rem 0.4rem;
-  border-bottom: 2px solid var(--fg);
+  border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--fg) 3%, var(--surface));
 }
 .jx-sheet td,
@@ -186,11 +186,10 @@
   text-align: center;
   cursor: help;
 }
-.jx-eff.is-up {
-  color: var(--ok);
-}
+/* One neutral colour: the direction carries the meaning (a decrease isn't bad — owing a customer less is good). */
+.jx-eff.is-up,
 .jx-eff.is-down {
-  color: var(--err);
+  color: var(--fg);
 }
 .jx-amount:focus + .jx-eff {
   visibility: hidden;
