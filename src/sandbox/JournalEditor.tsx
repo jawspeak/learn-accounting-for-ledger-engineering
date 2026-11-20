@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AccountType, SandboxEntity, Side } from '@contracts';
+import type { AccountType, EntityBooks, Side } from '@contracts';
 import { AmountInput } from '../components/builder/AmountInput';
 import { formatDollars } from '../components/builder/model';
 import { useScrollToAt } from '../lib/useScrollToAt';
@@ -15,7 +15,7 @@ import {
   setLineAccount,
   setLineAmount,
 } from './model';
-import { SECTION_LABEL, sectionOf, TypeOptions, type BsSection } from './PartyPanels';
+import { SECTION_LABEL, sectionOf, TypeOptions, type BsSection } from './EntityPanels';
 import './journal.css';
 
 const NEW = '__new';
@@ -31,8 +31,8 @@ export function JournalEditor({
   onChange,
   at,
 }: {
-  entity: SandboxEntity;
-  onChange(e: SandboxEntity): void;
+  entity: EntityBooks;
+  onChange(e: EntityBooks): void;
   at?: string;
 }) {
   useScrollToAt(at, e.id);
@@ -239,13 +239,13 @@ export function JournalEditor({
   );
 }
 
-/** Inline "New account": a name and a type, added to this party's accounts and chosen for the line. */
+/** Inline "New account": a name and a type, added to this entity's accounts and chosen for the line. */
 function NewAccountForm({
   entity,
   onCreate,
   onCancel,
 }: {
-  entity: SandboxEntity;
+  entity: EntityBooks;
   onCreate(name: string, type: AccountType): void;
   onCancel(): void;
 }) {

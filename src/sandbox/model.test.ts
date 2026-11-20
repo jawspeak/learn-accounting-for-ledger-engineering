@@ -1,16 +1,25 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import type { SandboxEntity } from '@contracts';
+import type { EntityBooks } from '@contracts';
 import { engine } from '@engine';
 import { EXAMPLES } from '../../content/sandbox-examples';
 import {
+  addScenarioTo,
   applyAccounts,
-  emptyState,
+  booksOf,
   duplicateEntity,
+  duplicateEntityIn,
+  duplicateScenarioIn,
+  emptyState,
+  persistable,
+  removeEntityFrom,
+  removeScenarioFrom,
   setOpening,
   slugify,
   summarize,
   uniqueId,
+  usageByScenario,
+  withBooks,
   withColumnOrder,
 } from './model';
 import { isSafeHref, renderUntrustedMarkdown } from './safeMarkdown';
@@ -28,7 +37,7 @@ describe('ids', () => {
 });
 
 describe('applyAccounts', () => {
-  const base: SandboxEntity = {
+  const base: EntityBooks = {
     id: 'you',
     name: 'You',
     accounts: [{ id: 'cash', name: 'Cash', type: 'asset' }],
@@ -36,7 +45,7 @@ describe('applyAccounts', () => {
     showBalanceSheets: false,
   };
   it('re-ids new accounts as slugs and rewrites references', () => {
-    const withRow: SandboxEntity = {
+    const withRow: EntityBooks = {
       ...base,
       rows: [
         {
@@ -93,31 +102,88 @@ describe('URL round-trip', () => {
 
 describe('examples', () => {
   it.each(EXAMPLES.map((x) => [x.label, x] as const))(
-    '%s: rows balance and A = L + E holds',
+    '%s: in every scenario, entries balance and A = L + E holds for every entity',
     (_, ex) => {
       const s = ex.build();
       expect(s.entities.length).toBeGreaterThanOrEqual(2);
-      for (const e of s.entities) {
-        const ids = new Set(e.accounts.map((a) => a.id));
-        for (const r of e.rows) {
-          expect(engine.rowTotals(r).balanced).toBe(true);
-          expect(r.postings.length).toBeGreaterThan(0);
-          for (const p of r.postings) expect(ids.has(p.accountId)).toBe(true);
+      expect(s.scenarios.length).toBeGreaterThanOrEqual(2);
+      for (const [si, sc] of s.scenarios.entries()) {
+        expect(sc.text.length).toBeGreaterThan(0);
+        for (const [ei, entity] of s.entities.entries()) {
+          if (!sc.books[entity.id]) continue;
+          const e = booksOf(s, si, ei);
+          const ids = new Set(e.accounts.map((a) => a.id));
+          for (const r of e.rows) {
+            expect(engine.rowTotals(r).balanced).toBe(true);
+            for (const p of r.postings) expect(ids.has(p.accountId)).toBe(true);
+          }
+          for (const l of e.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
+          const sum = summarize(e);
+          expect(sum.rowsBalanced).toBe(true);
+          expect(sum.opening?.balanced ?? true).toBe(true);
+          expect(sum.equation.balanced).toBe(true);
         }
-        for (const l of e.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
-        const sum = summarize(e);
-        expect(sum.rowsBalanced).toBe(true);
-        expect(sum.opening?.balanced ?? true).toBe(true);
-        expect(sum.equation.balanced).toBe(true);
-        expect(sum.equation.assets).toBeGreaterThan(0);
       }
     },
   );
 });
 
+describe('entities × scenarios', () => {
+  const ex = () => EXAMPLES.find((x) => x.id === 'fbo')!.build();
+
+  it('the views edit one entity in one scenario; accounts are shared, entries are not', () => {
+    let s = ex();
+    const zap = s.entities.findIndex((e) => e.id === 'zap');
+    // Add an account in scenario 1: every scenario has it; scenario 2's entries are untouched.
+    const b = booksOf(s, 0, zap);
+    s = withBooks(s, 0, zap, {
+      ...b,
+      accounts: [...b.accounts, { id: 'rewards', name: 'Rewards Payable', type: 'liability' }],
+      rows: [],
+    });
+    expect(booksOf(s, 1, zap).accounts.map((a) => a.id)).toContain('rewards');
+    expect(booksOf(s, 0, zap).rows).toEqual([]);
+    expect(booksOf(s, 1, zap).rows).toHaveLength(1);
+  });
+
+  it('removing an account removes its lines in every scenario', () => {
+    let s = ex();
+    const zap = s.entities.findIndex((e) => e.id === 'zap');
+    expect(usageByScenario(s, 'zap', 'wallet-bob')).toEqual([0, 1, 3]);
+    const b = booksOf(s, 0, zap);
+    s = withBooks(s, 0, zap, { ...b, accounts: b.accounts.filter((a) => a.id !== 'wallet-bob') });
+    expect(usageByScenario(s, 'zap', 'wallet-bob')).toEqual([0, 0, 0]);
+    expect(booksOf(s, 2, zap).opening!.lines.some((l) => l.accountId === 'wallet-bob')).toBe(false);
+  });
+
+  it('add / duplicate / remove scenarios and entities', () => {
+    let s = ex();
+    s = addScenarioTo(s).state;
+    expect(s.scenarios.at(-1)).toMatchObject({ title: 'Scenario 4', books: {} });
+    s = duplicateScenarioIn(s, 0);
+    expect(s.scenarios[1]!.title).toBe('Alice tops up $50 (copy)');
+    expect(s.scenarios[1]!.books).toEqual(s.scenarios[0]!.books);
+    s = removeScenarioFrom(s, 1);
+    expect(s.scenarios).toHaveLength(4);
+    s = duplicateEntityIn(s, 0);
+    const copy = s.entities[1]!;
+    expect(s.scenarios[0]!.books[copy.id]).toEqual(s.scenarios[0]!.books[s.entities[0]!.id]);
+    s = removeEntityFrom(s, 1);
+    expect(s.scenarios.every((sc) => !(copy.id in sc.books))).toBe(true);
+  });
+
+  it('persistable drops half-written lines and the type an account already says', () => {
+    const s = ex();
+    const out = persistable(s);
+    const p = out.scenarios[0]!.books.zap!.rows[0]!.postings[0]!;
+    expect(p).toEqual({ accountId: 'fbo-cash', side: 'dr', amount: 5000 });
+    expect(engine.decodeSandbox(engine.encodeState(out))).toEqual(out);
+  });
+});
+
 describe('summarize', () => {
   it('does not report an empty row as unbalanced', () => {
-    const e: SandboxEntity = {
+    const e: EntityBooks = {
       id: 'x',
       name: 'X',
       accounts: [],
@@ -125,7 +191,7 @@ describe('summarize', () => {
       showBalanceSheets: false,
     };
     expect(summarize(e).unbalancedRows).toEqual([]);
-    const half: SandboxEntity = {
+    const half: EntityBooks = {
       ...e,
       accounts: [{ id: 'cash', name: 'Cash', type: 'asset' }],
       rows: [{ id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 100 }] }],

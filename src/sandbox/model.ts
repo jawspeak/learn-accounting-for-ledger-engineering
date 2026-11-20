@@ -7,8 +7,11 @@ import type {
   EquationCheck,
   Money,
   Posting,
+  EntityBooks,
   SandboxEntity,
+  SandboxScenario,
   SandboxState,
+  ScenarioBooks,
   Side,
   TransactionRow,
 } from '@contracts';
@@ -28,7 +31,25 @@ export const ACCOUNT_TYPES: { type: AccountType; label: string }[] = [
 ];
 
 export function emptyState(): SandboxState {
-  return { v: 1, title: '', scenario: '', entities: [newEntity([], 'You')] };
+  return {
+    v: 2,
+    title: '',
+    entities: [newEntity([], 'You')],
+    scenarios: [newScenario([], 'Scenario 1')],
+  };
+}
+
+export function newScenario(existing: SandboxScenario[], title: string): SandboxScenario {
+  return {
+    id: uniqueId(
+      title,
+      existing.map((s) => s.id),
+      'scenario',
+    ),
+    title,
+    text: '',
+    books: {},
+  };
 }
 
 /** kebab-case slug: "Cash: Vault" → "cash-vault". Never empty. */
@@ -61,7 +82,6 @@ export function newEntity(existing: SandboxEntity[], name = 'New entity'): Sandb
     ),
     name,
     accounts: [],
-    rows: [],
     showBalanceSheets: false,
   };
 }
@@ -85,7 +105,7 @@ export function duplicateEntity(existing: SandboxEntity[], src: SandboxEntity): 
  * builder-assigned id (rows, opening, column order, contraOf) are rewritten. Existing accounts keep their ids,
  * so renames don't break rows. Opening lines / column order for deleted accounts are dropped.
  */
-export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity {
+export function applyAccounts(e: EntityBooks, next: Account[]): EntityBooks {
   const before = new Set(e.accounts.map((a) => a.id));
   const taken = new Set<string>(next.filter((a) => before.has(a.id)).map((a) => a.id));
   const rename = new Map<string, string>();
@@ -105,7 +125,7 @@ export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity 
   const openingLines = e.opening?.lines
     .map((l) => ({ ...l, accountId: sw(l.accountId) }))
     .filter((l) => ids.has(l.accountId));
-  const out: SandboxEntity = {
+  const out: EntityBooks = {
     ...e,
     accounts,
     rows: rename.size
@@ -125,7 +145,7 @@ export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity 
   return out;
 }
 
-export function typeResolver(e: SandboxEntity): (id: AccountId) => AccountType | undefined {
+export function typeResolver(e: EntityBooks): (id: AccountId) => AccountType | undefined {
   const byId = new Map(e.accounts.map((a) => [a.id, a.type]));
   const chosen = new Map<string, AccountType>();
   for (const r of e.rows)
@@ -141,7 +161,7 @@ export interface EntitySummary {
   equation: EquationCheck;
 }
 
-export function summarize(e: SandboxEntity): EntitySummary {
+export function summarize(e: EntityBooks): EntitySummary {
   const typeOf = typeResolver(e);
   // An entry nobody has typed an amount into isn't an error yet — it's waiting to be filled in.
   const unbalancedRows = e.rows.flatMap((r, i) => {
@@ -161,10 +181,10 @@ export function summarize(e: SandboxEntity): EntitySummary {
 /** Set one opening balance line, in cents (negative = abnormal). Blank (null) and 0 both mean "no opening
  *  balance" and remove the line — the same in every view. */
 export function setOpening(
-  e: SandboxEntity,
+  e: EntityBooks,
   accountId: AccountId,
   cents: number | null,
-): SandboxEntity {
+): EntityBooks {
   const lines = (e.opening?.lines ?? []).filter((l) => l.accountId !== accountId);
   if (cents !== null && Number.isFinite(cents) && Math.round(cents) !== 0)
     lines.push({ accountId, amount: Math.round(cents) });
@@ -174,7 +194,7 @@ export function setOpening(
 }
 
 /** Canonical order for all of an entity's accounts (used to seed manual ordering). */
-export function canonicalOrder(e: SandboxEntity): AccountId[] {
+export function canonicalOrder(e: EntityBooks): AccountId[] {
   return engine
     .orderColumns(
       e.accounts.map((a) => ({
@@ -197,7 +217,7 @@ export function moveInOrder(order: AccountId[], id: AccountId, delta: -1 | 1): A
   return next;
 }
 
-export function accountUsed(e: SandboxEntity, id: AccountId): boolean {
+export function accountUsed(e: EntityBooks, id: AccountId): boolean {
   return (
     e.rows.some((r) => r.postings.some((p) => p.accountId === id)) ||
     e.accounts.some((a) => a.contraOf === id)
@@ -212,7 +232,7 @@ export function nextRowId(rows: { id: string }[]): string {
 }
 
 /** Builder convention: an empty (or missing) column order means "canonical" — stored as `undefined`. */
-export function withColumnOrder(e: SandboxEntity, order: AccountId[] | undefined): SandboxEntity {
+export function withColumnOrder(e: EntityBooks, order: AccountId[] | undefined): EntityBooks {
   const next = { ...e };
   if (order && order.length) next.columnOrder = order;
   else delete next.columnOrder;
@@ -223,10 +243,10 @@ export function withColumnOrder(e: SandboxEntity, order: AccountId[] | undefined
 // Auto (no `columnOrder`): the conventional balance-sheet order, A ‖ L │ E, contras after their parent.
 // Manual (`columnOrder` set): the learner's order; moving an account in either view edits it.
 
-export const isManualOrder = (e: SandboxEntity) => !!e.columnOrder?.length;
+export const isManualOrder = (e: EntityBooks) => !!e.columnOrder?.length;
 
 /** Every account id in display order. In manual mode, accounts the order doesn't list yet go at the end. */
-export function orderedIds(e: SandboxEntity): AccountId[] {
+export function orderedIds(e: EntityBooks): AccountId[] {
   const auto = canonicalOrder(e);
   if (!isManualOrder(e)) return auto;
   const have = new Set(auto);
@@ -234,23 +254,23 @@ export function orderedIds(e: SandboxEntity): AccountId[] {
   return [...manual, ...auto.filter((id) => !manual.includes(id))];
 }
 
-export function orderedAccounts(e: SandboxEntity): Account[] {
+export function orderedAccounts(e: EntityBooks): Account[] {
   const byId = new Map(e.accounts.map((a) => [a.id, a]));
   return orderedIds(e).map((id) => byId.get(id)!);
 }
 
 /** Switch auto ↔ manual. Manual starts from the order you're looking at, so nothing jumps. */
-export function setManualOrder(e: SandboxEntity, manual: boolean): SandboxEntity {
+export function setManualOrder(e: EntityBooks, manual: boolean): EntityBooks {
   return withColumnOrder(e, manual && e.accounts.length ? orderedIds(e) : undefined);
 }
 
 /** Move one account left/right in the manual order (a no-op in auto mode). */
-export function moveAccountInOrder(e: SandboxEntity, id: AccountId, delta: -1 | 1): SandboxEntity {
+export function moveAccountInOrder(e: EntityBooks, id: AccountId, delta: -1 | 1): EntityBooks {
   return isManualOrder(e) ? withColumnOrder(e, moveInOrder(orderedIds(e), id, delta)) : e;
 }
 
 /** Move a transaction row up/down — the same rows in both views. */
-export function moveRow(e: SandboxEntity, i: number, delta: -1 | 1): SandboxEntity {
+export function moveRow(e: EntityBooks, i: number, delta: -1 | 1): EntityBooks {
   const j = i + delta;
   if (i < 0 || j < 0 || i >= e.rows.length || j >= e.rows.length) return e;
   const rows = [...e.rows];
@@ -258,7 +278,7 @@ export function moveRow(e: SandboxEntity, i: number, delta: -1 | 1): SandboxEnti
   return { ...e, rows };
 }
 
-export function removeRow(e: SandboxEntity, i: number): SandboxEntity {
+export function removeRow(e: EntityBooks, i: number): EntityBooks {
   return { ...e, rows: e.rows.filter((_, j) => j !== i) };
 }
 
@@ -282,11 +302,11 @@ export function contraCandidates(accounts: Account[], t: AccountType, self?: Acc
 /** Add an account: a unique slug id; a contra type reduces `contraOf` if given and valid, else the first
  *  candidate. In manual order it goes at the end (auto order places it by type). */
 export function addAccount(
-  e: SandboxEntity,
+  e: EntityBooks,
   name: string,
   type: AccountType,
   contraOf?: AccountId,
-): { entity: SandboxEntity; id: AccountId } {
+): { entity: EntityBooks; id: AccountId } {
   const id = uniqueId(
     name,
     e.accounts.map((a) => a.id),
@@ -295,7 +315,7 @@ export function addAccount(
   const candidates = contraCandidates(e.accounts, type);
   if (candidates.length)
     account.contraOf = candidates.some((c) => c.id === contraOf) ? contraOf! : candidates[0]!.id;
-  const entity: SandboxEntity = { ...e, accounts: [...e.accounts, account] };
+  const entity: EntityBooks = { ...e, accounts: [...e.accounts, account] };
   if (e.columnOrder?.length) entity.columnOrder = [...e.columnOrder, id];
   return { entity, id };
 }
@@ -303,10 +323,10 @@ export function addAccount(
 /** Patch one account. A blank name is ignored (an account always has a name). Changing to a contra type picks
  *  a parent if none is valid; postings are re-typed to match. */
 export function updateAccount(
-  e: SandboxEntity,
+  e: EntityBooks,
   id: AccountId,
   patch: Partial<Omit<Account, 'id'>>,
-): SandboxEntity {
+): EntityBooks {
   if (patch.name !== undefined && !patch.name.trim()) {
     patch = { ...patch };
     delete patch.name;
@@ -348,13 +368,13 @@ export function updateAccount(
 export const needsParent = (a: Account) => !!contraBase(a.type) && !a.contraOf;
 
 /** How many lines post to this account (what removing it would also remove). */
-export const linesUsing = (e: SandboxEntity, id: AccountId) =>
+export const linesUsing = (e: EntityBooks, id: AccountId) =>
   e.rows.reduce((n, r) => n + r.postings.filter((p) => p.accountId === id).length, 0);
 
 /** Remove an account with its lines, opening balance and place in the order. Contras that reduced it fall back
  *  to their base type. (The views ask first when it has lines.) */
-export function removeAccount(e: SandboxEntity, id: AccountId): SandboxEntity {
-  const out: SandboxEntity = {
+export function removeAccount(e: EntityBooks, id: AccountId): EntityBooks {
+  const out: EntityBooks = {
     ...e,
     accounts: e.accounts
       .filter((a) => a.id !== id)
@@ -385,28 +405,28 @@ export const blankLine = (side: Side): Posting => ({ accountId: '', side, amount
 
 /** A new entry at the end. In the Journal it starts with one debit line and one credit line, ready to fill in;
  *  in the Grid with no lines (each cell typed into adds one). */
-export function addEntry(e: SandboxEntity, { blankLines = true } = {}): SandboxEntity {
+export function addEntry(e: EntityBooks, { blankLines = true } = {}): EntityBooks {
   const postings = blankLines ? [blankLine('dr'), blankLine('cr')] : [];
   return { ...e, rows: [...e.rows, { id: nextRowId(e.rows), postings }] };
 }
 
-function updateLines(e: SandboxEntity, ri: number, f: (ps: Posting[]) => Posting[]): SandboxEntity {
+function updateLines(e: EntityBooks, ri: number, f: (ps: Posting[]) => Posting[]): EntityBooks {
   return { ...e, rows: e.rows.map((r, i) => (i === ri ? { ...r, postings: f(r.postings) } : r)) };
 }
 
-export const addLine = (e: SandboxEntity, ri: number, side: Side) =>
+export const addLine = (e: EntityBooks, ri: number, side: Side) =>
   updateLines(e, ri, (ps) => [...ps, blankLine(side)]);
 
-export const removeLine = (e: SandboxEntity, ri: number, li: number) =>
+export const removeLine = (e: EntityBooks, ri: number, li: number) =>
   updateLines(e, ri, (ps) => ps.filter((_, j) => j !== li));
 
 /** Choose a line's account; the posting carries the account's type (as everywhere in the sandbox). */
 export function setLineAccount(
-  e: SandboxEntity,
+  e: EntityBooks,
   ri: number,
   li: number,
   accountId: AccountId,
-): SandboxEntity {
+): EntityBooks {
   const type = e.accounts.find((a) => a.id === accountId)?.type;
   return updateLines(e, ri, (ps) =>
     ps.map((p, j) => {
@@ -421,12 +441,7 @@ export function setLineAccount(
 
 /** Type a line's amount. A line is a debit line or a credit line (chosen when it's added), so its amount
  *  stays on that side; clearing it leaves an empty line (kept while editing, not saved in links). */
-export function setLineAmount(
-  e: SandboxEntity,
-  ri: number,
-  li: number,
-  cents: Money,
-): SandboxEntity {
+export function setLineAmount(e: EntityBooks, ri: number, li: number, cents: Money): EntityBooks {
   return updateLines(e, ri, (ps) =>
     ps.map((p, j) => (j === li ? { ...p, amount: Math.max(0, cents) } : p)),
   );
@@ -475,16 +490,218 @@ export function entryCheck(r: TransactionRow): EntryCheck {
   };
 }
 
-/** The state as it can be saved in a link: half-written lines (no account, or no amount) are left out. */
+/**
+ * The state as it can be saved in a link or a file: half-written lines (no account, or no amount) are left out,
+ * and a line's `chosenType` is dropped when its account exists (the account says the type) — shorter links.
+ */
 export function persistable(s: SandboxState): SandboxState {
   return {
     ...s,
-    entities: s.entities.map((e) => ({
-      ...e,
-      rows: e.rows.map((r) => ({
-        ...r,
-        postings: r.postings.filter((p) => p.accountId && p.amount > 0),
-      })),
+    scenarios: s.scenarios.map((sc) => ({
+      ...sc,
+      books: Object.fromEntries(
+        Object.entries(sc.books).map(([id, b]) => {
+          const known = new Set(s.entities.find((e) => e.id === id)?.accounts.map((a) => a.id));
+          const out: ScenarioBooks = {
+            ...b,
+            rows: b.rows.map((r) => ({
+              ...r,
+              postings: r.postings.filter(isPosted).map((p) => {
+                if (!known.has(p.accountId)) return p;
+                const out: Posting = { ...p };
+                delete out.chosenType;
+                return out;
+              }),
+            })),
+          };
+          return [id, out];
+        }),
+      ),
     })),
   };
 }
+
+/** Scenarios written as each entity's books (accounts + rows) → a state. An entity's accounts are the union, by
+ *  id, of its accounts in every scenario (first definition wins), in first-seen order. */
+export function stateFromBooks(
+  title: string,
+  scenarios: { id: string; title: string; text: string; books: EntityBooks[] }[],
+): SandboxState {
+  const entities: SandboxEntity[] = [];
+  for (const sc of scenarios)
+    for (const b of sc.books) {
+      const { rows: _r, opening: _o, ...def } = b;
+      void _r;
+      void _o;
+      const have = entities.find((e) => e.id === b.id);
+      if (!have) entities.push({ ...def, accounts: [...def.accounts] });
+      else
+        for (const a of def.accounts)
+          if (!have.accounts.some((x) => x.id === a.id)) have.accounts.push(a);
+    }
+  return {
+    v: 2,
+    title,
+    entities,
+    scenarios: scenarios.map((sc) => ({
+      id: sc.id,
+      title: sc.title,
+      text: sc.text,
+      books: Object.fromEntries(
+        sc.books.map((b) => {
+          const books: ScenarioBooks = { rows: b.rows };
+          if (b.opening) books.opening = b.opening;
+          return [b.id, books];
+        }),
+      ),
+    })),
+  };
+}
+
+// ---- Entities × scenarios: the views edit one entity's books in one scenario (`EntityBooks`) ----
+// Accounts, account order and the balance-sheet toggle belong to the entity (shared by every scenario); entries
+// and opening balances belong to the scenario.
+
+const NO_BOOKS: ScenarioBooks = { rows: [] };
+
+/** Entity `ei`'s chart of accounts with its books in scenario `si`. */
+export function booksOf(s: SandboxState, si: number, ei: number): EntityBooks {
+  const e = s.entities[ei]!;
+  const b = s.scenarios[si]?.books[e.id] ?? NO_BOOKS;
+  const out: EntityBooks = { ...e, rows: b.rows };
+  if (b.opening) out.opening = b.opening;
+  return out;
+}
+
+/** Every entity's books in scenario `si` (the T-accounts view). */
+export const allBooks = (s: SandboxState, si: number) =>
+  s.entities.map((_, ei) => booksOf(s, si, ei));
+
+/**
+ * Write back an edit of entity `ei` in scenario `si`. The entity part is shared, so when an account was removed
+ * its lines and opening balance go from every other scenario too (an id that no longer exists can't be posted to).
+ */
+export function withBooks(s: SandboxState, si: number, ei: number, b: EntityBooks): SandboxState {
+  const { rows, opening, ...entity } = b;
+  const id = s.entities[ei]!.id;
+  const ids = new Set(entity.accounts.map((a) => a.id));
+  const removed = s.entities[ei]!.accounts.some((a) => !ids.has(a.id));
+  const keep = (accountId: AccountId) => !accountId || ids.has(accountId);
+  return {
+    ...s,
+    entities: s.entities.map((x, j) => (j === ei ? entity : x)),
+    scenarios: s.scenarios.map((sc, j) => {
+      if (j === si) {
+        const books: ScenarioBooks = { rows };
+        if (opening) books.opening = opening;
+        return { ...sc, books: { ...sc.books, [id]: books } };
+      }
+      const other = sc.books[id];
+      if (!removed || !other) return sc;
+      const pruned: ScenarioBooks = {
+        rows: other.rows.map((r) => ({
+          ...r,
+          postings: r.postings.filter((p) => keep(p.accountId)),
+        })),
+      };
+      const lines = other.opening?.lines.filter((l) => keep(l.accountId)) ?? [];
+      if (lines.length) pruned.opening = { lines };
+      return { ...sc, books: { ...sc.books, [id]: pruned } };
+    }),
+  };
+}
+
+/** How many lines post to an account in each scenario (for "remove" confirmations and the chart of accounts). */
+export function usageByScenario(s: SandboxState, entityId: string, accountId: AccountId): number[] {
+  return s.scenarios.map((sc) => {
+    const b = sc.books[entityId];
+    if (!b) return 0;
+    const lines = b.rows.reduce(
+      (n, r) => n + r.postings.filter((p) => p.accountId === accountId && isPosted(p)).length,
+      0,
+    );
+    const opening = b.opening?.lines.some((l) => l.accountId === accountId && l.amount !== 0)
+      ? 1
+      : 0;
+    return lines + opening;
+  });
+}
+
+export function addEntityTo(s: SandboxState, name: string): { state: SandboxState; index: number } {
+  const e = newEntity(s.entities, name);
+  return { state: { ...s, entities: [...s.entities, e] }, index: s.entities.length };
+}
+
+/** Duplicate an entity right after it: its accounts, and its books in every scenario. */
+export function duplicateEntityIn(s: SandboxState, ei: number): SandboxState {
+  const src = s.entities[ei]!;
+  const copy = duplicateEntity(s.entities, src);
+  return {
+    ...s,
+    entities: [...s.entities.slice(0, ei + 1), copy, ...s.entities.slice(ei + 1)],
+    scenarios: s.scenarios.map((sc) =>
+      sc.books[src.id]
+        ? { ...sc, books: { ...sc.books, [copy.id]: structuredClone(sc.books[src.id]!) } }
+        : sc,
+    ),
+  };
+}
+
+/** Remove an entity and its books in every scenario (at least one entity always remains). */
+export function removeEntityFrom(s: SandboxState, ei: number): SandboxState {
+  const id = s.entities[ei]!.id;
+  const rest = s.entities.filter((_, j) => j !== ei);
+  return {
+    ...s,
+    entities: rest.length ? rest : [newEntity([], 'You')],
+    scenarios: s.scenarios.map((sc) => {
+      const books = { ...sc.books };
+      delete books[id];
+      return { ...sc, books };
+    }),
+  };
+}
+
+export function addScenarioTo(s: SandboxState): { state: SandboxState; index: number } {
+  const sc = newScenario(s.scenarios, `Scenario ${s.scenarios.length + 1}`);
+  return { state: { ...s, scenarios: [...s.scenarios, sc] }, index: s.scenarios.length };
+}
+
+/** Duplicate a scenario right after it (its text, entries and opening balances). */
+export function duplicateScenarioIn(s: SandboxState, si: number): SandboxState {
+  const src = s.scenarios[si]!;
+  const title = `${src.title} (copy)`;
+  const copy: SandboxScenario = {
+    ...structuredClone(src),
+    id: uniqueId(
+      title,
+      s.scenarios.map((x) => x.id),
+      'scenario',
+    ),
+    title,
+  };
+  return { ...s, scenarios: [...s.scenarios.slice(0, si + 1), copy, ...s.scenarios.slice(si + 1)] };
+}
+
+/** Remove a scenario (at least one always remains). */
+export function removeScenarioFrom(s: SandboxState, si: number): SandboxState {
+  const rest = s.scenarios.filter((_, j) => j !== si);
+  return { ...s, scenarios: rest.length ? rest : [newScenario([], 'Scenario 1')] };
+}
+
+export function moveScenario(s: SandboxState, si: number, delta: -1 | 1): SandboxState {
+  const j = si + delta;
+  if (j < 0 || j >= s.scenarios.length) return s;
+  const scenarios = [...s.scenarios];
+  [scenarios[si], scenarios[j]] = [scenarios[j]!, scenarios[si]!];
+  return { ...s, scenarios };
+}
+
+export const updateScenario = (
+  s: SandboxState,
+  si: number,
+  patch: Partial<Pick<SandboxScenario, 'title' | 'text'>>,
+): SandboxState => ({
+  ...s,
+  scenarios: s.scenarios.map((sc, j) => (j === si ? { ...sc, ...patch } : sc)),
+});

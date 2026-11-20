@@ -12,12 +12,14 @@ describe('router', () => {
   it('the Sandbox: three views of the same state (journal is #/sandbox, so old links open the editor)', () => {
     expect(parseHash('#/sandbox?d=zz')).toEqual({
       name: 'sandbox',
+      scenario: 0,
       view: 'journal',
       data: 'zz',
       entity: 0,
     });
     expect(parseHash(href.sandbox('zz', 1, 'entry-3'))).toEqual({
       name: 'sandbox',
+      scenario: 0,
       view: 'journal',
       data: 'zz',
       entity: 1,
@@ -25,23 +27,34 @@ describe('router', () => {
     });
     expect(parseHash(href.taccounts('zz'))).toEqual({
       name: 'sandbox',
+      scenario: 0,
       view: 'taccounts',
       data: 'zz',
       entity: 0,
     });
     expect(parseHash(href.sheet('abc', 1))).toEqual({
       name: 'sandbox',
+      scenario: 0,
       view: 'grid',
       data: 'abc',
       entity: 1,
     });
     expect(parseHash('#/sheet?e=-3')).toEqual({
       name: 'sandbox',
+      scenario: 0,
       view: 'grid',
       data: undefined,
       entity: 0,
     });
-    expect(href.sandboxView('taccounts', 'd1', 2)).toBe('#/taccounts?d=d1&e=2');
+    // The T-accounts view shows every entity: no `e`.
+    expect(href.sandboxView('taccounts', 'd1', 2)).toBe('#/taccounts?d=d1');
+  });
+
+  it('the Sandbox remembers the scenario (`s`) as well as the entity (`e`)', () => {
+    const h = href.sandboxView('grid', 'd1', 1, undefined, 2);
+    expect(h).toBe('#/sheet?d=d1&s=2&e=1');
+    expect(parseHash(h)).toMatchObject({ view: 'grid', scenario: 2, entity: 1 });
+    expect(parseHash('#/sandbox?s=-1')).toMatchObject({ scenario: 0 });
   });
 
   it('round-trips the ?at= deep link on sections and the cheat sheet', () => {

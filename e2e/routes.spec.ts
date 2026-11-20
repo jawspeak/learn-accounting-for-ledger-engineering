@@ -23,7 +23,7 @@ test('every route renders without console or page errors', async ({ page }) => {
   await page.goto('/#/cheatsheet');
   await expect(page.locator('main h1, main h2').first()).toBeVisible();
   await page.goto('/#/sandbox');
-  await expect(page.getByRole('textbox', { name: 'Board title' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Sandbox title' })).toBeVisible();
   await page.goto('/#/sheet');
   await expect(page.getByRole('region', { name: /Spreadsheet/ })).toBeVisible();
   await page.goto('/#/animations');

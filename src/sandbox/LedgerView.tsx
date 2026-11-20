@@ -1,4 +1,4 @@
-import type { Account, AccountId, SandboxEntity, SandboxState, Side } from '@contracts';
+import type { Account, AccountId, EntityBooks, Side } from '@contracts';
 import { engine } from '@engine';
 import { BalanceSheetPanel } from '../components/builder/BalanceSheetPanel';
 import { formatDollars } from '../components/builder/model';
@@ -16,45 +16,45 @@ import {
   summarize,
   typeResolver,
 } from './model';
-import { EntitySummaryLine, typeLabel } from './PartyPanels';
+import { EntitySummaryLine, typeLabel } from './EntityPanels';
 import './journal.css';
 
 const SIDES: Side[] = ['dr', 'cr'];
 const other = (s: Side): Side => (s === 'dr' ? 'cr' : 'dr');
 
 /**
- * The T-accounts view: the same entries, organised by account — the general ledger. Every party's books side by
- * side; one T per account that has an opening balance or appears in an entry (no empty T's), in the party's
- * account order, A ‖ = ‖ L + E. Each amount is numbered by its journal entry and links back to it. Read-only:
- * you write entries in the Journal or the Grid.
+ * The T-accounts view: the current scenario's entries, organised by account — the general ledger. Every entity's
+ * books side by side; one T per account that has an opening balance or appears in an entry (no empty T's), in
+ * the entity's account order, A ‖ = ‖ L + E. Each amount is numbered by its journal entry and links back to it.
+ * Read-only: you write entries in the Journal or the Grid.
  */
 export function LedgerView({
-  state,
-  onEntityChange,
+  books,
+  onBooksChange,
   at,
 }: {
-  state: SandboxState;
-  onEntityChange(i: number, e: SandboxEntity): void;
+  books: EntityBooks[];
+  onBooksChange(i: number, e: EntityBooks): void;
   at?: string;
 }) {
   useScrollToAt(at);
   return (
     <div className="lv">
-      {state.entities.map((e, pi) => (
-        <PartyLedger key={e.id} entity={e} index={pi} onChange={(x) => onEntityChange(pi, x)} />
+      {books.map((e, i) => (
+        <EntityLedger key={e.id} entity={e} index={i} onChange={(x) => onBooksChange(i, x)} />
       ))}
     </div>
   );
 }
 
-function PartyLedger({
+function EntityLedger({
   entity: e,
   index,
   onChange,
 }: {
-  entity: SandboxEntity;
+  entity: EntityBooks;
   index: number;
-  onChange(e: SandboxEntity): void;
+  onChange(e: EntityBooks): void;
 }) {
   const typeOf = typeResolver(e);
   const balances = engine.computeBalances(postedRows(e.rows), typeOf, e.opening);
@@ -67,7 +67,7 @@ function PartyLedger({
   const liab = shown.filter((a) => a.type === 'liability' || a.type === 'contra-liability');
   const eq = shown.filter((a) => !left.includes(a) && !liab.includes(a));
   const nameOf = (id: AccountId) => e.accounts.find((a) => a.id === id)?.name ?? id;
-  // The same rows in every T of this party, so a row means the same thing everywhere: the opening balance
+  // The same rows in every T of this entity, so a row means the same thing everywhere: the opening balance
   // (if any T has one), then one row per entry, in order (blank where the entry doesn't touch the account),
   // then the ending balance.
   const layout: Layout = {
@@ -89,7 +89,7 @@ function PartyLedger({
             ) : (
               <span className="lv-band-label" aria-hidden="true" />
             )}
-            <TAccount entity={e} account={a} balance={balances} layout={layout} party={index} />
+            <TAccount entity={e} account={a} balance={balances} layout={layout} owner={index} />
           </div>
         )),
       )}
@@ -98,12 +98,12 @@ function PartyLedger({
 
   return (
     <section
-      className="lv-party"
-      id={`party-${index + 1}`}
-      aria-label={`${e.name || 'Unnamed party'}’s ledger`}
+      className="lv-entity"
+      id={`entity-${index + 1}`}
+      aria-label={`${e.name || 'Unnamed entity'}’s ledger`}
     >
-      <div className="lv-party-head">
-        <h2>{e.name || `Party ${index + 1}`}</h2>
+      <div className="lv-entity-head">
+        <h2>{e.name || `Entity ${index + 1}`}</h2>
         <ColumnOrderToggle
           manual={isManualOrder(e)}
           disabled={e.accounts.length === 0}
@@ -117,7 +117,7 @@ function PartyLedger({
           />
           Show balance sheets
         </label>
-        <SandboxLink className="lv-edit" to={{ view: 'journal', party: index }}>
+        <SandboxLink className="lv-edit" to={{ view: 'journal', entity: index }}>
           Edit in Journal
         </SandboxLink>
       </div>
@@ -125,8 +125,8 @@ function PartyLedger({
       {shown.length === 0 ? (
         <p className="note">
           No postings yet. Write entries in the{' '}
-          <SandboxLink to={{ view: 'journal', party: index }}>Journal</SandboxLink> or the{' '}
-          <SandboxLink to={{ view: 'grid', party: index }}>Grid</SandboxLink>, and each account you
+          <SandboxLink to={{ view: 'journal', entity: index }}>Journal</SandboxLink> or the{' '}
+          <SandboxLink to={{ view: 'grid', entity: index }}>Grid</SandboxLink>, and each account you
           use gets a T here.
         </p>
       ) : (
@@ -140,7 +140,7 @@ function PartyLedger({
                 <li key={r.id}>
                   <SandboxLink
                     className="lv-ref"
-                    to={{ view: 'journal', party: index, at: entryAnchor(n) }}
+                    to={{ view: 'journal', entity: index, at: entryAnchor(n) }}
                     title={`Entry ${n} — open in the Journal`}
                   >
                     ({n})
@@ -196,7 +196,7 @@ function PartyLedger({
   );
 }
 
-/** The row structure shared by every T in a party: an opening row (if any T has one), then these entries. */
+/** The row structure shared by every T in an entity: an opening row (if any T has one), then these entries. */
 interface Layout {
   opening: boolean;
   /** Row indices of the entries that post anything. */
@@ -209,14 +209,14 @@ function TAccount({
   account: a,
   balance,
   layout,
-  party,
+  owner,
 }: {
-  entity: SandboxEntity;
+  entity: EntityBooks;
   account: Account;
   balance: { lines: { accountId: AccountId; amount: number }[] };
   layout: Layout;
-  /** Which party this T belongs to (its entry numbers link to that party's Journal). */
-  party: number;
+  /** Which entity this T belongs to (its entry numbers link to that entity’s Journal). */
+  owner: number;
 }) {
   const normal = engine.normalSide(a.type);
   const bal = balance.lines.find((l) => l.accountId === a.id)?.amount ?? 0;
@@ -278,7 +278,7 @@ function TAccount({
                   <span key={s} className={`tacct__cell tacct__${s}`}>
                     <SandboxLink
                       className="tacct__ref lv-ref"
-                      to={{ view: 'journal', party, at: entryAnchor(l.n) }}
+                      to={{ view: 'journal', entity: owner, at: entryAnchor(l.n) }}
                       title={`Entry ${l.n}${l.label ? `: ${l.label}` : ''} — open in the Journal`}
                     >
                       ({l.n})

@@ -2,12 +2,13 @@
 import type {
   Account,
   BookingProblem,
-  SandboxEntity,
+  EntityBooks,
   SandboxState,
   TransactionRow,
 } from '@contracts';
 import { engine } from '@engine';
 import { entities, problems } from '@content';
+import { stateFromBooks } from '../sandbox';
 
 /** Fill chosenType on authored rows so the builder can show them. */
 export function withTypes(rows: TransactionRow[], accounts: Account[]): TransactionRow[] {
@@ -25,7 +26,7 @@ export function sandboxEntity(
   problem: BookingProblem,
   accounts: Account[],
   rows: TransactionRow[],
-): SandboxEntity {
+): EntityBooks {
   const used = new Set<string>();
   rows.forEach((r) => r.postings.forEach((p) => used.add(p.accountId)));
   problem.opening?.lines.forEach((l) => used.add(l.accountId));
@@ -35,7 +36,10 @@ export function sandboxEntity(
   const rank = (id: string) => coaIndex.get(id) ?? Number.MAX_SAFE_INTEGER;
   // Accounts in play may be outside a restricted picker list (e.g. Net Worth in an opening balance): take them
   // from the entity's full chart of accounts so the board never has a balance for an unknown account.
-  const pool = [...accounts, ...(entity?.accounts ?? []).filter((a) => !accounts.some((x) => x.id === a.id))];
+  const pool = [
+    ...accounts,
+    ...(entity?.accounts ?? []).filter((a) => !accounts.some((x) => x.id === a.id)),
+  ];
   const chosen = pool.filter((a) => used.has(a.id)).sort((a, b) => rank(a.id) - rank(b.id));
   return {
     id: problem.entityId,
@@ -79,10 +83,7 @@ export function boardFor(
     books.push(
       sandboxEntity(pair, engine.pickerAccounts(pair, entities[pair.entityId]!), solvedRows(pair)),
     );
-  return {
-    v: 1,
-    title: withPair ? `${problem.title} — solution` : problem.title,
-    scenario: problem.prompt,
-    entities: books,
-  };
+  return stateFromBooks(withPair ? `${problem.title} — solution` : problem.title, [
+    { id: problem.id, title: problem.title, text: problem.prompt, books },
+  ]);
 }

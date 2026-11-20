@@ -4,10 +4,12 @@ import { watchErrors } from './helpers';
 test.use({ viewport: { width: 1600, height: 950 } });
 
 const views = (page: Page) => page.getByRole('navigation', { name: 'Sandbox view' });
-const loadExample = (page: Page, id: string) =>
-  page.getByLabel('Example scenarios:').selectOption(id);
+const loadExample = async (page: Page, id: string) => {
+  await page.getByLabel('Example scenarios:').selectOption(id);
+  await page.getByRole('button', { name: 'Yes, replace' }).click();
+};
 
-test('Grid: example, ▲ sides, keyboard entry, party tabs, URL restore', async ({ page }) => {
+test('Grid: example, ▲ sides, keyboard entry, entity tabs, URL restore', async ({ page }) => {
   const w = watchErrors(page);
   await page.goto('/#/sheet');
   await loadExample(page, 'payroll');
@@ -38,8 +40,8 @@ test('Grid: example, ▲ sides, keyboard entry, party tabs, URL restore', async 
   await expect(page.getByRole('textbox', { name: `Entry ${entries} Cash credit` })).toBeFocused();
   await expect(page.locator('.sbx-summary')).toContainText(`Unbalanced entry: ${next}`);
 
-  // Parties are tabs (shared with the Journal): click or arrow keys; the URL remembers which.
-  const tabs = page.getByRole('tablist', { name: 'Whose books' });
+  // Entities are tabs (shared with the Journal): click or arrow keys; the URL remembers which.
+  const tabs = page.getByRole('tablist', { name: 'Entities' });
   await tabs.getByRole('tab', { name: 'Employer Foo' }).click();
   await expect(page.getByRole('textbox', { name: 'Account name: Payroll Payable' })).toBeVisible();
   await expect(page).toHaveURL(/e=1/);
@@ -60,7 +62,12 @@ test('Grid: example, ▲ sides, keyboard entry, party tabs, URL restore', async 
 test('Journal → T-accounts → Grid: the same books, three ways', async ({ page }) => {
   const w = watchErrors(page);
   await page.goto('/#/sandbox');
-  await loadExample(page, 'loan');
+  await loadExample(page, 'bank');
+  await page
+    .getByRole('tablist', { name: 'Scenarios' })
+    .getByRole('tab', { name: 'Borrow, then pay interest' })
+    .click();
+  await expect(page).toHaveURL(/s=1/);
   await expect(views(page).getByRole('link', { name: 'Journal' })).toHaveAttribute(
     'aria-current',
     'page',

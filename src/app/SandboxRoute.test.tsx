@@ -1,19 +1,21 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { SandboxState } from '@contracts';
+import type { SandboxState, ScenarioBooks } from '@contracts';
 import { engine } from '@engine';
 import { parseHash, type SandboxView } from './router';
 import SandboxRoute, { URL_DEBOUNCE_MS } from './SandboxRoute';
 import { EXAMPLES } from '../../content/sandbox-examples';
 import {
   addEntry,
+  booksOf,
   emptyState,
   entryCheck,
   persistable,
   setLineAccount,
   setLineAmount,
   summarize,
+  withBooks,
 } from '../sandbox/model';
 
 beforeEach(() => {
@@ -32,10 +34,23 @@ function urlState(): SandboxState | null {
   const r = parseHash(window.location.hash);
   return r.name === 'sandbox' && r.data ? engine.decodeSandbox(r.data) : null;
 }
+/** One entity's books in one scenario, from the URL. */
+const urlBooks = (scenario: number, entityId: string): ScenarioBooks =>
+  urlState()!.scenarios[scenario]!.books[entityId] ?? { rows: [] };
 const flush = () => act(() => vi.advanceTimersByTime(URL_DEBOUNCE_MS + 10));
-const mount = (view: SandboxView, s?: SandboxState, entity = 0) =>
-  render(<SandboxRoute view={view} data={s ? engine.encodeState(s) : undefined} entity={entity} />);
-const loan = () => EXAMPLES.find((x) => x.id === 'loan')!.build();
+const mount = (view: SandboxView, s?: SandboxState, entity = 0, scenario = 0) =>
+  render(
+    <SandboxRoute
+      view={view}
+      data={s ? engine.encodeState(s) : undefined}
+      scenario={scenario}
+      entity={entity}
+    />,
+  );
+/** "You and your bank": scenario 1 is "Borrow, then pay interest" (You: 2 entries; the bank: 2 entries). */
+const bank = () => EXAMPLES.find((x) => x.id === 'bank')!.build();
+const LOAN = 1;
+const mountLoan = (view: SandboxView, entity = 0) => mount(view, bank(), entity, LOAN);
 
 describe('Journal view (the editor)', () => {
   it('write an entry: description, accounts, amounts; Dr = Cr status; saved in the link', () => {
@@ -44,7 +59,6 @@ describe('Journal view (the editor)', () => {
       { id: 'cash', name: 'Cash', type: 'asset' },
       { id: 'checking', name: 'Checking Account', type: 'asset' },
     ];
-    s.entities[0]!.rows = [];
     mount('journal', s);
     fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
     fireEvent.change(screen.getByLabelText('Entry 1 description'), {
@@ -63,26 +77,27 @@ describe('Journal view (the editor)', () => {
     });
     expect(screen.getByText('Debits = credits')).toBeTruthy();
     flush();
-    const row = urlState()!.entities[0]!.rows[0]!;
+    const row = urlBooks(0, 'you').rows[0]!;
     expect(row.label).toBe('Deposit cash');
+    // The link leaves out what the account already says (its type).
     expect(row.postings).toEqual([
-      { accountId: 'checking', side: 'dr', amount: 4424, chosenType: 'asset' },
-      { accountId: 'cash', side: 'cr', amount: 4424, chosenType: 'asset' },
+      { accountId: 'checking', side: 'dr', amount: 4424 },
+      { accountId: 'cash', side: 'cr', amount: 4424 },
     ]);
   });
 
   it('half-written lines stay on screen but are left out of the link', () => {
-    mount('journal', loan());
+    mountLoan('journal');
     fireEvent.click(screen.getAllByRole('button', { name: /Cr line/ })[0]!);
     expect(screen.getByLabelText('Entry 1 line 3 account')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Entry 1 description'), { target: { value: 'Borrow' } });
     flush();
-    expect(urlState()!.entities[0]!.rows[0]!.postings).toHaveLength(2);
+    expect(urlBooks(LOAN, 'you').rows[0]!.postings).toHaveLength(2);
     expect(screen.getByLabelText('Entry 1 line 3 account')).toBeTruthy();
   });
 
   it('a new account straight from a line’s account list', () => {
-    mount('journal', loan());
+    mountLoan('journal');
     fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
     fireEvent.change(screen.getByLabelText('Entry 3 line 1 account'), {
       target: { value: '__new' },
@@ -97,7 +112,7 @@ describe('Journal view (the editor)', () => {
   });
 
   it('entries move up / down and can be removed', () => {
-    mount('journal', loan());
+    mountLoan('journal');
     fireEvent.click(screen.getByRole('button', { name: 'Move entry 2 up' }));
     expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
       'Pay $5 interest',
@@ -112,10 +127,14 @@ describe('Journal view (the editor)', () => {
 
 describe('Accounts panel', () => {
   it('manual order: a list, so ↑ ↓ move an account earlier / later (the order the Grid shows left → right)', () => {
-    mount('journal', loan());
-    expect(screen.queryByRole('button', { name: /^Move (?!entry).* (up|down)$/ })).toBeNull(); // auto order
+    mountLoan('journal');
+    expect(
+      screen.queryByRole('button', { name: /^Move (?!entry|scenario).* (up|down)$/ }),
+    ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
-    expect(screen.queryByRole('button', { name: /^Move (?!entry).* (left|right)$/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /^Move (?!entry|scenario).* (left|right)$/ }),
+    ).toBeNull();
     const names = () =>
       [...document.querySelectorAll<HTMLInputElement>('.sbx-accounts tbody input')].map(
         (i) => i.value,
@@ -130,10 +149,10 @@ describe('Accounts panel', () => {
   });
 });
 
-describe('party bar (Journal and Grid)', () => {
-  it('tabs pick whose books; add, duplicate, rename and remove a party', () => {
-    mount('journal', loan());
-    const tabs = screen.getByRole('tablist', { name: 'Whose books' });
+describe('entities (Journal and Grid)', () => {
+  it('tabs pick whose books; add, duplicate, rename and remove an entity', () => {
+    mountLoan('journal');
+    const tabs = screen.getByRole('tablist', { name: 'Entities' });
     expect(
       within(tabs)
         .getAllByRole('tab')
@@ -141,24 +160,108 @@ describe('party bar (Journal and Grid)', () => {
     ).toEqual(['You', 'First Example Bank']);
     fireEvent.click(within(tabs).getByRole('tab', { name: 'First Example Bank' }));
     expect(screen.getByRole('tabpanel', { name: 'First Example Bank' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate entity' }));
     expect(within(tabs).getAllByRole('tab')).toHaveLength(3);
     expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe(
       'First Example Bank (copy)',
     );
-    fireEvent.change(screen.getByLabelText('Rename this party'), { target: { value: 'Bank 2' } });
+    fireEvent.change(screen.getByLabelText('Entity name'), { target: { value: 'Bank 2' } });
     expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Bank 2');
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove entity' }));
+    expect(screen.getByRole('group', { name: 'Confirm remove entity' }).textContent).toMatch(
+      /in all 3 scenarios/,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
     expect(within(tabs).getAllByRole('tab')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: '+ Add party' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add entity' }));
     expect(within(tabs).getAllByRole('tab')).toHaveLength(3);
+  });
+});
+
+describe('scenarios', () => {
+  it('tabs pick the scenario; the URL remembers it; accounts carry over, entries don’t', () => {
+    mount('journal', bank());
+    const tabs = screen.getByRole('tablist', { name: 'Scenarios' });
+    expect(
+      within(tabs)
+        .getAllByRole('tab')
+        .map((t) => t.textContent),
+    ).toEqual(['Deposit cash', 'Borrow, then pay interest', 'Repay the loan']);
+    expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
+      'Deposit cash',
+    );
+    fireEvent.click(within(tabs).getByRole('tab', { name: 'Borrow, then pay interest' }));
+    expect(parseHash(window.location.hash)).toMatchObject({ scenario: 1 });
+    expect((screen.getByLabelText('Entry 1 description') as HTMLInputElement).value).toBe(
+      'Borrow $500',
+    );
+    // A new scenario: the same entities and accounts, empty books.
+    fireEvent.click(screen.getByRole('button', { name: '+ Add scenario' }));
+    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Scenario 4');
+    expect(screen.queryByLabelText('Entry 1 description')).toBeNull();
+    expect(screen.getByText(/^Accounts \(5\)/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Scenario title'), { target: { value: 'Overdraft' } });
+    expect(within(tabs).getByRole('tab', { selected: true }).textContent).toBe('Overdraft');
+    flush();
+    expect(urlState()!.scenarios.map((s) => s.title)).toEqual([
+      'Deposit cash',
+      'Borrow, then pay interest',
+      'Repay the loan',
+      'Overdraft',
+    ]);
+  });
+
+  it('duplicate, move and remove a scenario (remove asks first)', () => {
+    mount('journal', bank());
+    const tabs = screen.getByRole('tablist', { name: 'Scenarios' });
+    const titles = () =>
+      within(tabs)
+        .getAllByRole('tab')
+        .map((t) => t.textContent);
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate scenario' }));
+    expect(titles()[1]).toBe('Deposit cash (copy)');
+    fireEvent.click(screen.getByRole('button', { name: 'Move scenario right' }));
+    expect(titles()[2]).toBe('Deposit cash (copy)');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove scenario' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, remove' }));
+    expect(titles()).toEqual(['Deposit cash', 'Borrow, then pay interest', 'Repay the loan']);
+  });
+
+  it('an example replaces everything — only after you say yes', () => {
+    mount('journal', emptyState());
+    fireEvent.change(screen.getByLabelText('Example scenarios:'), { target: { value: 'fbo' } });
+    expect(screen.getByRole('group', { name: 'Confirm replace' }).textContent).toMatch(
+      /Replace everything/,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('tablist', { name: 'Scenarios' }).textContent).toBe('Scenario 1');
+    fireEvent.change(screen.getByLabelText('Example scenarios:'), { target: { value: 'fbo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, replace' }));
+    expect(
+      within(screen.getByRole('tablist', { name: 'Scenarios' })).getAllByRole('tab'),
+    ).toHaveLength(3);
+    expect(
+      within(screen.getByRole('tablist', { name: 'Entities' })).getAllByRole('tab'),
+    ).toHaveLength(2);
+  });
+
+  it('the chart of accounts: every entity’s accounts with their labels, and which scenarios use them', () => {
+    mount('journal', bank());
+    const you = screen.getByRole('region', { name: 'You chart of accounts' });
+    const row = (name: string) =>
+      within(you).getByRole('rowheader', { name }).closest('tr')!.textContent;
+    expect(row('Checking Account')).toBe(
+      'Checking AccountAt the bankAssetDeposit cashBorrow, then pay interestRepay the loan',
+    );
+    expect(row('Cash')).toBe('CashIn your walletAssetDeposit cash');
+    expect(row('Interest Expense')).toMatch(/Borrow, then pay interest$/);
+    expect(within(you).getByText(/5 accounts/)).toBeTruthy();
   });
 });
 
 describe('T-accounts view (the ledger)', () => {
   it('lists the entries above the T’s, one per line, as the key to their (n)', () => {
-    mount('taccounts', loan());
+    mountLoan('taccounts');
     const you = screen.getByRole('region', { name: 'You’s ledger' });
     const items = within(within(you).getByRole('list', { name: 'Entries' })).getAllByRole(
       'listitem',
@@ -175,12 +278,12 @@ describe('T-accounts view (the ledger)', () => {
     ).toEqual(['Assets', 'Liabilities', 'Equity']);
   });
 
-  it('every party side by side; a T only for accounts in use; entries numbered and linked to the Journal', () => {
-    mount('taccounts', loan());
-    expect(screen.queryByRole('tablist')).toBeNull();
+  it('every entity side by side; a T only for accounts in use; entries numbered and linked to the Journal', () => {
+    mountLoan('taccounts');
+    expect(screen.queryByRole('tablist', { name: 'Entities' })).toBeNull();
     const you = screen.getByRole('region', { name: 'You’s ledger' });
     const ts = within(you).getAllByRole('group', { name: /T-account/ });
-    // "You" has 5 accounts; only the 3 used in entries get a T.
+    // "You" has 5 accounts; only the 3 used in this scenario's entries get a T.
     expect(ts.map((t) => t.getAttribute('aria-label')!.split(',')[0])).toEqual([
       'Checking Account',
       'Loan Payable',
@@ -191,16 +294,17 @@ describe('T-accounts view (the ledger)', () => {
     const ref = within(checking).getByRole('link', { name: '(2)' });
     expect(parseHash(ref.getAttribute('href')!)).toMatchObject({
       view: 'journal',
+      scenario: LOAN,
       entity: 0,
       at: 'entry-2',
     });
     expect(screen.getByRole('region', { name: 'First Example Bank’s ledger' })).toBeTruthy();
   });
 
-  it('every T in a party has the same rows: opening, one per entry, total (so row n is entry n everywhere)', () => {
-    mount('taccounts', loan());
-    const bank = screen.getByRole('region', { name: 'First Example Bank’s ledger' });
-    const rows = within(bank)
+  it('every T in an entity has the same rows: opening, one per entry, total (so row n is entry n everywhere)', () => {
+    mountLoan('taccounts');
+    const bankLedger = screen.getByRole('region', { name: 'First Example Bank’s ledger' });
+    const rows = within(bankLedger)
       .getAllByRole('group', { name: /T-account/ })
       .map((t) =>
         [...t.querySelectorAll('.tacct__row')].map(
@@ -214,8 +318,8 @@ describe('T-accounts view (the ledger)', () => {
     expect(rows.every((r) => r[2] === '' || r[2] === '(2)')).toBe(true);
   });
 
-  it('balance sheets per party', () => {
-    mount('taccounts', loan());
+  it('balance sheets per entity', () => {
+    mountLoan('taccounts');
     const you = screen.getByRole('region', { name: 'You’s ledger' });
     const box = within(you).getByRole('checkbox', {
       name: 'Show balance sheets',
@@ -228,15 +332,18 @@ describe('T-accounts view (the ledger)', () => {
 });
 
 describe('Grid view', () => {
-  it('one party at a time, with the same party tabs', () => {
-    mount('grid', loan(), 1);
-    expect(screen.getByRole('tab', { selected: true }).textContent).toBe('First Example Bank');
+  it('one entity at a time, with the same entity tabs', () => {
+    mountLoan('grid', 1);
+    expect(
+      within(screen.getByRole('tablist', { name: 'Entities' })).getByRole('tab', {
+        selected: true,
+      }).textContent,
+    ).toBe('First Example Bank');
     expect(screen.getByRole('region', { name: /Spreadsheet/ })).toBeTruthy();
   });
 
   it('a contra type says what it needs first; the Description column resizes with ← →', () => {
-    const s = emptyState();
-    mount('grid', s);
+    mount('grid', emptyState());
     const contra = screen.getByRole('option', { name: /^Contra-asset/ }) as HTMLOptionElement;
     expect(contra.disabled).toBe(true);
     expect(contra.textContent).toBe('Contra-asset (add an asset first)');
@@ -255,14 +362,14 @@ describe('Grid view', () => {
     mount('grid', s);
     expect(screen.getByLabelText('Entry 1 description')).toBeTruthy();
     // Untouched, it isn't in the books (or the link).
-    fireEvent.change(screen.getByLabelText('Board title'), { target: { value: 'T' } });
+    fireEvent.change(screen.getByLabelText('Sandbox title'), { target: { value: 'T' } });
     flush();
-    expect(urlState()!.entities[0]!.rows).toEqual([]);
+    expect(urlBooks(0, 'you').rows).toEqual([]);
     // Typing an amount creates it.
     fireEvent.change(screen.getByLabelText('Entry 1 Cash debit'), { target: { value: '5' } });
     flush();
-    expect(urlState()!.entities[0]!.rows).toEqual([
-      { id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 500, chosenType: 'asset' }] },
+    expect(urlBooks(0, 'you').rows).toEqual([
+      { id: 'r1', postings: [{ accountId: 'cash', side: 'dr', amount: 500 }] },
     ]);
     // "+ Add entry" adds entry 2 below it.
     fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));
@@ -270,16 +377,16 @@ describe('Grid view', () => {
   });
 
   it('a cell made of two journal lines shows their total read-only, so it can’t merge them', () => {
-    const s = loan();
+    const s = bank();
     // Entry 1 borrows $500 into Checking: split it into two $250 debit lines (as the Journal allows).
-    const row = s.entities[0]!.rows[0]!;
+    const row = s.scenarios[LOAN]!.books.you!.rows[0]!;
     const dr = row.postings.find((p) => p.side === 'dr')!;
     row.postings = [
       { ...dr, amount: 25000 },
       { ...dr, amount: 25000 },
       ...row.postings.filter((p) => p !== dr),
     ];
-    mount('grid', s);
+    mount('grid', s, 0, LOAN);
     const cell = screen.getByLabelText(
       'Entry 1 Checking Account debit (2 lines; edit in the Journal)',
     ) as HTMLInputElement;
@@ -293,8 +400,8 @@ describe('Grid view', () => {
 });
 
 describe('the view switcher', () => {
-  it('links every view to the same state', () => {
-    mount('journal', loan());
+  it('links every view to the same state and scenario', () => {
+    mountLoan('journal');
     const nav = screen.getByRole('navigation', { name: 'Sandbox view' });
     const views = within(nav)
       .getAllByRole('link')
@@ -304,8 +411,8 @@ describe('the view switcher', () => {
       'taccounts',
       'grid',
     ]);
-    const datas = new Set(views.map((v) => v.name === 'sandbox' && v.data));
-    expect(datas.size).toBe(1);
+    expect(new Set(views.map((v) => v.name === 'sandbox' && v.data)).size).toBe(1);
+    expect(views.every((v) => v.name === 'sandbox' && v.scenario === LOAN)).toBe(true);
     expect(within(nav).getByRole('link', { name: 'Journal' }).getAttribute('aria-current')).toBe(
       'page',
     );
@@ -313,22 +420,24 @@ describe('the view switcher', () => {
 });
 
 describe('journal model', () => {
+  const youInLoan = () => ({ ...booksOf(bank(), LOAN, 0), rows: [] });
+
   it('a line keeps the side it was added on; persistable drops half-written lines', () => {
-    let e = addEntry({ ...loan().entities[0]!, rows: [] });
+    let e = addEntry(youInLoan());
     e = setLineAccount(e, 0, 1, 'cash');
     e = setLineAmount(e, 0, 1, 1000);
     expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 1000, chosenType: 'asset' });
     e = setLineAmount(e, 0, 1, 500);
     expect(e.rows[0]!.postings[1]).toMatchObject({ side: 'cr', amount: 500 });
     e = setLineAmount(e, 0, 0, 700); // an amount on a line with no account yet
-    const s = persistable({ v: 1, scenario: '', entities: [e] });
-    expect(s.entities[0]!.rows[0]!.postings).toEqual([
-      { accountId: 'cash', side: 'cr', amount: 500, chosenType: 'asset' },
+    const s = persistable(withBooks(bank(), LOAN, 0, e));
+    expect(s.scenarios[LOAN]!.books.you!.rows[0]!.postings).toEqual([
+      { accountId: 'cash', side: 'cr', amount: 500 },
     ]);
   });
 
   it('one balance check everywhere: an untouched entry is not flagged; a line with no account never counts', () => {
-    let e = addEntry({ ...loan().entities[0]!, rows: [] });
+    let e = addEntry(youInLoan());
     expect(entryCheck(e.rows[0]!)).toMatchObject({ started: false, balanced: false });
     expect(summarize(e).unbalancedRows).toEqual([]);
     e = setLineAccount(e, 0, 0, 'cash');

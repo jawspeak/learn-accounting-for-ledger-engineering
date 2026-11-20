@@ -6,7 +6,7 @@ import type {
   AccountType,
   BalanceSheet,
   Money,
-  SandboxEntity,
+  EntityBooks,
   Side,
   TransactionRow,
 } from '@contracts';
@@ -38,26 +38,26 @@ export function toneOf(t: AccountType): Tone {
 }
 
 export function updateRow(
-  e: SandboxEntity,
+  e: EntityBooks,
   i: number,
   f: (r: TransactionRow) => TransactionRow,
-): SandboxEntity {
+): EntityBooks {
   return { ...e, rows: e.rows.map((r, j) => (j === i ? f(r) : r)) };
 }
 
 /** Type into an account's debit or credit cell of entry `i` (one posting per account and side; 0 removes it). */
 export function setAmount(
-  e: SandboxEntity,
+  e: EntityBooks,
   i: number,
   accountId: AccountId,
   side: Side,
   cents: Money,
-): SandboxEntity {
+): EntityBooks {
   const type = e.accounts.find((a) => a.id === accountId)?.type ?? 'asset';
   return updateRow(e, i, (r) => setCell(r, accountId, side, cents, type));
 }
 
-export function setLabel(e: SandboxEntity, i: number, label: string): SandboxEntity {
+export function setLabel(e: EntityBooks, i: number, label: string): EntityBooks {
   return updateRow(e, i, (r) => {
     const next = { ...r };
     if (label) next.label = label;
@@ -67,7 +67,7 @@ export function setLabel(e: SandboxEntity, i: number, label: string): SandboxEnt
 }
 
 /** Balance per account on its normal side (opening + every posted line) — the same numbers the T-accounts show. */
-export function sheetBalance(e: SandboxEntity): BalanceSheet {
+export function sheetBalance(e: EntityBooks): BalanceSheet {
   return engine.computeBalances(postedRows(e.rows), typeResolver(e), e.opening);
 }
 

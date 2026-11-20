@@ -364,6 +364,7 @@ export function App() {
               <SandboxRoute
                 view={route.view}
                 data={route.data}
+                scenario={route.scenario}
                 entity={route.entity}
                 at={route.at}
               />

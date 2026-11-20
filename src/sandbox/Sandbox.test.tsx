@@ -14,7 +14,8 @@ function StandaloneHost({ onState }: { onState(s: SandboxState): void }) {
     return s;
   });
   const [view, setView] = useState<SandboxView>('journal');
-  const [party, setParty] = useState(0);
+  const [entity, setEntity] = useState(0);
+  const [scenario, setScenario] = useState(0);
   return (
     <Sandbox
       state={state}
@@ -23,12 +24,15 @@ function StandaloneHost({ onState }: { onState(s: SandboxState): void }) {
         onState(s);
       }}
       view={view}
-      party={party}
-      onPartyChange={setParty}
+      scenario={scenario}
+      onScenarioSelect={setScenario}
+      entity={entity}
+      onEntitySelect={setEntity}
       linkTo={() => '#'}
       onNavigate={(t: SandboxTarget) => {
         setView(t.view);
-        if (t.party !== undefined) setParty(t.party);
+        if (t.entity !== undefined) setEntity(t.entity);
+        if (t.scenario !== undefined) setScenario(t.scenario);
       }}
     />
   );

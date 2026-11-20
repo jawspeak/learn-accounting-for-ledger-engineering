@@ -16,13 +16,16 @@ describe('solution boards (Open solution in Sandbox / Spreadsheet)', () => {
       // A link that fails the schema would silently open an empty board.
       expect(engine.decodeSandbox(engine.encodeState(board))).toEqual(board);
 
+      // One scenario: the problem, with each entity's books.
+      expect(board.scenarios).toHaveLength(1);
       for (const e of board.entities) {
         const ids = new Set(e.accounts.map((a) => a.id));
-        for (const r of e.rows) {
+        const books = board.scenarios[0]!.books[e.id]!;
+        for (const r of books.rows) {
           expect(engine.rowTotals(r).balanced).toBe(true);
           for (const q of r.postings) expect(ids.has(q.accountId)).toBe(true);
         }
-        for (const l of e.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
+        for (const l of books.opening?.lines ?? []) expect(ids.has(l.accountId)).toBe(true);
       }
 
       const pair = p.perspectivePairId ? problems[p.perspectivePairId] : undefined;

@@ -1,7 +1,7 @@
-/** Party-level panels shared by the Sandbox views: checks summary, accounts list, opening balances,
+/** Entity-level panels shared by the Sandbox views: checks summary, accounts list, opening balances,
  *  and the small account controls every view uses (type options, "reduces…", remove-with-confirm). */
-import { Fragment, useId, useState } from 'react';
-import type { Account, AccountId, AccountType, SandboxEntity } from '@contracts';
+import { createContext, Fragment, useContext, useId, useState } from 'react';
+import type { Account, AccountId, AccountType, EntityBooks } from '@contracts';
 import { formatDollars, parseDollars } from '../components/builder/model';
 import {
   ACCOUNT_TYPES,
@@ -114,12 +114,27 @@ export function ContraParentSelect({
   );
 }
 
-/** Remove an account everywhere — asking first when entries post to it (its lines go too). */
-export function removeAccountAsking(e: SandboxEntity, a: Account): SandboxEntity | null {
-  const n = linesUsing(e, a.id);
-  if (n > 0 && !window.confirm(`Remove ${a.name} and its ${n} line${n > 1 ? 's' : ''}?`))
-    return null;
-  return removeAccount(e, a.id);
+/** Lines (and opening balances) per scenario that use an account of the current entity. The host provides it;
+ *  without one, only the books on screen are counted. */
+export type AccountUsage = (accountId: AccountId) => number[];
+export const AccountUsage = createContext<AccountUsage | null>(null);
+
+/** Remove an account everywhere — asking first when any scenario posts to it (its lines go too). */
+export function useRemoveAccount() {
+  const usage = useContext(AccountUsage);
+  return (e: EntityBooks, a: Account): EntityBooks | null => {
+    const per = usage ? usage(a.id) : [linesUsing(e, a.id)];
+    const n = per.reduce((t, x) => t + x, 0);
+    const where = per.filter((x) => x > 0).length;
+    if (
+      n > 0 &&
+      !window.confirm(
+        `Remove ${a.name} and its ${n} line${n > 1 ? 's' : ''}${where > 1 ? ` in ${where} scenarios` : ''}?`,
+      )
+    )
+      return null;
+    return removeAccount(e, a.id);
+  };
 }
 
 /** An account name field: free editing (it may be blank while retyping); only non-blank names are saved. */
@@ -152,8 +167,8 @@ export function AccountsEditor({
   entity,
   onChange,
 }: {
-  entity: SandboxEntity;
-  onChange(e: SandboxEntity): void;
+  entity: EntityBooks;
+  onChange(e: EntityBooks): void;
 }) {
   const uid = useId();
   const [name, setName] = useState('');
@@ -162,6 +177,7 @@ export function AccountsEditor({
   const manual = isManualOrder(entity);
   // The same order as the Grid's columns: balance-sheet order (auto) or the manual order.
   const listed = orderedAccounts(entity);
+  const removeAsking = useRemoveAccount();
 
   const add = () => {
     const n = name.trim();
@@ -266,7 +282,7 @@ export function AccountsEditor({
                       aria-label={`Remove ${a.name}`}
                       title="Remove this account (and its lines)"
                       onClick={() => {
-                        const next = removeAccountAsking(entity, a);
+                        const next = removeAsking(entity, a);
                         if (next) onChange(next);
                       }}
                     >
@@ -341,8 +357,8 @@ export function OpeningEditor({
   entity,
   onChange,
 }: {
-  entity: SandboxEntity;
-  onChange(e: SandboxEntity): void;
+  entity: EntityBooks;
+  onChange(e: EntityBooks): void;
 }) {
   if (entity.accounts.length === 0) return <p className="note">Add accounts first.</p>;
   const amountOf = (id: string) => entity.opening?.lines.find((l) => l.accountId === id)?.amount;

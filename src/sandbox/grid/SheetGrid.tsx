@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import type { Account, AccountType, BalanceSheet, Money, SandboxEntity, Side } from '@contracts';
+import type { Account, AccountType, BalanceSheet, Money, EntityBooks, Side } from '@contracts';
 import { engine } from '@engine';
 import { cellAmount, formatDollars, parseDollars } from '../../components/builder/model';
 import {
@@ -16,7 +16,7 @@ import {
   setOpening,
   updateAccount,
 } from '../model';
-import { ContraParentSelect, removeAccountAsking, TypeOptions } from '../PartyPanels';
+import { ContraParentSelect, TypeOptions, useRemoveAccount } from '../EntityPanels';
 import { equalsAt, setAmount, setLabel, sheetBalance, toneOf } from './model';
 
 const SIDES: Side[] = ['dr', 'cr'];
@@ -34,11 +34,12 @@ export function SheetGrid({
   entity: e,
   onChange,
 }: {
-  entity: SandboxEntity;
-  onChange(e: SandboxEntity): void;
+  entity: EntityBooks;
+  onChange(e: EntityBooks): void;
 }) {
   const tableRef = useRef<HTMLTableElement>(null);
   const [descWidth, setDescWidth] = useStoredWidth();
+  const removeAsking = useRemoveAccount();
   const [showOpening, setShowOpening] = useState(() => !!e.opening);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('asset');
@@ -98,7 +99,7 @@ export function SheetGrid({
   };
 
   const remove = (a: Account) => {
-    const next = removeAccountAsking(e, a);
+    const next = removeAsking(e, a);
     if (next) onChange(next);
   };
 

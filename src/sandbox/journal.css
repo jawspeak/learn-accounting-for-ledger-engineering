@@ -1,6 +1,6 @@
-/* Sandbox: party bar, Journal view (.jx) and T-accounts view (.lv). Tokens from src/styles/tokens.css. */
+/* Sandbox: entity bar, Journal view (.jx) and T-accounts view (.lv). Tokens from src/styles/tokens.css. */
 
-/* ---------- party bar (Journal and Grid) ---------- */
+/* ---------- entity bar (Journal and Grid) ---------- */
 .sbx-partybar {
   display: flex;
   flex-direction: column;
@@ -262,19 +262,19 @@
   gap: var(--space-5);
   margin-top: var(--space-3);
 }
-.lv-party {
+.lv-entity {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: var(--space-3) var(--space-4);
   background: var(--surface);
 }
-.lv-party-head {
+.lv-entity-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-4);
 }
-.lv-party-head h2 {
+.lv-entity-head h2 {
   margin: 0;
   font-size: var(--text-xl);
 }
@@ -340,7 +340,7 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: var(--space-2);
 }
-/* Every T in a party has the same rows (opening, one per entry, total), so rows line up across T's: the
+/* Every T in an entity has the same rows (opening, one per entry, total), so rows line up across T's: the
    header is a fixed two-line block (a long name wraps without pushing its T down) and each row has one height. */
 .lv .tacct__head {
   /* Two lines of name + the type line, always — so every T's top bar sits at the same height. */

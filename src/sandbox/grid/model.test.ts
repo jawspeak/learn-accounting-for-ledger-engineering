@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SandboxEntity } from '@contracts';
+import type { EntityBooks } from '@contracts';
 import { engine } from '@engine';
 import { EXAMPLES } from '../../../content/sandbox-examples';
 import { parseDollars, formatDollars } from '../../components/builder/model';
@@ -20,7 +20,7 @@ import {
 import { equalsAt, setAmount, sheetBalance } from './model';
 
 /** Three accounts and two empty entries, as "+ Add entry" makes them in the Grid. */
-const base = (): SandboxEntity =>
+const base = (): EntityBooks =>
   addEntry(
     addEntry(
       {

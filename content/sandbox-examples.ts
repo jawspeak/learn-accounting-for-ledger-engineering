@@ -1,6 +1,11 @@
-/** Built-in example scenarios for the Sandbox. Every row balances and A = L + E holds (see examples.test.ts). */
-import type { Account, AccountId, Posting, SandboxState, Side } from '@contracts';
+/**
+ * Built-in example scenarios for the Sandbox: each is a set of entities and several scenarios, the way the
+ * Sandbox is meant to be used — write every scenario, and the chart of accounts they need emerges. Every entry
+ * balances and A = L + E holds in every scenario's books (see model.test.ts).
+ */
+import type { Account, AccountId, EntityBooks, Posting, SandboxState, Side } from '@contracts';
 import { entities } from '@content';
+import { stateFromBooks } from '../src/sandbox';
 
 const $ = (dollars: number) => dollars * 100;
 
@@ -9,7 +14,7 @@ function fromEntity(entityId: string, wanted: Account[]): Account[] {
   const coa = entities[entityId]?.accounts ?? [];
   return wanted.map((w) => {
     const a = coa.find((x) => x.id === w.id);
-    return a && a.type === w.type ? { ...a } : w;
+    return a && a.type === w.type ? { ...a, ...(w.subtitle ? { subtitle: w.subtitle } : {}) } : w;
   });
 }
 
@@ -19,251 +24,301 @@ function post(accounts: Account[], accountId: AccountId, side: Side, dollars: nu
   return { accountId, side, amount: $(dollars), chosenType: type };
 }
 
-// ---------- shared account definitions ----------
-const youAccounts = (extra: Account[] = []) =>
-  fromEntity('you', [
-    { id: 'cash', name: 'Cash', type: 'asset' },
-    { id: 'checking', name: 'Checking Account', type: 'asset' },
-    ...extra,
-    { id: 'net-worth', name: 'Net Worth', type: 'equity', equityGroup: 'retained' },
-  ]);
+/** One entity's books in one scenario. */
+function books(
+  id: string,
+  name: string,
+  accounts: Account[],
+  entries: [label: string, ...postings: [AccountId, Side, number][]][],
+  opening?: [AccountId, number][],
+  showBalanceSheets = true,
+): EntityBooks {
+  const b: EntityBooks = {
+    id,
+    name,
+    accounts,
+    showBalanceSheets,
+    rows: entries.map(([label, ...ps], i) => ({
+      id: `r${i + 1}`,
+      label,
+      postings: ps.map(([a, side, d]) => post(accounts, a, side, d)),
+    })),
+  };
+  if (opening)
+    b.opening = { lines: opening.map(([accountId, d]) => ({ accountId, amount: $(d) })) };
+  return b;
+}
 
-const bankAccounts = (ids: AccountId[]) => {
-  const all: Account[] = [
-    { id: 'vault-cash', name: 'Cash: Vault', type: 'asset' },
-    { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset' },
-    { id: 'loans-receivable', name: 'Loans Receivable', type: 'asset' },
-    { id: 'deposits-checking', name: 'Customer Deposits: Checking', type: 'liability' },
-    { id: 'deposits-fbo', name: 'Deposits: FBO Accounts', type: 'liability' },
-    { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
-    { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
-  ];
-  return fromEntity(
-    'bank',
-    all.filter((a) => ids.includes(a.id)),
-  );
-};
 const bankName = () => entities.bank?.name ?? 'First Example Bank';
 const youName = () => entities.you?.name ?? 'You';
 
-// ---------- 1. Cash deposit ----------
-function cashDeposit(): SandboxState {
-  const you = youAccounts();
-  const bank = bankAccounts(['vault-cash', 'reserves-fed', 'deposits-checking', 'paid-in-capital']);
-  return {
-    v: 1,
-    title: 'Cash deposit — you and the bank',
-    scenario:
-      'You walk into **First Example Bank** with **$100** of cash and deposit it into your checking account.\n\n' +
-      '- In *your* books, one asset becomes another — net worth doesn’t change.\n' +
-      '- In the *bank’s* books, the cash is a new asset **and** a new liability: it now owes you $100.',
-    entities: [
-      {
-        id: 'you',
-        name: youName(),
-        accounts: you,
-        opening: {
-          lines: [
-            { accountId: 'cash', amount: $(100) },
-            { accountId: 'net-worth', amount: $(100) },
-          ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Deposit cash',
-            postings: [post(you, 'checking', 'dr', 100), post(you, 'cash', 'cr', 100)],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-      {
-        id: 'bank',
-        name: bankName(),
-        accounts: bank,
-        opening: {
-          lines: [
-            { accountId: 'reserves-fed', amount: $(1000) },
-            { accountId: 'paid-in-capital', amount: $(1000) },
-          ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Customer deposits cash',
-            postings: [
-              post(bank, 'vault-cash', 'dr', 100),
-              post(bank, 'deposits-checking', 'cr', 100),
-            ],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-    ],
-  };
-}
-
-// ---------- 2. Loan — both sides ----------
-function loan(): SandboxState {
-  const you = youAccounts([
+// ============ 1. You and your bank ============
+function youAndYourBank(): SandboxState {
+  const you = fromEntity('you', [
+    { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'In your wallet' },
+    { id: 'checking', name: 'Checking Account', type: 'asset', subtitle: 'At the bank' },
     { id: 'loan-payable', name: 'Loan Payable', type: 'liability' },
+    { id: 'net-worth', name: 'Net Worth', type: 'equity', equityGroup: 'retained' },
     { id: 'interest-expense', name: 'Interest Expense', type: 'expense' },
   ]);
-  const bank = bankAccounts([
-    'reserves-fed',
-    'loans-receivable',
-    'deposits-checking',
-    'paid-in-capital',
-    'interest-income',
+  const bank = fromEntity('bank', [
+    { id: 'vault-cash', name: 'Cash: Vault', type: 'asset' },
+    { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset' },
+    { id: 'loans-receivable', name: 'Loans Receivable', type: 'asset' },
+    {
+      id: 'deposits-checking',
+      name: 'Customer Deposits: Checking',
+      type: 'liability',
+      subtitle: 'What the bank owes depositors',
+    },
+    { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
+    { id: 'interest-income', name: 'Interest Income', type: 'revenue' },
   ]);
-  return {
-    v: 1,
-    title: 'Loan — both sides',
-    scenario:
-      'The bank lends you **$500**, credited straight to your checking account. A month later you pay **$5** of interest from checking.\n\n' +
-      'Notice the bank creates the deposit when it makes the loan — no reserves move. ' +
-      'Each row in your books mirrors a row in the bank’s books, with assets and liabilities swapped.',
-    entities: [
-      {
-        id: 'you',
-        name: youName(),
-        accounts: you,
-        rows: [
-          {
-            id: 'r1',
-            label: 'Borrow $500',
-            postings: [post(you, 'checking', 'dr', 500), post(you, 'loan-payable', 'cr', 500)],
-          },
-          {
-            id: 'r2',
-            label: 'Pay $5 interest',
-            postings: [post(you, 'interest-expense', 'dr', 5), post(you, 'checking', 'cr', 5)],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-      {
-        id: 'bank',
-        name: bankName(),
-        accounts: bank,
-        opening: {
-          lines: [
-            { accountId: 'reserves-fed', amount: $(1000) },
-            { accountId: 'paid-in-capital', amount: $(1000) },
+  const Y = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('you', youName(), you, e, o);
+  const B = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('bank', bankName(), bank, e, o);
+  return stateFromBooks('You and your bank', [
+    {
+      id: 'cash-deposit',
+      title: 'Deposit cash',
+      text:
+        'You walk into **First Example Bank** with **$100** of cash and deposit it into your checking account.\n\n' +
+        '- In *your* books, one asset becomes another — net worth doesn’t change.\n' +
+        '- In the *bank’s* books, the cash is a new asset **and** a new liability: it now owes you $100.',
+      books: [
+        Y(
+          [['Deposit cash', ['checking', 'dr', 100], ['cash', 'cr', 100]]],
+          [
+            ['cash', 100],
+            ['net-worth', 100],
           ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Make the loan',
-            postings: [
-              post(bank, 'loans-receivable', 'dr', 500),
-              post(bank, 'deposits-checking', 'cr', 500),
+        ),
+        B(
+          [['Customer deposits cash', ['vault-cash', 'dr', 100], ['deposits-checking', 'cr', 100]]],
+          [
+            ['reserves-fed', 1000],
+            ['paid-in-capital', 1000],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'loan',
+      title: 'Borrow, then pay interest',
+      text:
+        'The bank lends you **$500**, credited straight to your checking account. A month later you pay **$5** of interest from checking.\n\n' +
+        'Notice the bank *creates* the deposit when it makes the loan — no reserves move. ' +
+        'Each entry in your books mirrors one in the bank’s, with assets and liabilities swapped.',
+      books: [
+        Y([
+          ['Borrow $500', ['checking', 'dr', 500], ['loan-payable', 'cr', 500]],
+          ['Pay $5 interest', ['interest-expense', 'dr', 5], ['checking', 'cr', 5]],
+        ]),
+        B(
+          [
+            ['Make the loan', ['loans-receivable', 'dr', 500], ['deposits-checking', 'cr', 500]],
+            [
+              'Collect interest from checking',
+              ['deposits-checking', 'dr', 5],
+              ['interest-income', 'cr', 5],
             ],
-          },
-          {
-            id: 'r2',
-            label: 'Collect interest from checking',
-            postings: [
-              post(bank, 'deposits-checking', 'dr', 5),
-              post(bank, 'interest-income', 'cr', 5),
+          ],
+          [
+            ['reserves-fed', 1000],
+            ['paid-in-capital', 1000],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'repay',
+      title: 'Repay the loan',
+      text:
+        'You pay back the **$500** loan from checking.\n\n' +
+        'The mirror image of borrowing: your asset and liability both shrink — and in the bank’s books, the deposit ' +
+        'and the loan cancel out. Repaying a loan *destroys* the deposit money the loan created.',
+      books: [
+        Y(
+          [['Repay the loan', ['loan-payable', 'dr', 500], ['checking', 'cr', 500]]],
+          [
+            ['checking', 1000],
+            ['loan-payable', 500],
+            ['net-worth', 500],
+          ],
+        ),
+        B(
+          [
+            [
+              'Loan repaid from checking',
+              ['deposits-checking', 'dr', 500],
+              ['loans-receivable', 'cr', 500],
             ],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-    ],
-  };
+          ],
+          [
+            ['reserves-fed', 1000],
+            ['loans-receivable', 500],
+            ['deposits-checking', 1000],
+            ['paid-in-capital', 500],
+          ],
+        ),
+      ],
+    },
+  ]);
 }
 
-// ---------- 3. FBO top-up ----------
-function fboTopUp(): SandboxState {
+// ============ 2. Zap: a wallet on an FBO account ============
+function zapWallet(): SandboxState {
   const zap: Account[] = [
     {
       id: 'operating-cash',
       name: 'Cash: Operating',
       type: 'asset',
-      description: 'Zap’s own money at the bank.',
+      subtitle: 'Zap’s own money',
+      description: 'Zap’s own checking account at the bank.',
     },
     {
       id: 'fbo-cash',
       name: 'Cash: FBO Account',
       type: 'asset',
+      subtitle: 'Users’ money, held for them',
       description: 'Customer money held at the bank for the benefit of Zap users.',
     },
+    { id: 'wallet-alice', name: 'Wallet: Alice', type: 'liability', subtitle: 'Customer balances' },
+    { id: 'wallet-bob', name: 'Wallet: Bob', type: 'liability', subtitle: 'Customer balances' },
+    { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
+    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Cash-out fees' },
+  ];
+  const bank = fromEntity('bank', [
+    { id: 'reserves-fed', name: 'Reserves at the Federal Reserve', type: 'asset' },
     {
-      id: 'customer-balances',
-      name: 'Customer Balances Payable',
+      id: 'deposits-checking',
+      name: 'Customer Deposits: Checking',
       type: 'liability',
-      description: 'What Zap owes its users (their wallet balances).',
+      subtitle: 'Alice, Bob, Zap’s operating account…',
+    },
+    {
+      id: 'deposits-fbo',
+      name: 'Deposits: FBO Accounts',
+      type: 'liability',
+      subtitle: 'Held for Zap’s users',
     },
     { id: 'paid-in-capital', name: 'Paid-in Capital', type: 'equity', equityGroup: 'paid-in' },
-  ];
-  const bank = bankAccounts([
-    'reserves-fed',
-    'deposits-checking',
-    'deposits-fbo',
-    'paid-in-capital',
   ]);
-  return {
-    v: 1,
-    title: 'FBO top-up — Zap and the bank',
-    scenario:
-      'Alice tops up her **Zap** wallet with **$50** from her checking account at **First Example Bank**, where Zap holds its FBO account.\n\n' +
-      '- The bank just moves the liability from Alice’s checking deposit to the FBO deposit.\n' +
-      '- Zap records the FBO cash as an asset and the wallet balance as what it owes Alice.',
-    entities: [
-      {
-        id: 'zap',
-        name: 'Zap',
-        accounts: zap,
-        opening: {
-          lines: [
-            { accountId: 'operating-cash', amount: $(200) },
-            { accountId: 'paid-in-capital', amount: $(200) },
+  const Z = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('zap', 'Zap', zap, e, o);
+  const B = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('bank', bankName(), bank, e, o);
+  return stateFromBooks('Zap — a wallet on an FBO account', [
+    {
+      id: 'top-up',
+      title: 'Alice tops up $50',
+      text:
+        'Alice tops up her **Zap** wallet with **$50** from her checking account at **First Example Bank**, where Zap holds an FBO (“for the benefit of”) account.\n\n' +
+        '- The bank just moves its liability from Alice’s checking deposit to the FBO deposit.\n' +
+        '- Zap records the FBO cash as an asset, and Alice’s wallet balance as what it owes her.',
+      books: [
+        Z(
+          [['Alice tops up $50', ['fbo-cash', 'dr', 50], ['wallet-alice', 'cr', 50]]],
+          [
+            ['operating-cash', 200],
+            ['paid-in-capital', 200],
           ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Alice tops up $50',
-            postings: [post(zap, 'fbo-cash', 'dr', 50), post(zap, 'customer-balances', 'cr', 50)],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-      {
-        id: 'bank',
-        name: bankName(),
-        accounts: bank,
-        opening: {
-          lines: [
-            { accountId: 'reserves-fed', amount: $(1000) },
-            { accountId: 'deposits-checking', amount: $(500) },
-            { accountId: 'paid-in-capital', amount: $(500) },
-          ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Move $50 from Alice’s checking to Zap’s FBO',
-            postings: [
-              post(bank, 'deposits-checking', 'dr', 50),
-              post(bank, 'deposits-fbo', 'cr', 50),
+        ),
+        B(
+          [
+            [
+              'Move $50 from Alice’s checking to Zap’s FBO',
+              ['deposits-checking', 'dr', 50],
+              ['deposits-fbo', 'cr', 50],
             ],
-          },
-        ],
-        showBalanceSheets: true,
-      },
-    ],
-  };
+          ],
+          [
+            ['reserves-fed', 1000],
+            ['deposits-checking', 500],
+            ['paid-in-capital', 500],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'p2p',
+      title: 'Alice pays Bob $20 in Zap',
+      text:
+        'Alice sends Bob **$20** inside Zap.\n\n' +
+        'Only Zap’s books change: it now owes Alice less and Bob more. **The bank sees nothing** — the money ' +
+        'never leaves the FBO account. (Look at the bank’s T-accounts: no entries.) This is why a wallet needs ' +
+        'its own ledger: the bank can’t tell you who owns what inside the FBO account.',
+      books: [
+        Z(
+          [['Alice pays Bob $20', ['wallet-alice', 'dr', 20], ['wallet-bob', 'cr', 20]]],
+          [
+            ['operating-cash', 200],
+            ['fbo-cash', 50],
+            ['wallet-alice', 50],
+            ['paid-in-capital', 200],
+          ],
+        ),
+        B(
+          [],
+          [
+            ['reserves-fed', 1000],
+            ['deposits-checking', 450],
+            ['deposits-fbo', 50],
+            ['paid-in-capital', 500],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'cash-out',
+      title: 'Bob cashes out, less a $1 fee',
+      text:
+        'Bob withdraws his **$20** to his checking account. Zap keeps a **$1** fee, then sweeps the fee from the FBO ' +
+        'account into its own operating account.\n\n' +
+        '- The fee is Zap’s revenue — and that $1 must leave the FBO account: it’s no longer users’ money.\n' +
+        '- Check the reconciliation: the bank’s **Deposits: FBO Accounts** ends at $30, exactly Zap’s ' +
+        '**Cash: FBO Account** — and exactly what Zap owes its users (Alice’s $30).',
+      books: [
+        Z(
+          [
+            ['Charge Bob the $1 cash-out fee', ['wallet-bob', 'dr', 1], ['fee-revenue', 'cr', 1]],
+            ['Pay Bob $19 to his checking', ['wallet-bob', 'dr', 19], ['fbo-cash', 'cr', 19]],
+            ['Sweep the fee to operating', ['operating-cash', 'dr', 1], ['fbo-cash', 'cr', 1]],
+          ],
+          [
+            ['operating-cash', 200],
+            ['fbo-cash', 50],
+            ['wallet-alice', 30],
+            ['wallet-bob', 20],
+            ['paid-in-capital', 200],
+          ],
+        ),
+        B(
+          [
+            ['FBO → Bob’s checking', ['deposits-fbo', 'dr', 19], ['deposits-checking', 'cr', 19]],
+            [
+              'FBO → Zap’s operating account',
+              ['deposits-fbo', 'dr', 1],
+              ['deposits-checking', 'cr', 1],
+            ],
+          ],
+          [
+            ['reserves-fed', 1000],
+            ['deposits-checking', 450],
+            ['deposits-fbo', 50],
+            ['paid-in-capital', 500],
+          ],
+        ),
+      ],
+    },
+  ]);
 }
 
-// ---------- 4. Payroll — a payroll provider's ledger (best in the Grid view) ----------
+// ============ 3. A payroll provider (best in the Grid view) ============
 function payroll(): SandboxState {
-  const accounts: Account[] = [
+  const provider: Account[] = [
     { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Bank account' },
-    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Income' },
     {
       id: 'employer-foo-receivable',
       name: 'Employer Foo Receivable',
@@ -282,8 +337,9 @@ function payroll(): SandboxState {
       type: 'liability',
       subtitle: 'Employee payables',
     },
+    { id: 'fee-revenue', name: 'Fee Revenue', type: 'revenue', subtitle: 'Income' },
   ];
-  const fooAccounts: Account[] = [
+  const foo: Account[] = [
     { id: 'cash', name: 'Cash', type: 'asset', subtitle: 'Operating bank account' },
     {
       id: 'payroll-payable',
@@ -295,96 +351,80 @@ function payroll(): SandboxState {
     { id: 'wages-expense', name: 'Wages Expense', type: 'expense' },
     { id: 'payroll-fees', name: 'Payroll Fees', type: 'expense', subtitle: 'Provider fee' },
   ];
-  return {
-    v: 1,
-    title: 'Payroll',
-    scenario:
-      'A payroll provider runs **$2,000** of payroll for **Employer Foo** (Employee 1: $1,200, Employee 2: $800) and charges a **$20** fee.\n\n' +
-      '1. Running payroll: Foo now owes us $2,020; we owe each employee their pay; we earned the fee.\n' +
-      '2. We pull $2,020 from Foo’s bank account.\n' +
-      '3–4. We pay each employee; Cash ends at the $20 fee we kept.\n\n' +
-      '**Employer Foo**’s books (the second tab in the Journal and the Grid) show the same events from the employer’s side: an expense and a payable, then the cash leaves.',
-    entities: [
-      {
-        id: 'payroll-provider',
-        name: 'Payroll provider',
-        accounts,
-        rows: [
-          {
-            id: 'r1',
-            label: 'Employer Foo runs payroll',
-            postings: [
-              post(accounts, 'employer-foo-receivable', 'dr', 2020),
-              post(accounts, 'fee-revenue', 'cr', 20),
-              post(accounts, 'foo-employee-1-payable', 'cr', 1200),
-              post(accounts, 'foo-employee-2-payable', 'cr', 800),
-            ],
-          },
-          {
-            id: 'r2',
-            label: 'Debit Employer Foo',
-            postings: [
-              post(accounts, 'cash', 'dr', 2020),
-              post(accounts, 'employer-foo-receivable', 'cr', 2020),
-            ],
-          },
-          {
-            id: 'r3',
-            label: 'Credit Foo Employee 1',
-            postings: [
-              post(accounts, 'foo-employee-1-payable', 'dr', 1200),
-              post(accounts, 'cash', 'cr', 1200),
-            ],
-          },
-          {
-            id: 'r4',
-            label: 'Credit Foo Employee 2',
-            postings: [
-              post(accounts, 'foo-employee-2-payable', 'dr', 800),
-              post(accounts, 'cash', 'cr', 800),
-            ],
-          },
-        ],
-        showBalanceSheets: false,
-      },
-      {
-        id: 'employer-foo',
-        name: 'Employer Foo',
-        accounts: fooAccounts,
-        opening: {
-          lines: [
-            { accountId: 'cash', amount: $(10000) },
-            { accountId: 'paid-in-capital', amount: $(10000) },
+  const P = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('payroll-provider', 'Payroll provider', provider, e, o, false);
+  const F = (e: Parameters<typeof books>[3], o?: [AccountId, number][]) =>
+    books('employer-foo', 'Employer Foo', foo, e, o, false);
+  return stateFromBooks('A payroll provider', [
+    {
+      id: 'run-payroll',
+      title: 'Run payroll',
+      text:
+        'A payroll provider runs **$2,000** of payroll for **Employer Foo** (Employee 1: $1,200, Employee 2: $800) and charges a **$20** fee.\n\n' +
+        '1. Running payroll: Foo now owes us $2,020; we owe each employee their pay; we earned the fee.\n' +
+        '2. We pull $2,020 from Foo’s bank account.\n' +
+        '3–4. We pay each employee; Cash ends at the $20 fee we kept.\n\n' +
+        '**Employer Foo**’s books (its tab in the Journal and the Grid) show the same events from the employer’s side: an expense and a payable, then the cash leaves.',
+      books: [
+        P([
+          [
+            'Employer Foo runs payroll',
+            ['employer-foo-receivable', 'dr', 2020],
+            ['fee-revenue', 'cr', 20],
+            ['foo-employee-1-payable', 'cr', 1200],
+            ['foo-employee-2-payable', 'cr', 800],
           ],
-        },
-        rows: [
-          {
-            id: 'r1',
-            label: 'Run payroll with the provider',
-            postings: [
-              post(fooAccounts, 'wages-expense', 'dr', 2000),
-              post(fooAccounts, 'payroll-fees', 'dr', 20),
-              post(fooAccounts, 'payroll-payable', 'cr', 2020),
+          ['Debit Employer Foo', ['cash', 'dr', 2020], ['employer-foo-receivable', 'cr', 2020]],
+          ['Credit Foo Employee 1', ['foo-employee-1-payable', 'dr', 1200], ['cash', 'cr', 1200]],
+          ['Credit Foo Employee 2', ['foo-employee-2-payable', 'dr', 800], ['cash', 'cr', 800]],
+        ]),
+        F(
+          [
+            [
+              'Run payroll with the provider',
+              ['wages-expense', 'dr', 2000],
+              ['payroll-fees', 'dr', 20],
+              ['payroll-payable', 'cr', 2020],
             ],
-          },
-          {
-            id: 'r2',
-            label: 'Provider debits our bank account',
-            postings: [
-              post(fooAccounts, 'payroll-payable', 'dr', 2020),
-              post(fooAccounts, 'cash', 'cr', 2020),
+            [
+              'Provider debits our bank account',
+              ['payroll-payable', 'dr', 2020],
+              ['cash', 'cr', 2020],
             ],
-          },
-        ],
-        showBalanceSheets: false,
-      },
-    ],
-  };
+          ],
+          [
+            ['cash', 10000],
+            ['paid-in-capital', 10000],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'ach-return',
+      title: 'An employee payment bounces',
+      text:
+        'Employee 2’s **$800** payment comes back (an ACH return: the account number was wrong). We still owe them, so ' +
+        'the payable comes back too — then we send it again to the right account.\n\n' +
+        'Employer Foo’s books don’t change: Foo paid us, and the problem is ours to fix. A return is its own entry, ' +
+        'never an edit of the original payment — the ledger keeps the history.',
+      books: [
+        P(
+          [
+            ['ACH return: Employee 2', ['cash', 'dr', 800], ['foo-employee-2-payable', 'cr', 800]],
+            ['Re-send to Employee 2', ['foo-employee-2-payable', 'dr', 800], ['cash', 'cr', 800]],
+          ],
+          [
+            ['cash', 20],
+            ['fee-revenue', 20],
+          ],
+        ),
+      ],
+    },
+  ]);
 }
 
 export const EXAMPLES: { id: string; label: string; build: () => SandboxState }[] = [
-  { id: 'cash-deposit', label: 'Cash deposit — you and the bank', build: cashDeposit },
-  { id: 'loan', label: 'Loan — both sides', build: loan },
-  { id: 'fbo-top-up', label: 'FBO top-up — Zap and the bank', build: fboTopUp },
-  { id: 'payroll', label: 'Payroll — a payroll provider’s ledger', build: payroll },
+  { id: 'bank', label: 'You and your bank (3 scenarios)', build: youAndYourBank },
+  { id: 'fbo', label: 'Zap — a wallet on an FBO account (3 scenarios)', build: zapWallet },
+  { id: 'payroll', label: 'A payroll provider (2 scenarios)', build: payroll },
 ];

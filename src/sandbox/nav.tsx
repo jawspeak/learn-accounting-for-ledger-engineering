@@ -3,10 +3,12 @@ import { createContext, useContext, type ReactNode } from 'react';
 /** The three views of the same books. */
 export type SandboxView = 'journal' | 'taccounts' | 'grid';
 
-/** Somewhere inside the Sandbox: a view, a party (Journal / Grid), and an element to scroll to. */
+/** Somewhere inside the Sandbox: a view, an entity (Journal / Grid), a scenario (default: the current one), and
+ *  an element to scroll to. */
 export interface SandboxTarget {
   view: SandboxView;
-  party?: number;
+  entity?: number;
+  scenario?: number;
   /** An element id, e.g. "entry-3". */
   at?: string;
 }

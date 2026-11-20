@@ -6,7 +6,7 @@ import './viewSwitch.css';
  * The Sandbox is one tool with three views of the same books (the same URL state, so switching keeps everything):
  *  - Journal: by transaction, in order — what happened, and what each event posted. The editor.
  *  - T-accounts: by account — the general ledger: what's in each account and how it got there.
- *  - Grid: both at once — rows = entries, columns = accounts; one party at a time, desktop-first.
+ *  - Grid: both at once — rows = entries, columns = accounts; one entity at a time, desktop-first.
  * Names live here only, so renaming them is a one-line change.
  */
 export const VIEW_NAME: Record<SandboxView, string> = {
@@ -17,8 +17,8 @@ export const VIEW_NAME: Record<SandboxView, string> = {
 
 const VIEW_HINT: Record<SandboxView, string> = {
   journal: 'By transaction: write and read entries, debits then credits',
-  taccounts: 'By account: every party’s ledger as T-accounts, with balance sheets',
-  grid: 'Both: entries down, accounts across — one party as a wide spreadsheet (desktop)',
+  taccounts: 'By account: every entity’s ledger as T-accounts, with balance sheets',
+  grid: 'Both: entries down, accounts across — one entity as a wide spreadsheet (desktop)',
 };
 
 const icon = (children: React.ReactNode) => (
@@ -83,7 +83,7 @@ const VIEWS: [SandboxView, ComponentType][] = [
 ];
 
 /** "Sandbox · [Journal | T-accounts | Grid]" — the same header on every view; links resolve via the host. */
-export function ViewSwitch({ current, party = 0 }: { current: SandboxView; party?: number }) {
+export function ViewSwitch({ current, entity = 0 }: { current: SandboxView; entity?: number }) {
   return (
     <div className="vs">
       <span className="vs-tool">Sandbox</span>
@@ -91,7 +91,7 @@ export function ViewSwitch({ current, party = 0 }: { current: SandboxView; party
         {VIEWS.map(([v, Icon]) => (
           <SandboxLink
             key={v}
-            to={{ view: v, party: v === 'taccounts' ? 0 : party }}
+            to={{ view: v, entity: v === 'taccounts' ? 0 : entity }}
             className={`vs-opt${v === current ? ' is-current' : ''}`}
             aria-current={v === current ? 'page' : undefined}
             title={VIEW_HINT[v]}

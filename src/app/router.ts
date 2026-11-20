@@ -6,10 +6,11 @@ export type { SandboxView };
 /**
  * Hash routes: #/  #/s/<sectionId>?at=<element id>  #/p/<problemId>?a=<attempt>
  * #/cheatsheet?at=<element id> — `at` scrolls to a block on the page (search results deep-link with it).
- * The Sandbox: three views of the same state (`d`); `e` = which party; `at` = an element to scroll to.
- *   #/sandbox?d=&e=&at=   Journal — the editor, and the default
- *   #/taccounts?d=&at=    T-accounts — every party's ledger, read-only
- *   #/sheet?d=&e=         Grid — one party as a wide spreadsheet
+ * The Sandbox: three views of the same state (`d`); `s` = which scenario; `e` = which entity; `at` = an element
+ * to scroll to.
+ *   #/sandbox?d=&s=&e=&at=   Journal — the editor, and the default
+ *   #/taccounts?d=&s=&at=    T-accounts — every entity's ledger, read-only
+ *   #/sheet?d=&s=&e=         Grid — one entity as a wide spreadsheet
  */
 const VIEW_PATH: Record<SandboxView, string> = {
   journal: 'sandbox',
@@ -21,7 +22,14 @@ export type Route =
   | { name: 'home' }
   | { name: 'section'; id: string; at?: string }
   | { name: 'problem'; id: string; attempt?: string }
-  | { name: 'sandbox'; view: SandboxView; data?: string; entity: number; at?: string }
+  | {
+      name: 'sandbox';
+      view: SandboxView;
+      data?: string;
+      scenario: number;
+      entity: number;
+      at?: string;
+    }
   | { name: 'definitions'; id?: string }
   | { name: 'cheatsheet'; at?: string }
   | { name: 'animations' }
@@ -38,12 +46,16 @@ export function parseHash(hash: string): Route {
     return { name: 'problem', id: parts[1], attempt: params.get('a') ?? undefined };
   const view = (Object.keys(VIEW_PATH) as SandboxView[]).find((v) => VIEW_PATH[v] === parts[0]);
   if (view) {
-    const e = Number(params.get('e') ?? 0);
+    const index = (k: string) => {
+      const n = Number(params.get(k) ?? 0);
+      return Number.isInteger(n) && n > 0 ? n : 0;
+    };
     return {
       name: 'sandbox',
       view,
       data: params.get('d') ?? undefined,
-      entity: Number.isInteger(e) && e > 0 ? e : 0,
+      scenario: index('s'),
+      entity: index('e'),
       ...(at ? { at } : {}),
     };
   }
@@ -54,8 +66,19 @@ export function parseHash(hash: string): Route {
 }
 
 /** Any Sandbox view of the same state. */
-function sandboxView(view: SandboxView, data?: string, entity = 0, at?: string): string {
-  const q = [data && `d=${data}`, entity > 0 && `e=${entity}`, at && `at=${encodeURIComponent(at)}`]
+function sandboxView(
+  view: SandboxView,
+  data?: string,
+  entity = 0,
+  at?: string,
+  scenario = 0,
+): string {
+  const q = [
+    data && `d=${data}`,
+    scenario > 0 && `s=${scenario}`,
+    entity > 0 && view !== 'taccounts' && `e=${entity}`,
+    at && `at=${encodeURIComponent(at)}`,
+  ]
     .filter(Boolean)
     .join('&');
   return `#/${VIEW_PATH[view]}${q ? `?${q}` : ''}`;

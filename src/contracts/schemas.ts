@@ -225,20 +225,30 @@ export const sectionSchema = z.object({
 });
 
 export const sandboxStateSchema = z.object({
-  v: z.literal(1),
+  v: z.literal(2),
   title: z.string().optional(),
-  scenario: z.string(),
   entities: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
       accounts: z.array(accountSchema),
-      rows: z.array(rowSchema),
-      opening: balanceSheetSchema.optional(),
       showBalanceSheets: z.boolean(),
       columnOrder: z.array(z.string()).optional(),
     }),
   ),
+  scenarios: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        text: z.string(),
+        books: z.record(
+          z.string(),
+          z.object({ rows: z.array(rowSchema), opening: balanceSheetSchema.optional() }),
+        ),
+      }),
+    )
+    .min(1),
 });
 
 export const attemptStateSchema = z.object({
