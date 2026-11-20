@@ -8,7 +8,11 @@ afterEach(cleanup);
 
 /** A host with no URL routing at all: state in React, views switched through onNavigate. */
 function StandaloneHost({ onState }: { onState(s: SandboxState): void }) {
-  const [state, setState] = useState<SandboxState>(emptyState());
+  const [state, setState] = useState<SandboxState>(() => {
+    const s = emptyState();
+    s.entities[0]!.name = 'Lemonade stand';
+    return s;
+  });
   const [view, setView] = useState<SandboxView>('journal');
   const [party, setParty] = useState(0);
   return (
@@ -26,36 +30,30 @@ function StandaloneHost({ onState }: { onState(s: SandboxState): void }) {
         setView(t.view);
         if (t.party !== undefined) setParty(t.party);
       }}
-      templates={[
-        {
-          id: 'shop',
-          name: 'Lemonade stand',
-          accounts: [
-            { id: 'cash', name: 'Cash', type: 'asset' },
-            { id: 'sales', name: 'Sales', type: 'revenue' },
-          ],
-        },
-      ]}
     />
   );
 }
 
 describe('Sandbox as a standalone module (no router, no course content)', () => {
-  it('a host supplies its own templates and handles navigation; edits come back through onChange', () => {
+  it('a host handles navigation; edits come back through onChange', () => {
     const onState = vi.fn();
     render(<StandaloneHost onState={onState} />);
-    // No examples given: no example menu. The host's template is offered.
+    // No examples given: no example menu.
     expect(screen.queryByLabelText('Example scenarios:')).toBeNull();
-    fireEvent.change(screen.getByLabelText('Start from a template:'), {
-      target: { value: 'shop' },
-    });
+    // Add two accounts in the Accounts panel.
+    for (const [name, type] of [
+      ['Cash', 'asset'],
+      ['Sales', 'revenue'],
+    ]) {
+      fireEvent.change(screen.getByPlaceholderText('New account name'), {
+        target: { value: name },
+      });
+      fireEvent.change(screen.getByLabelText('New account type'), { target: { value: type } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add account' }));
+    }
     expect(
       onState.mock.calls.at(-1)![0].entities[0].accounts.map((a: { id: string }) => a.id),
     ).toEqual(['cash', 'sales']);
-    // A template is a chart of accounts only — the status line says so (no entries appear).
-    expect(screen.getByRole('status').textContent).toMatch(
-      /Added 2 accounts from Lemonade stand .*no entries are added/,
-    );
 
     // Write an entry: sell lemonade for $3.
     fireEvent.click(screen.getByRole('button', { name: /Add entry/ }));

@@ -215,6 +215,28 @@ describe('Grid view', () => {
     expect(screen.getByRole('tab', { selected: true }).textContent).toBe('First Example Bank');
     expect(screen.getByRole('region', { name: /Spreadsheet/ })).toBeTruthy();
   });
+
+  it('a cell made of two journal lines shows their total read-only, so it can’t merge them', () => {
+    const s = loan();
+    // Entry 1 borrows $500 into Checking: split it into two $250 debit lines (as the Journal allows).
+    const row = s.entities[0]!.rows[0]!;
+    const dr = row.postings.find((p) => p.side === 'dr')!;
+    row.postings = [
+      { ...dr, amount: 25000 },
+      { ...dr, amount: 25000 },
+      ...row.postings.filter((p) => p !== dr),
+    ];
+    mount('grid', s);
+    const cell = screen.getByLabelText(
+      'Entry 1 Checking Account debit (2 lines; edit in the Journal)',
+    ) as HTMLInputElement;
+    expect(cell.readOnly).toBe(true);
+    expect(cell.value).toBe('$500');
+    // The other cells stay editable.
+    expect(
+      (screen.getByLabelText('Entry 1 Checking Account credit') as HTMLInputElement).readOnly,
+    ).toBe(false);
+  });
 });
 
 describe('the view switcher', () => {

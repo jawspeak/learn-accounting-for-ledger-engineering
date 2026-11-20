@@ -401,6 +401,11 @@ export function SheetGrid({
                         nav={`${ri}:${FIRST_AMOUNT_COL + i * 2 + si}`}
                         label={`Entry ${n1} ${a.name} ${SIDE_WORD[s]}`}
                         cents={cellAmount(row, a.id, s)}
+                        lines={
+                          row.postings.filter(
+                            (p) => p.accountId === a.id && p.side === s && p.amount > 0,
+                          ).length
+                        }
                         onChange={(c) => onChange(setAmount(e, ri, a.id, s, c))}
                       />
                     </td>
@@ -493,15 +498,35 @@ function MoneyCell({
   label,
   nav,
   allowNegative,
+  lines = 1,
 }: {
   cents: Money;
   onChange(c: Money): void;
   label: string;
   nav?: string;
   allowNegative?: boolean;
+  /** How many journal lines make up this cell. A split (2+) shows its total read-only: typing one number here
+   *  would merge the lines, so they're edited in the Journal. */
+  lines?: number;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const rest = cents === 0 ? '' : cents < 0 ? `−${formatDollars(-cents)}` : formatDollars(cents);
+  if (lines > 1)
+    return (
+      <span className="sh-split" title={`${lines} journal lines — edit them in the Journal`}>
+        <input
+          type="text"
+          readOnly
+          className="sh-amt"
+          data-nav={nav}
+          aria-label={`${label} (${lines} lines; edit in the Journal)`}
+          value={rest}
+        />
+        <span className="sh-split-note" aria-hidden="true">
+          {lines} lines
+        </span>
+      </span>
+    );
   return (
     <input
       type="text"

@@ -4,7 +4,6 @@ import type {
   AccountId,
   AccountType,
   BalanceSheet,
-  EntityCoA,
   EquationCheck,
   Money,
   Posting,
@@ -124,17 +123,6 @@ export function applyAccounts(e: SandboxEntity, next: Account[]): SandboxEntity 
   }
   if (!e.opening) delete out.opening;
   return out;
-}
-
-/** Copy a content entity's accounts into a sandbox entity (accounts already present by id are kept). */
-export function applyTemplate(
-  e: SandboxEntity,
-  coa: Pick<EntityCoA, 'name' | 'accounts'>,
-): SandboxEntity {
-  const have = new Set(e.accounts.map((a) => a.id));
-  const added = coa.accounts.filter((a) => !have.has(a.id)).map((a) => ({ ...a }));
-  const pristineName = e.accounts.length === 0 && /^(new entity|you)( \d+)?$/i.test(e.name.trim());
-  return { ...e, name: pristineName ? coa.name : e.name, accounts: [...e.accounts, ...added] };
 }
 
 export function typeResolver(e: SandboxEntity): (id: AccountId) => AccountType | undefined {

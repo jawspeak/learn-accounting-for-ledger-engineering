@@ -10,7 +10,7 @@
  * decides where it lives (a URL, storage, a backend); `persistable` drops half-written journal lines first.
  */
 export { Sandbox } from './Sandbox';
-export type { SandboxExample, SandboxProps, SandboxTemplate } from './Sandbox';
+export type { SandboxExample, SandboxProps } from './Sandbox';
 export type { SandboxNav, SandboxTarget, SandboxView } from './nav';
 export { emptyState, persistable } from './model';
 export type { SandboxEntity, SandboxState } from '@contracts';

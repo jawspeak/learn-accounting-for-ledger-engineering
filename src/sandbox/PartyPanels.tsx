@@ -1,4 +1,4 @@
-/** Party-level panels shared by the Sandbox views: checks summary, template picker, accounts list, opening balances,
+/** Party-level panels shared by the Sandbox views: checks summary, accounts list, opening balances,
  *  and the small account controls every view uses (type options, "reduces…", remove-with-confirm). */
 import { Fragment, useId, useState } from 'react';
 import type { Account, AccountId, AccountType, SandboxEntity } from '@contracts';
@@ -53,35 +53,6 @@ export function EntitySummaryLine({
         <span className="sbx-err">Opening balances don’t satisfy A = L + E</span>
       )}
     </p>
-  );
-}
-
-/** "Start from a template": the host's charts of accounts, in the host's order. */
-export function TemplatePicker({
-  templates,
-  onPick,
-}: {
-  templates: { id: string; name: string; accounts: Account[] }[];
-  onPick(t: { id: string; name: string; accounts: Account[] }): void;
-}) {
-  return (
-    <label className="sbx-inline">
-      Start from a template:
-      <select
-        value=""
-        onChange={(e) => {
-          const t = templates.find((x) => x.id === e.target.value);
-          if (t) onPick(t);
-        }}
-      >
-        <option value="">Choose…</option>
-        {templates.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name} ({c.accounts.length} accounts)
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
@@ -196,8 +167,8 @@ export function AccountsEditor({
     <div className="sbx-accounts">
       {listed.length === 0 ? (
         <p className="note">
-          No accounts yet — add one below, choose “New account…” on a journal line, or start from a
-          template.
+          No accounts yet — add one below, choose “New account…” on a journal line, or load an
+          example scenario.
         </p>
       ) : (
         <table className="sbx-table">

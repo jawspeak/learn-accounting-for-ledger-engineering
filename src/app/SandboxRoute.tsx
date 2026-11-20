@@ -1,26 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { entities } from '@content';
 import { engine } from '@engine';
 import { EXAMPLES } from '../../content/sandbox-examples';
-import {
-  Sandbox,
-  emptyState,
-  persistable,
-  type SandboxState,
-  type SandboxTemplate,
-  type SandboxView,
-} from '../sandbox';
+import { Sandbox, emptyState, persistable, type SandboxState, type SandboxView } from '../sandbox';
 import { href, parseHash, replaceHash } from './router';
 
 /** Debounce for writing state into the URL. */
 export const URL_DEBOUNCE_MS = 300;
 /** Warn (non-blocking) once the shareable URL gets longer than this. */
 export const URL_WARN_LENGTH = 6000;
-
-/** The course's charts of accounts as Sandbox templates: "You" first, then by name. */
-const TEMPLATES: SandboxTemplate[] = Object.values(entities).sort((a, b) =>
-  a.id === 'you' ? -1 : b.id === 'you' ? 1 : a.name.localeCompare(b.name),
-);
 
 interface Board {
   state: SandboxState;
@@ -42,7 +29,7 @@ const encode = (s: SandboxState) => engine.encodeState(persistable(s));
 
 /**
  * The course's Sandbox route (#/sandbox, #/taccounts, #/sheet): hosts the standalone Sandbox with the state in
- * the URL — shareable links, back/forward, a debounced write as you type — plus the course's templates and
+ * the URL — shareable links, back/forward, a debounced write as you type — plus the course's
  * example scenarios. Everything URL-specific lives here, not in the Sandbox.
  */
 export default function SandboxRoute({
@@ -130,7 +117,6 @@ export default function SandboxRoute({
       linkTo={(t) =>
         href.sandboxView(t.view, enc, t.view === 'taccounts' ? 0 : (t.party ?? party), t.at)
       }
-      templates={TEMPLATES}
       examples={EXAMPLES}
       toolbar={
         <>

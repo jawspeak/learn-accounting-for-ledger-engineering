@@ -552,6 +552,23 @@ th.sh-left[colspan='3'] {
 .sh-center {
   text-align: center;
 }
+/* A cell made of 2+ journal lines: the total, read-only, with a small "2 lines" note. */
+.sh-split {
+  position: relative;
+  display: block;
+}
+.sh-split .sh-amt {
+  cursor: default;
+  padding-top: 0.55rem;
+}
+.sh-split-note {
+  position: absolute;
+  top: 0.05rem;
+  right: 0.45rem;
+  font-size: 0.62rem;
+  color: var(--muted);
+  pointer-events: none;
+}
 .sh-check {
   text-align: center;
   font-size: 0.82rem;

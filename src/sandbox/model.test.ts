@@ -2,13 +2,10 @@
 import { describe, expect, it } from 'vitest';
 import type { SandboxEntity } from '@contracts';
 import { engine } from '@engine';
-import { entities } from '@content';
 import { EXAMPLES } from '../../content/sandbox-examples';
 import {
   applyAccounts,
-  applyTemplate,
   emptyState,
-  newEntity,
   duplicateEntity,
   setOpening,
   slugify,
@@ -73,11 +70,6 @@ describe('applyAccounts', () => {
 });
 
 describe('entities', () => {
-  it('template copies content accounts and names a pristine entity', () => {
-    const e = applyTemplate(newEntity([], 'New entity'), entities.bank!);
-    expect(e.name).toBe(entities.bank!.name);
-    expect(e.accounts.length).toBe(entities.bank!.accounts.length);
-  });
   it('duplicate gets a unique id', () => {
     const s = emptyState();
     const d = duplicateEntity(s.entities, s.entities[0]!);

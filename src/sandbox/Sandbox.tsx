@@ -1,11 +1,10 @@
 import { useId, useState, type ReactNode } from 'react';
-import type { Account, SandboxEntity, SandboxState } from '@contracts';
+import type { SandboxEntity, SandboxState } from '@contracts';
 import { SheetGrid } from './grid/SheetGrid';
 import { ColumnOrderToggle } from './ColumnOrderToggle';
 import { JournalEditor } from './JournalEditor';
 import { LedgerView } from './LedgerView';
 import {
-  applyTemplate,
   duplicateEntity,
   emptyState,
   isManualOrder,
@@ -14,18 +13,11 @@ import {
   summarize,
 } from './model';
 import { SandboxLink, SandboxNavProvider, type SandboxNav, type SandboxView } from './nav';
-import { AccountsEditor, EntitySummaryLine, OpeningEditor, TemplatePicker } from './PartyPanels';
+import { AccountsEditor, EntitySummaryLine, OpeningEditor } from './PartyPanels';
 import { SafeMarkdown } from './safeMarkdown';
 import { ViewSwitch } from './ViewSwitch';
 import './sandbox.css';
 import './grid/sheet.css';
-
-/** A starting chart of accounts ("Start from a template"). */
-export interface SandboxTemplate {
-  id: string;
-  name: string;
-  accounts: Account[];
-}
 
 /** A ready-made scenario ("Load an example…"). */
 export interface SandboxExample {
@@ -44,8 +36,6 @@ export interface SandboxProps extends SandboxNav {
   onPartyChange(party: number): void;
   /** An element to scroll to on arrival, e.g. "entry-3". */
   at?: string;
-  /** Charts of accounts offered by "Start from a template" (none: the picker is hidden). */
-  templates?: SandboxTemplate[];
   /** Scenarios offered by "Load an example…" (none: the menu is hidden). */
   examples?: SandboxExample[];
   /** Extra toolbar content from the host, e.g. a "Copy link" button. */
@@ -62,7 +52,7 @@ const clampEntity = (i: number, s: SandboxState) => Math.max(0, Math.min(i, s.en
  *  - T-accounts: every party's ledger as real T's, with balance sheets (read-only).
  *  - Grid: one party as a wide spreadsheet — rows = entries, columns = accounts.
  * A controlled component: the host owns the state and where it's saved (a URL, storage, a backend) and
- * how in-Sandbox links resolve (`linkTo` / `onNavigate`). Course-free: templates and examples are props.
+ * how in-Sandbox links resolve (`linkTo` / `onNavigate`). Course-free: example scenarios are a prop.
  */
 export function Sandbox({
   state,
@@ -71,7 +61,6 @@ export function Sandbox({
   party,
   onPartyChange,
   at,
-  templates,
   examples,
   toolbar,
   notice,
@@ -284,12 +273,10 @@ export function Sandbox({
             addParty={addParty}
             current={current}
             setEntity={setEntity}
-            templates={templates}
             duplicateParty={duplicateParty}
             confirmRemove={confirmRemove}
             setConfirmRemove={setConfirmRemove}
             removeParty={removeParty}
-            setStatus={setStatus}
           />
         )}
 
@@ -350,12 +337,10 @@ function PartyBar({
   addParty,
   current,
   setEntity,
-  templates,
   duplicateParty,
   confirmRemove,
   setConfirmRemove,
   removeParty,
-  setStatus,
 }: {
   uid: string;
   state: SandboxState;
@@ -366,12 +351,10 @@ function PartyBar({
   addParty(): void;
   current: SandboxEntity;
   setEntity(e: SandboxEntity): void;
-  templates?: SandboxTemplate[];
   duplicateParty(): void;
   confirmRemove: boolean;
   setConfirmRemove(v: boolean): void;
   removeParty(): void;
-  setStatus(msg: string): void;
 }) {
   const summary = summarize(current);
   return (
@@ -414,23 +397,6 @@ function PartyBar({
             onChange={(e) => setEntity({ ...current, name: e.target.value })}
           />
         </label>
-        {templates && templates.length > 0 && (
-          <TemplatePicker
-            templates={templates}
-            onPick={(t) => {
-              const next = applyTemplate(current, t);
-              const added = next.accounts.length - current.accounts.length;
-              setEntity(next);
-              // A template is a chart of accounts, not a scenario: say so, since the Journal and T-accounts
-              // show nothing new until an entry uses the accounts.
-              setStatus(
-                added
-                  ? `Added ${added} account${added > 1 ? 's' : ''} from ${t.name} — choose them on a journal line (no entries are added; “Load an example” has full scenarios).`
-                  : `${current.name} already has every account in ${t.name}.`,
-              );
-            }}
-          />
-        )}
         <ColumnOrderToggle
           manual={isManualOrder(current)}
           disabled={current.accounts.length === 0}
